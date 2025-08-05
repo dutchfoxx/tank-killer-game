@@ -1,0 +1,338 @@
+import { GameState, Tank, Bullet, Upgrade, Tree, Vector2 } from '../shared/types.js';
+import { AIController } from '../shared/ai.js';
+import { checkAABBCollision, getRandomPositionAvoidingObstacles } from '../shared/collision.js';
+import { 
+  GAME_TICK_RATE, 
+  UPGRADE_TYPES, 
+  TREE_PARAMS, 
+  BATTLEFIELD,
+  TANK_ATTRIBUTES 
+} from '../shared/constants.js';
+
+export class GameEngine {
+  constructor() {
+    this.gameState = new GameState();
+    this.aiControllers = new Map();
+    this.lastUpdate = Date.now();
+    this.gameLoop = null;
+    this.isRunning = false;
+    
+    this.initializeBattlefield();
+  }
+
+  start() {
+    if (this.isRunning) return;
+    
+    this.isRunning = true;
+    this.gameLoop = setInterval(() => {
+      this.update();
+    }, 1000 / GAME_TICK_RATE);
+  }
+
+  stop() {
+    if (!this.isRunning) return;
+    
+    this.isRunning = false;
+    if (this.gameLoop) {
+      clearInterval(this.gameLoop);
+      this.gameLoop = null;
+    }
+  }
+
+  update() {
+    const currentTime = Date.now();
+    const deltaTime = currentTime - this.lastUpdate;
+    this.lastUpdate = currentTime;
+
+    // Update game time
+    this.gameState.gameTime += deltaTime;
+
+    // Update all tanks
+    for (const [id, tank] of this.gameState.tanks) {
+      tank.update(deltaTime);
+    }
+
+    // Update AI controllers
+    for (const [id, aiController] of this.aiControllers) {
+      aiController.update(deltaTime);
+    }
+
+    // Update bullets
+    this.updateBullets(deltaTime);
+
+    // Check collisions
+    this.checkCollisions();
+
+    // Spawn new upgrades if needed
+    this.spawnUpgrades();
+
+    // Clean up expired bullets
+    this.cleanupBullets();
+  }
+
+  updateBullets(deltaTime) {
+    for (const bullet of this.gameState.bullets) {
+      bullet.update(deltaTime);
+    }
+  }
+
+  checkCollisions() {
+    // Check bullet-tank collisions
+    for (let i = this.gameState.bullets.length - 1; i >= 0; i--) {
+      const bullet = this.gameState.bullets[i];
+      const bulletBox = bullet.getBoundingBox();
+
+      // Check collision with tanks
+      for (const [tankId, tank] of this.gameState.tanks) {
+        if (tankId === bullet.shooterId) continue; // Can't hit yourself
+        if (!tank.isAlive) continue;
+
+        const tankBox = tank.getBoundingBox();
+        if (checkAABBCollision(bulletBox, tankBox)) {
+          tank.takeDamage();
+          this.gameState.bullets.splice(i, 1);
+          break;
+        }
+      }
+
+      // Check collision with trees
+      for (const tree of this.gameState.trees) {
+        const treeBox = tree.getBoundingBox();
+        if (checkAABBCollision(bulletBox, treeBox)) {
+          this.gameState.bullets.splice(i, 1);
+          break;
+        }
+      }
+    }
+
+    // Check tank-upgrade collisions
+    for (const tank of this.gameState.tanks.values()) {
+      if (!tank.isAlive) continue;
+
+      const tankBox = tank.getBoundingBox();
+      for (let i = this.gameState.upgrades.length - 1; i >= 0; i--) {
+        const upgrade = this.gameState.upgrades[i];
+        if (upgrade.collected) continue;
+
+        const upgradeBox = upgrade.getBoundingBox();
+        if (checkAABBCollision(tankBox, upgradeBox)) {
+          this.applyUpgrade(tank, upgrade.type);
+          upgrade.collected = true;
+          this.gameState.upgrades.splice(i, 1);
+        }
+      }
+    }
+  }
+
+  applyUpgrade(tank, upgradeType) {
+    const upgradeConfig = UPGRADE_TYPES[upgradeType];
+    if (!upgradeConfig) return;
+
+    switch (upgradeType) {
+      case 'HEALTH':
+        tank.attributes.health = Math.min(
+          TANK_ATTRIBUTES.HEALTH.max,
+          tank.attributes.health + upgradeConfig.value
+        );
+        break;
+      case 'SPEED':
+        tank.attributes.speed = Math.min(
+          TANK_ATTRIBUTES.SPEED.max,
+          tank.attributes.speed + upgradeConfig.value
+        );
+        break;
+      case 'GASOLINE':
+        tank.attributes.gasoline = Math.min(
+          TANK_ATTRIBUTES.GASOLINE.max,
+          tank.attributes.gasoline + upgradeConfig.value
+        );
+        break;
+      case 'ROTATION':
+        tank.attributes.rotation = Math.min(
+          TANK_ATTRIBUTES.ROTATION.max,
+          tank.attributes.rotation + upgradeConfig.value
+        );
+        break;
+      case 'AMMUNITION':
+        tank.attributes.ammunition = Math.min(
+          TANK_ATTRIBUTES.AMMUNITION.max,
+          tank.attributes.ammunition + upgradeConfig.value
+        );
+        break;
+      case 'KINETICS':
+        tank.attributes.kinetics = Math.min(
+          TANK_ATTRIBUTES.KINETICS.max,
+          tank.attributes.kinetics + upgradeConfig.value
+        );
+        break;
+    }
+  }
+
+  spawnUpgrades() {
+    // Count current upgrades by type
+    const upgradeCounts = {};
+    for (const upgrade of this.gameState.upgrades) {
+      upgradeCounts[upgrade.type] = (upgradeCounts[upgrade.type] || 0) + 1;
+    }
+
+    // Spawn missing upgrades
+    for (const [type, config] of Object.entries(UPGRADE_TYPES)) {
+      const currentCount = upgradeCounts[type] || 0;
+      if (currentCount < config.count) {
+        const position = getRandomPositionAvoidingObstacles([
+          ...this.gameState.trees.values(),
+          ...this.gameState.upgrades,
+          ...this.gameState.tanks.values()
+        ]);
+        
+        this.gameState.upgrades.push(new Upgrade(type, new Vector2(position.x, position.y)));
+      }
+    }
+  }
+
+  cleanupBullets() {
+    this.gameState.bullets = this.gameState.bullets.filter(bullet => !bullet.isExpired());
+  }
+
+  addPlayer(playerId, callname, tankColor, team) {
+    const player = {
+      id: playerId,
+      callname,
+      tankColor,
+      team,
+      lastUpdate: Date.now()
+    };
+
+    this.gameState.players.set(playerId, player);
+
+    // Create tank for player
+    const position = getRandomPositionAvoidingObstacles([
+      ...this.gameState.trees,
+      ...this.gameState.upgrades,
+      ...this.gameState.tanks.values()
+    ]);
+
+    const tank = new Tank(playerId, new Vector2(position.x, position.y));
+    this.gameState.tanks.set(playerId, tank);
+
+    return { player, tank };
+  }
+
+  removePlayer(playerId) {
+    this.gameState.players.delete(playerId);
+    this.gameState.tanks.delete(playerId);
+    this.aiControllers.delete(playerId);
+  }
+
+  addAITank() {
+    const aiId = `ai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const position = getRandomPositionAvoidingObstacles([
+      ...this.gameState.trees,
+      ...this.gameState.upgrades,
+      ...this.gameState.tanks.values()
+    ]);
+
+    const tank = new Tank(aiId, new Vector2(position.x, position.y));
+    tank.isAI = true;
+    this.gameState.tanks.set(aiId, tank);
+
+    const aiController = new AIController(tank, this.gameState);
+    this.aiControllers.set(aiId, aiController);
+
+    return aiId;
+  }
+
+  removeAITank(aiId) {
+    this.gameState.tanks.delete(aiId);
+    this.aiControllers.delete(aiId);
+  }
+
+  updatePlayerInput(playerId, input) {
+    console.log(`Updating input for player ${playerId}:`, input);
+    
+    const tank = this.gameState.tanks.get(playerId);
+    if (!tank) {
+      console.log(`No tank found for player ${playerId}`);
+      return;
+    }
+    
+    if (!tank.isAlive) {
+      console.log(`Tank ${playerId} is not alive`);
+      return;
+    }
+
+    // Update tank movement
+    if (input.movement) {
+      console.log(`Setting tank ${playerId} velocity to:`, input.movement);
+      // Scale the movement vector by tank speed
+      const speed = tank.attributes.speed;
+      tank.targetVelocity = new Vector2(input.movement.x * speed, input.movement.y * speed);
+    }
+
+    // Update tank rotation (only if rotation is explicitly provided and not 0)
+    if (input.rotation !== undefined && input.rotation !== 0) {
+      console.log(`Setting tank ${playerId} rotation to:`, input.rotation);
+      tank.angle = input.rotation;
+    }
+
+    // Handle shooting
+    if (input.shoot) {
+      console.log(`Tank ${playerId} attempting to shoot`);
+      const bullet = tank.shoot();
+      if (bullet) {
+        console.log(`Tank ${playerId} shot bullet:`, bullet);
+        this.gameState.bullets.push(bullet);
+      } else {
+        console.log(`Tank ${playerId} cannot shoot - conditions not met`);
+      }
+    }
+  }
+
+  initializeBattlefield() {
+    // Generate trees
+    const treeCount = Math.floor(
+      Math.random() * (TREE_PARAMS.MAX_TREES - TREE_PARAMS.MIN_TREES + 1) + 
+      TREE_PARAMS.MIN_TREES
+    );
+
+    for (let i = 0; i < treeCount; i++) {
+      const size = TREE_PARAMS.TREE_SIZE + 
+        (Math.random() - 0.5) * TREE_PARAMS.TREE_SIZE_VARIANCE;
+      
+      // Generate position across the entire battlefield area
+      const position = getRandomPositionAvoidingObstacles([
+        ...this.gameState.trees,
+        ...this.gameState.upgrades
+      ], 60, 50, 50, 1150, 750);
+
+      this.gameState.trees.push(new Tree(new Vector2(position.x, position.y), size));
+    }
+
+    // Spawn initial upgrades
+    this.spawnUpgrades();
+  }
+
+  getGameState() {
+    return {
+      players: Array.from(this.gameState.players.values()),
+      tanks: Array.from(this.gameState.tanks.values()),
+      bullets: this.gameState.bullets,
+      upgrades: this.gameState.upgrades,
+      trees: this.gameState.trees,
+      gameTime: this.gameState.gameTime
+    };
+  }
+
+  getPlayerGameState(playerId) {
+    const tank = this.gameState.tanks.get(playerId);
+    if (!tank) return null;
+
+    return {
+      tank: tank,
+      attributes: tank.attributes,
+      isAlive: tank.isAlive,
+      respawnTime: tank.respawnTime
+    };
+  }
+} 

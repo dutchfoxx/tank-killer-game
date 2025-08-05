@@ -1,0 +1,308 @@
+// Game State Types
+export class Vector2 {
+  constructor(x = 0, y = 0) {
+    this.x = x;
+    this.y = y;
+  }
+
+  add(other) {
+    return new Vector2(this.x + other.x, this.y + other.y);
+  }
+
+  subtract(other) {
+    return new Vector2(this.x - other.x, this.y - other.y);
+  }
+
+  multiply(scalar) {
+    return new Vector2(this.x * scalar, this.y * scalar);
+  }
+
+  magnitude() {
+    return Math.sqrt(this.x * this.x + this.y * this.y);
+  }
+
+  normalize() {
+    const mag = this.magnitude();
+    if (mag === 0) return new Vector2(0, 0);
+    return new Vector2(this.x / mag, this.y / mag);
+  }
+
+  lerp(target, factor) {
+    return new Vector2(
+      this.x + (target.x - this.x) * factor,
+      this.y + (target.y - this.y) * factor
+    );
+  }
+
+  distance(other) {
+    return this.subtract(other).magnitude();
+  }
+
+  clone() {
+    return new Vector2(this.x, this.y);
+  }
+}
+
+export class TankAttributes {
+  constructor() {
+    this.health = 100;
+    this.speed = 50;
+    this.gasoline = 100;
+    this.rotation = 50;
+    this.ammunition = 14;
+    this.kinetics = 300;
+  }
+
+  clone() {
+    const clone = new TankAttributes();
+    clone.health = this.health;
+    clone.speed = this.speed;
+    clone.gasoline = this.gasoline;
+    clone.rotation = this.rotation;
+    clone.ammunition = this.ammunition;
+    clone.kinetics = this.kinetics;
+    return clone;
+  }
+
+  getPercentage(attribute, max, min) {
+    const current = this[attribute];
+    return Math.max(0, Math.min(100, ((current - min) / (max - min)) * 100));
+  }
+}
+
+export class Tank {
+  constructor(id, position, angle = 0) {
+    this.id = id;
+    this.position = position;
+    this.angle = angle;
+    this.velocity = new Vector2(0, 0);
+    this.targetVelocity = new Vector2(0, 0);
+    this.attributes = new TankAttributes();
+    this.isAlive = true;
+    this.respawnTime = 0;
+    this.reloadTime = 0;
+    this.lastShot = 0;
+    this.isAI = false;
+  }
+
+  update(deltaTime) {
+    console.log(`Tank ${this.id} update - position:`, this.position, `angle:`, this.angle, `isAlive:`, this.isAlive, `velocity:`, this.velocity);
+    if (!this.isAlive) {
+      this.respawnTime -= deltaTime;
+      if (this.respawnTime <= 0) {
+        this.respawn();
+      }
+      return;
+    }
+
+    // Update reload time
+    if (this.reloadTime > 0) {
+      this.reloadTime -= deltaTime;
+    }
+
+    // Apply gasoline penalty
+    const effectiveSpeed = this.attributes.gasoline <= 0 
+      ? this.attributes.speed * 0.5 
+      : this.attributes.speed;
+
+    // Smooth velocity interpolation
+    const lerpFactor = 0.15; // Smoothing factor
+    if (this.targetVelocity.magnitude() > 0.1) {
+      this.velocity = this.velocity.lerp(this.targetVelocity, lerpFactor);
+      
+      // Update tank rotation based on movement direction
+      this.angle = Math.atan2(this.targetVelocity.y, this.targetVelocity.x);
+    } else {
+      // Apply friction when not moving
+      this.velocity = this.velocity.multiply(0.9);
+    }
+
+    // Update position
+    this.position = this.position.add(this.velocity.multiply(deltaTime / 1000));
+
+    // Keep tank within bounds
+    this.position.x = Math.max(10, Math.min(1190, this.position.x));
+    this.position.y = Math.max(10, Math.min(790, this.position.y));
+  }
+
+  respawn() {
+    this.isAlive = true;
+    this.position = new Vector2(
+      Math.random() * 1000 + 100,
+      Math.random() * 600 + 100
+    );
+    this.angle = Math.random() * Math.PI * 2;
+    this.velocity = new Vector2(0, 0);
+    this.targetVelocity = new Vector2(0, 0);
+    this.attributes = new TankAttributes();
+    this.respawnTime = 0;
+    this.reloadTime = 0;
+  }
+
+  canShoot() {
+    const canShoot = this.isAlive && 
+           this.attributes.ammunition > 0 && 
+           this.reloadTime <= 0;
+    
+    console.log(`Tank ${this.id} canShoot check:`, {
+      isAlive: this.isAlive,
+      ammunition: this.attributes.ammunition,
+      reloadTime: this.reloadTime,
+      canShoot: canShoot
+    });
+    
+    return canShoot;
+  }
+
+  shoot() {
+    console.log(`Tank ${this.id} shoot() called`);
+    if (!this.canShoot()) {
+      console.log(`Tank ${this.id} cannot shoot - conditions not met`);
+      return null;
+    }
+
+    console.log(`Tank ${this.id} shooting bullet`);
+    
+    this.attributes.ammunition--;
+    this.reloadTime = 1000; // 1 second reload time
+    this.lastShot = Date.now();
+
+    const bulletSpeed = this.attributes.kinetics;
+    const direction = new Vector2(
+      Math.cos(this.angle),
+      Math.sin(this.angle)
+    );
+    const bulletVelocity = direction.multiply(bulletSpeed);
+
+    const bullet = new Bullet(
+      this.id,
+      this.position.clone(),
+      bulletVelocity,
+      Date.now()
+    );
+
+    console.log(`Tank ${this.id} shot bullet:`, bullet);
+    console.log(`Tank ${this.id} remaining ammo:`, this.attributes.ammunition);
+    
+    return bullet;
+  }
+
+  takeDamage() {
+    if (!this.isAlive) return;
+
+    this.attributes.health -= 1;
+    this.attributes.speed = Math.max(5, this.attributes.speed - 5);
+    this.attributes.rotation = Math.max(5, this.attributes.rotation - 5);
+    this.attributes.kinetics = Math.max(50, this.attributes.kinetics - 10);
+    this.attributes.gasoline = Math.max(0, this.attributes.gasoline - 5);
+
+    if (this.attributes.health <= 0) {
+      this.die();
+    }
+  }
+
+  die() {
+    this.isAlive = false;
+    this.respawnTime = 5000; // 5 seconds
+  }
+
+  getBoundingBox() {
+    const size = 20;
+    return {
+      x: this.position.x - size / 2,
+      y: this.position.y - size / 2,
+      width: size,
+      height: size
+    };
+  }
+}
+
+export class Bullet {
+  constructor(shooterId, position, velocity, timestamp) {
+    this.shooterId = shooterId;
+    this.position = position;
+    this.velocity = velocity;
+    this.timestamp = timestamp;
+    this.lifetime = 1000; // 1 second
+  }
+
+  update(deltaTime) {
+    this.position = this.position.add(this.velocity.multiply(deltaTime / 1000));
+    this.lifetime -= deltaTime;
+  }
+
+  isExpired() {
+    return this.lifetime <= 0 || 
+           this.position.x < 0 || 
+           this.position.x > 1200 ||
+           this.position.y < 0 || 
+           this.position.y > 800;
+  }
+
+  getBoundingBox() {
+    const size = 4;
+    return {
+      x: this.position.x - size / 2,
+      y: this.position.y - size / 2,
+      width: size,
+      height: size
+    };
+  }
+}
+
+export class Upgrade {
+  constructor(type, position) {
+    this.type = type;
+    this.position = position;
+    this.collected = false;
+  }
+
+  getBoundingBox() {
+    const size = 15;
+    return {
+      x: this.position.x - size / 2,
+      y: this.position.y - size / 2,
+      width: size,
+      height: size
+    };
+  }
+}
+
+export class Tree {
+  constructor(position, size) {
+    this.position = position;
+    this.size = size;
+  }
+
+  getBoundingBox() {
+    return {
+      x: this.position.x - this.size / 2,
+      y: this.position.y - this.size / 2,
+      width: this.size,
+      height: this.size
+    };
+  }
+}
+
+export class Player {
+  constructor(id, callname, tankColor, team) {
+    this.id = id;
+    this.callname = callname;
+    this.tankColor = tankColor;
+    this.team = team;
+    this.tank = null;
+    this.lastUpdate = Date.now();
+  }
+}
+
+export class GameState {
+  constructor() {
+    this.players = new Map();
+    this.tanks = new Map();
+    this.bullets = [];
+    this.upgrades = [];
+    this.trees = [];
+    this.gameTime = 0;
+    this.lastUpdate = Date.now();
+  }
+} 

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tank Killer - Multiplayer Battle Game</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #2F2F2F;
+            color: #FFFFFF;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 600px;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #b83400;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+            color: #CCCCCC;
+        }
+
+        .game-links {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .game-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            background-color: #1b1b1b;
+            border-radius: 10px;
+            text-decoration: none;
+            color: #FFFFFF;
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+
+        .game-link:hover {
+            background-color: #b83400;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .game-link .material-icons {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .game-link h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .game-link p {
+            font-size: 0.9rem;
+            color: #CCCCCC;
+        }
+
+        .instructions {
+            margin-top: 3rem;
+            padding: 2rem;
+            background-color: #1b1b1b;
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .instructions h2 {
+            color: #b83400;
+            margin-bottom: 1rem;
+        }
+
+        .instructions ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .instructions li {
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .instructions li:before {
+            content: "•";
+            color: #b83400;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+
+        @media (max-width: 768px) {
+            .game-links {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .game-link {
+                min-width: 250px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚗 Tank Killer</h1>
+        <p class="subtitle">Multiplayer Tank Battle Game</p>
+        
+        <div class="game-links">
+            <a href="/battlefield" class="game-link">
+                <span class="material-icons">visibility</span>
+                <h3>Battlefield</h3>
+                <p>Watch the battle unfold</p>
+            </a>
+            
+            <a href="/controller" class="game-link">
+                <span class="material-icons">gamepad</span>
+                <h3>Controller</h3>
+                <p>Join the battle</p>
+            </a>
+        </div>
+
+        <div class="instructions">
+            <h2>How to Play</h2>
+            <ul>
+                <li>Open the <strong>Battlefield</strong> page on a large screen to watch the game</li>
+                <li>Open the <strong>Controller</strong> page on your mobile device to join as a player</li>
+                <li>Choose your callname, tank color, and team</li>
+                <li>Use the joystick to move and the fire button to shoot</li>
+                <li>Collect upgrades (S, G, R, A, K, H) to improve your stats</li>
+                <li>Destroy enemy tanks to win!</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html> 

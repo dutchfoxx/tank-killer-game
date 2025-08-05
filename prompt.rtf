@@ -1,0 +1,62 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\froman\fcharset0 TimesNewRomanPSMT;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\sa320\partightenfactor0
+
+\f0\fs32 \cf2 \expnd0\expndtw0\kerning0
+Prepare a game called tank-killer, it's a top-down shooter with multiple tanks who can move, turn, and shoot at each other.\
+Prepare two pages. /battlefield and /controller. Each individual device on /controller is a player, and each player controls a tank. So, when a device connects to /controller, a tank appears on /battlefield randomly.\
+The /controller page is divided in two states. Join state, and play state.\
+Join state: The player can pick his callname, his tank colour, and his team. Tank colours: #1f2e23. #d9d188. #736246. #848081. #813D30. Teams: NATO (#0033A0), CSTO (#FFC700), PLA (#DE2910). Teams have no bearing on game (for now), just a little circle with the team colour appears with the team colour next to the callname on the battlefield.\
+Play state: has three main elements. At the very top, a banner with player's attributes (percentages of each attribute: health, speed, gasoline, rotation, kinetics, NOT ammunition), in the middle a big "fire" button and inside this round button, above fire there is the ammunition number left, and at the bottom a big nipple joystick direction controller. The attributes (except ammunition, shown in absolute) are shown in percentage of max/min, so if the attribute is max 50, min 5, and you are at 5, then this attribute will be shown as 0% since you are at the minimum possible of the attribute. \
+Each tank/player has attributes:\
+- Health. Max 100, min 0. When player dies, there is a respawn period.\
+- Speed. Max 50, min 5. It controls the speed of the tank.\
+- Gasoline. Max 100, min 0. When gasoline 0, speed is divided by 2.\
+- Rotation. Max 50, min 5. It controls the rotation speed of the tank. So when you rotate on nipple, it should be "slowed down" by this stat.\
+- Ammunition. Max 14, min 0. How many munitions you have left.You should be able to shoot as many munitions as you have available so not limited by one shot at a time.\
+- Kinetics. Max 300, min 50. Speed of the ammunition. \
+You start the game with full stats.\
+Other player non-visible parameters:\
+- Respawn speed: 5 seconds by default.\
+- Reload time. 1 second by default.\
+- Acceleration. How quick the tank goes from mobile to top speed.\
+Finally, there is a damage parameter per category. Each bullet causes the player damage on multiple attributes:\
+- Damage to health: 1 by default\
+- Damage to speed: 5 by default\
+- Damage to rotation: 5 by default\
+- Damage to kinetics: 10 by default\
+- Damage to gasoline: 5 by default\
+/battlefield screen:\
+So there is a battlefield, which is a rectangle. In this rectangle, there appears mutliple upgrades.\
+S = recharge speed stat. Default 20 per recharge.\
+G = recharge gasoline stat. Default 80 per recharge.\
+R = recharge rotation stat. Default 20 per recharge.\
+A = recharge ammunition stat. Default 7 per recharge.\
+K = recharge kinetics stat. Default 30 per recharge.\
+H = recharge health state. Default 10 per recharge.\
+Upgrades cannot raise stats above max value.\
+When a player picks up a letter, it disappears and reappears somewhere else. Other values:\
+- Amount of speed upgrades on map. 1 by default. \
+- Amount of gasoline upgrades on map. 1 by default.\
+- Amount of rotation upgrades on map. 1 by default.\
+- Amount of ammunition upgrades on map. 2 by default.\
+- Amount of kinetics upgrades on map. 1 by default.\
+- Amount of health upgrades on map. 0 by default.\
+On battlefield screen, above the game area, there is one settings button (identified by a material icons cog icon, 'settings' in material icons) in the top right. When you press, a downwards popup appears from under the settings icon and every single game parameters appears there (except the current player attributes obviously, like you cant modify his current health or speed, but you can modify max and min health, max and min speed etc.) to be able to modify them on the fly. At the very top of this popup, there is a copy parameters button, which creates a json on your copy that you can then use to tell cursor to update its code. This helps with balancing the game.\
+Finally, another icon in the top right of the battlefield, above the game area, which is 'robot' which when you click, the icon becomes green and it adds an AI tank on the game who follows the same physical constraints as the player, has a whole attributes and plays the game. He should be smart: aim to kill the other tanks, but also recharge the stats that are low. AI uses a weight-based decision tree to seek nearest target when health > 50%, otherwise searches for nearest needed upgrade." If you reclick on this robot icon, the icon becomes gray again and it removes the AI instantly. Reputting it puts it with full stats.\
+Battlefield is viewed as a fixed camera top-down canvas showing all players. \
+On battlefield, ground is #55492f, add randomized trees (green circles of various sizes, #5e6936). Parameters to add: Minimum trees, maximum trees, tree size, tree size variance. Trees change on each player joining. Bullets and tanks can't go through trees.\
+Graphics: add a trail behind the bullets. General colour of UI backgrounds (battlefield screen, controller screen) is #2F2F2F, with white text. #b83400 for main action buttons (join game)\
+Feedback on Damage: When you're hit, controller background becomes #b83400 for 300ms, with fade-out back to black.\
+Use WebSockets to maintain real-time communication between /controller and /battlefield, with /battlefield as the authoritative game state host.\
+Use axis-aligned bounding box (AABB) collisions for tank and bullet collisions. Bullets disappear on impact or after 1 second of leaving the viewport. Upgrades are non-blocking and can't be destroyed.\
+Game updates at a fixed 60 ticks per second. Use delta-time logic for movement and rotation interpolation.\
+/controller uses touch events to send movement vector at regular 100ms intervals.\
+As many tanks can join as there are unique devices connected on /controller.\
+Each controller is assigned a persistent player ID on join, stored in localStorage and reused on reconnect, to avoid the player reentering his data.\
+Create the game with a neat structure to be able to export to github in the future, expandable, and logical.\
+}
