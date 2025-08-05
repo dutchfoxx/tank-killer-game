@@ -354,6 +354,17 @@
             opacity: 1 !important;
         }
 
+        /* Remove background-blend-mode when in play mode */
+        .play-state.active ~ body,
+        body.play-mode {
+            background-blend-mode: normal;
+        }
+
+        /* Restore background-blend-mode when not in play mode */
+        body:not(.play-mode) {
+            background-blend-mode: overlay;
+        }
+
         /* Attribute Banner */
         .attribute-banner {
             background-color: #1b1b1b;
@@ -1933,8 +1944,7 @@
             console.log('Before - joinState display:', joinState.style.display);
             console.log('Before - playState classes:', playState.className);
             
-            joinState.style.display = 'none';
-            playState.classList.add('active');
+            activatePlayState();
             
             console.log('After state change - joinState display:', joinState.style.display);
             console.log('After state change - playState classes:', playState.className);
@@ -1966,8 +1976,7 @@
             console.log('Reconnected event received:', data);
             console.log('Processing reconnected event...');
             showStatus('Reconnected to the game!');
-            joinState.style.display = 'none';
-            playState.classList.add('active');
+            activatePlayState();
             
             console.log('After reconnected state change - joinState display:', joinState.style.display);
             console.log('After reconnected state change - playState classes:', playState.className);
@@ -2171,6 +2180,20 @@
             }
         });
 
+        // Function to handle play state activation
+        function activatePlayState() {
+            joinState.style.display = 'none';
+            playState.classList.add('active');
+            document.body.classList.add('play-mode');
+        }
+
+        // Function to handle join state activation
+        function activateJoinState() {
+            playState.classList.remove('active');
+            document.body.classList.remove('play-mode');
+            joinState.style.display = 'flex';
+        }
+
         // Test function to manually trigger state transition
         function testStateTransition() {
             console.log('=== TESTING STATE TRANSITION ===');
@@ -2180,8 +2203,7 @@
             console.log('Before - playState classes:', playState.className);
             console.log('Before - playState computed display:', window.getComputedStyle(playState).display);
             
-            joinState.style.display = 'none';
-            playState.classList.add('active');
+            activatePlayState();
             
             console.log('After - joinState display:', joinState.style.display);
             console.log('After - playState classes:', playState.className);
