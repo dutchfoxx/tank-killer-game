@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tank Designer</title>
+    <script src="/src/shared/shadows.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        .container {
+            display: flex;
+            gap: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .tank-display {
+            flex: 1;
+            background: #2a2a2a;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .canvas-container {
+            background: #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        #tankCanvas {
+            border: 2px solid #555;
+            background: #444;
+            border-radius: 5px;
+        }
+
+        .controls {
+            flex: 1;
+            background: #2a2a2a;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #333;
+            border-radius: 8px;
+        }
+
+        .control-group h3 {
+            margin: 0 0 15px 0;
+            color: #4CAF50;
+            font-size: 16px;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+
+        .control-row label {
+            min-width: 120px;
+            font-size: 14px;
+        }
+
+        .control-row input[type="range"] {
+            flex: 1;
+        }
+
+        .control-row input[type="color"] {
+            width: 50px;
+            height: 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .control-row input[type="number"] {
+            width: 80px;
+            padding: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #444;
+            color: #fff;
+        }
+
+        .control-row select {
+            padding: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #444;
+            color: #fff;
+            flex: 1;
+        }
+
+        .value-display {
+            min-width: 60px;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .copy-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #333;
+            border-radius: 8px;
+        }
+
+        .copy-section textarea {
+            width: 100%;
+            height: 100px;
+            background: #444;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #fff;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            resize: vertical;
+        }
+
+        .copy-section button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .copy-section button:hover {
+            background: #45a049;
+        }
+
+        .fire-button {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 0;
+            transition: background-color 0.3s;
+        }
+
+        .fire-button:hover {
+            background: #d32f2f;
+        }
+
+        .fire-button:active {
+            background: #b71c1c;
+        }
+
+        .info {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        .zoom-controls {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .zoom-controls label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .zoom-controls input[type="range"] {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+            margin-bottom: 30px;
+        }
+
+        .color-preview {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #555;
+            border-radius: 4px;
+            display: inline-block;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tank Designer</h1>
+    
+    <div class="container">
+        <div class="tank-display">
+            <div class="canvas-container">
+                <canvas id="tankCanvas" width="400" height="300"></canvas>
+                <div class="zoom-controls">
+                    <label for="zoomSlider">Zoom: <span id="zoomValue">2.0x</span></label>
+                    <input type="range" id="zoomSlider" min="0.5" max="5" value="2" step="0.1">
+                </div>
+                <div class="rotation-controls">
+                    <label for="rotationSlider">Rotation: <span id="rotationValue">0°</span></label>
+                    <input type="range" id="rotationSlider" min="0" max="360" value="0" step="1">
+                </div>
+                <div class="rotation-point-controls">
+                    <label for="rotationPointX">Rotation Point X: <span id="rotationPointXValue">0</span></label>
+                    <input type="range" id="rotationPointX" min="-100" max="100" value="0" step="1">
+                </div>
+            </div>
+            <button class="fire-button" id="fireButton">FIRE!</button>
+            <div class="info">
+                <strong>Instructions:</strong><br>
+                • Adjust the controls on the right to modify the tank appearance<br>
+                • Color blending modes affect how colors are applied to color maps<br>
+                • Contours always maintain their original color<br>
+                • Click "Fire" to test the tank's firing mechanism<br>
+                • Toggle collision box visibility<br>
+                • Click "Copy Settings" to get the configuration code<br>
+                • Paste the settings in the main game to apply changes
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <h3>Tank Colors</h3>
+                <div class="control-row">
+                    <label>Base Color:</label>
+                    <select id="tankColor">
+                        <option value="forest">Forest</option>
+                        <option value="desert">Desert</option>
+                        <option value="marines">Marines</option>
+                        <option value="metal">Metal</option>
+                        <option value="tradition">Tradition</option>
+                        <option value="plains">Plains</option>
+                        <option value="arctic">Arctic</option>
+                    </select>
+                    <div class="color-preview" id="colorPreview"></div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Color Blending</h3>
+                <div class="control-row">
+                    <label>Blend Mode:</label>
+                    <select id="colorBlendMode">
+                        <option value="hue">Hue Only</option>
+                        <option value="saturation">Saturation Only</option>
+                        <option value="hue-saturation">Hue + Saturation</option>
+                        <option value="color-replace">Color Replace</option>
+                        <option value="tint">Tint</option>
+                        <option value="shade">Shade</option>
+                        <option value="tone">Tone</option>
+                        <option value="multiply-pixel">Multiply (Pixel)</option>
+                        <option value="screen-pixel">Screen (Pixel)</option>
+                        <option value="overlay-pixel">Overlay (Pixel)</option>
+                        <option value="soft-light-pixel">Soft Light (Pixel)</option>
+                        <option value="hard-light-pixel">Hard Light (Pixel)</option>
+                        <option value="color-burn-pixel">Color Burn (Pixel)</option>
+                        <option value="color-dodge-pixel">Color Dodge (Pixel)</option>
+                        <option value="darken-pixel">Darken (Pixel)</option>
+                        <option value="lighten-pixel">Lighten (Pixel)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Camouflage</h3>
+                <div class="control-row">
+                    <label>Camo Pattern:</label>
+                    <select id="tankCamo">
+                        <option value="none">None</option>
+                        <option value="dazzle">Dazzle</option>
+                        <option value="pixel">Pixel</option>
+                        <option value="geometric">Geometric</option>
+                        <option value="fractal">Fractal</option>
+                        <option value="topographic">Topographic</option>
+                        <option value="woodlands">Woodlands</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label>Camo Opacity:</label>
+                    <input type="range" id="camoOpacity" min="0" max="1" value="1" step="0.1">
+                    <span class="value-display" id="camoOpacityValue">1.0</span>
+                </div>
+                <div class="control-row">
+                    <label>Camo Scale:</label>
+                    <input type="range" id="camoScale" min="0.5" max="3" value="1" step="0.1">
+                    <span class="value-display" id="camoScaleValue">1.0</span>
+                </div>
+                <div class="control-row">
+                    <label>Camo Blend Mode:</label>
+                    <select id="camoBlendMode">
+                        <option value="overlay-pixel">Overlay (Pixel)</option>
+                        <option value="multiply-pixel">Multiply (Pixel)</option>
+                        <option value="screen-pixel">Screen (Pixel)</option>
+                        <option value="soft-light-pixel">Soft Light (Pixel)</option>
+                        <option value="hard-light-pixel">Hard Light (Pixel)</option>
+                        <option value="color-burn-pixel">Color Burn (Pixel)</option>
+                        <option value="color-dodge-pixel">Color Dodge (Pixel)</option>
+                        <option value="darken-pixel">Darken (Pixel)</option>
+                        <option value="lighten-pixel">Lighten (Pixel)</option>
+                        <option value="difference-pixel">Difference (Pixel)</option>
+                        <option value="exclusion-pixel">Exclusion (Pixel)</option>
+                        <option value="hue-pixel">Hue (Pixel)</option>
+                        <option value="saturation-pixel">Saturation (Pixel)</option>
+                        <option value="color-pixel">Color (Pixel)</option>
+                        <option value="luminosity-pixel">Luminosity (Pixel)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Position & Size</h3>
+                <div class="control-row">
+                    <label>X Position:</label>
+                    <input type="range" id="tankPosX" min="50" max="350" value="200" step="1">
+                    <span class="value-display" id="tankPosXValue">200</span>
+                </div>
+                <div class="control-row">
+                    <label>Y Position:</label>
+                    <input type="range" id="tankPosY" min="50" max="250" value="150" step="1">
+                    <span class="value-display" id="tankPosYValue">150</span>
+                </div>
+                <div class="control-row">
+                    <label>Tank Scale:</label>
+                    <input type="range" id="tankScale" min="0.5" max="2" value="1" step="0.1">
+                    <span class="value-display" id="tankScaleValue">1.0</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Collision Box</h3>
+                <div class="control-row">
+                    <label>Width:</label>
+                    <input type="range" id="collisionWidth" min="20" max="100" value="60" step="1">
+                    <span class="value-display" id="collisionWidthValue">60</span>
+                </div>
+                <div class="control-row">
+                    <label>Height:</label>
+                    <input type="range" id="collisionHeight" min="20" max="80" value="40" step="1">
+                    <span class="value-display" id="collisionHeightValue">40</span>
+                </div>
+                <div class="control-row">
+                    <label>
+                        <input type="checkbox" id="showCollisionBox" checked>
+                        Show Collision Box
+                    </label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Recoil Animation</h3>
+                <div class="control-row">
+                    <label>Body Recoil Distance:</label>
+                    <input type="range" id="bodyRecoilDistance" min="0" max="10" value="3" step="0.5">
+                    <span class="value-display" id="bodyRecoilDistanceValue">3</span>
+                </div>
+                <div class="control-row">
+                    <label>Body Recoil Speed:</label>
+                    <input type="range" id="bodyRecoilSpeed" min="0.1" max="2" value="0.8" step="0.1">
+                    <span class="value-display" id="bodyRecoilSpeedValue">0.8</span>
+                </div>
+                <div class="control-row">
+                    <label>Body Return Speed:</label>
+                    <input type="range" id="bodyReturnSpeed" min="0.1" max="1" value="0.3" step="0.1">
+                    <span class="value-display" id="bodyReturnSpeedValue">0.3</span>
+                </div>
+                <div class="control-row">
+                    <label>Turret Recoil Distance:</label>
+                    <input type="range" id="turretRecoilDistance" min="0" max="20" value="8" step="0.5">
+                    <span class="value-display" id="turretRecoilDistanceValue">8</span>
+                </div>
+                <div class="control-row">
+                    <label>Turret Recoil Speed:</label>
+                    <input type="range" id="turretRecoilSpeed" min="0.1" max="3" value="1.2" step="0.1">
+                    <span class="value-display" id="turretRecoilSpeedValue">1.2</span>
+                </div>
+                <div class="control-row">
+                    <label>Turret Return Speed:</label>
+                    <input type="range" id="turretReturnSpeed" min="0.1" max="1" value="0.4" step="0.1">
+                    <span class="value-display" id="turretReturnSpeedValue">0.4</span>
+                </div>
+                <div class="control-row">
+                    <label>Turret Pendulum Range:</label>
+                    <input type="range" id="turretPendulumRange" min="-10" max="10" value="2" step="0.5">
+                    <span class="value-display" id="turretPendulumRangeValue">2</span>
+                </div>
+                <div class="control-row">
+                    <label>Turret Pendulum Speed:</label>
+                    <input type="range" id="turretPendulumSpeed" min="0.1" max="3" value="0.5" step="0.1">
+                    <span class="value-display" id="turretPendulumSpeedValue">0.5</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Shadow Settings</h3>
+                <div class="control-row">
+                    <label>Body Shadow:</label>
+                    <select id="bodyShadowType">
+                        <option value="NONE">None</option>
+                        <option value="LIGHT">Light</option>
+                        <option value="DEFAULT">Default</option>
+                        <option value="STRONG" selected>Strong</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label>Turret Shadow:</label>
+                    <select id="turretShadowType">
+                        <option value="NONE">None</option>
+                        <option value="LIGHT">Light</option>
+                        <option value="DEFAULT" selected>Default</option>
+                        <option value="STRONG">Strong</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label>Shadow Opacity:</label>
+                    <input type="range" id="shadowOpacity" min="0.0" max="1.0" step="0.1" value="1.0">
+                    <span class="value-display" id="shadowOpacityValue">1.0</span>
+                </div>
+                <div class="control-row">
+                    <label>Shadow Blur:</label>
+                    <input type="range" id="shadowBlur" min="0" max="20" step="1" value="8">
+                    <span class="value-display" id="shadowBlurValue">8</span>
+                </div>
+                <div class="control-row">
+                    <label>Shadow Offset X:</label>
+                    <input type="range" id="shadowOffsetX" min="0" max="10" step="1" value="4">
+                    <span class="value-display" id="shadowOffsetXValue">4</span>
+                </div>
+                <div class="control-row">
+                    <label>Shadow Offset Y:</label>
+                    <input type="range" id="shadowOffsetY" min="0" max="10" step="1" value="4">
+                    <span class="value-display" id="shadowOffsetYValue">4</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Bullet Start Position</h3>
+                <div class="control-row">
+                    <label>Bullet X:</label>
+                    <input type="range" id="bulletStartX" min="-50" max="50" value="0" step="1">
+                    <span class="value-display" id="bulletStartXValue">0</span>
+                </div>
+                <div class="control-row">
+                    <label>Bullet Y:</label>
+                    <input type="range" id="bulletStartY" min="-30" max="30" value="0" step="1">
+                    <span class="value-display" id="bulletStartYValue">0</span>
+                </div>
+            </div>
+
+            <div class="copy-section">
+                <h3>Export Settings</h3>
+                <textarea id="settingsOutput" placeholder="Settings will appear here..."></textarea>
+                <button onclick="copySettings()">Copy Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('tankCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Tank images - new layered system
+        let tankBodyBaseContours = null;
+        let tankBodyBaseColorMap = null;
+        let tankBodyElementsContours = null;
+        let tankBodyElementsColorMap = null;
+        let tankTurretBaseContours = null;
+        let tankTurretBaseColorMap = null;
+        let tankGunneryContours = null;
+        let tankGunneryColorMap = null;
+        
+        // Load contour images (these don't get color blending)
+        const tankBodyBaseContoursImage = new Image();
+        tankBodyBaseContoursImage.onload = function() {
+            tankBodyBaseContours = this;
+            updateTank();
+        };
+        tankBodyBaseContoursImage.src = '/assets/images/tanks/bodyBase_contours.png?t=' + Date.now();
+
+        const tankBodyElementsContoursImage = new Image();
+        tankBodyElementsContoursImage.onload = function() {
+            tankBodyElementsContours = this;
+            updateTank();
+        };
+        tankBodyElementsContoursImage.src = '/assets/images/tanks/bodyElements_contours.png?t=' + Date.now();
+
+        const tankTurretBaseContoursImage = new Image();
+        tankTurretBaseContoursImage.onload = function() {
+            tankTurretBaseContours = this;
+            updateTank();
+        };
+        tankTurretBaseContoursImage.src = '/assets/images/tanks/turretBase_contours.png?t=' + Date.now();
+
+        const tankGunneryContoursImage = new Image();
+        tankGunneryContoursImage.onload = function() {
+            tankGunneryContours = this;
+            updateTank();
+        };
+        tankGunneryContoursImage.src = '/assets/images/tanks/turretGunnery_contours.png?t=' + Date.now();
+
+        // Load color map images (these get color blending)
+        const tankBodyBaseColorMapImage = new Image();
+        tankBodyBaseColorMapImage.onload = function() {
+            tankBodyBaseColorMap = this;
+            updateTank();
+        };
+        tankBodyBaseColorMapImage.src = '/assets/images/tanks/bodyBase_colourMap.png?t=' + Date.now();
+
+        const tankBodyElementsColorMapImage = new Image();
+        tankBodyElementsColorMapImage.onload = function() {
+            tankBodyElementsColorMap = this;
+            updateTank();
+        };
+        tankBodyElementsColorMapImage.src = '/assets/images/tanks/bodyElements_colourMap.png?t=' + Date.now();
+
+        // Note: turretBase_colourMap.png might not exist yet
+        const tankTurretBaseColorMapImage = new Image();
+        tankTurretBaseColorMapImage.onload = function() {
+            tankTurretBaseColorMap = this;
+            updateTank();
+        };
+        tankTurretBaseColorMapImage.onerror = function() {
+            console.log('turretBase_colourMap.png not found, skipping turret base color map');
+            tankTurretBaseColorMap = null;
+            updateTank();
+        };
+        tankTurretBaseColorMapImage.src = '/assets/images/tanks/turretBase_colourMap.png?t=' + Date.now();
+
+        const tankGunneryColorMapImage = new Image();
+        tankGunneryColorMapImage.onload = function() {
+            tankGunneryColorMap = this;
+            updateTank();
+        };
+        tankGunneryColorMapImage.src = '/assets/images/tanks/turretGunnery_colourMap.png?t=' + Date.now();
+
+        // Tank colors
+        const tankColors = {
+            'forest': '#1f2e23',
+            'desert': '#D4A574',
+            'marines': '#333551',
+            'metal': '#6a6a6a',
+            'tradition': '#813D30',
+            'plains': '#50654D',
+            'arctic': '#cfc4c4'
+        };
+
+        // Default settings
+        let settings = {
+            tankColor: 'forest',
+            colorBlendMode: 'hard-light-pixel',
+            tankCamo: 'none',
+            camoOpacity: 1.0,
+            camoScale: 1.0,
+            camoBlendMode: 'overlay-pixel',
+            tankPosX: 200,
+            tankPosY: 150,
+            tankScale: 0.2,
+            collisionWidth: 60,
+            collisionHeight: 40,
+            showCollisionBox: true,
+            bulletStartX: 0,
+            bulletStartY: 0,
+            // Recoil animation settings
+            bodyRecoilDistance: 3,
+            bodyRecoilSpeed: 0.8,
+            bodyReturnSpeed: 0.3,
+            turretRecoilDistance: 8,
+                            turretRecoilSpeed: 1.2,
+                turretReturnSpeed: 0.4,
+                turretPendulumRange: 2,
+                turretPendulumSpeed: 0.5,
+                // Shadow settings
+                bodyShadowType: 'STRONG',
+                turretShadowType: 'DEFAULT',
+                shadowOpacity: 1.0,
+                shadowBlur: 8,
+                shadowOffsetX: 4,
+                shadowOffsetY: 4
+            };
+
+        let zoomLevel = 2.0;
+        let tankRotation = 0; // in degrees
+        let rotationPointX = 0; // X offset for rotation center
+        let isFiring = false;
+        let fireAnimation = 0;
+        
+        // Recoil animation variables
+        let recoilAnimation = 0;
+        let bodyRecoilOffset = { x: 0, y: 0 };
+        let turretRecoilOffset = { x: 0, y: 0 };
+        let turretPendulumAngle = 0;
+        let lastFireTime = 0;
+
+        function updateControls() {
+            document.getElementById('tankColor').value = settings.tankColor;
+            document.getElementById('colorBlendMode').value = settings.colorBlendMode;
+            document.getElementById('tankCamo').value = settings.tankCamo;
+            document.getElementById('camoOpacity').value = settings.camoOpacity;
+            document.getElementById('camoScale').value = settings.camoScale;
+            document.getElementById('camoBlendMode').value = settings.camoBlendMode;
+            document.getElementById('tankPosX').value = settings.tankPosX;
+            document.getElementById('tankPosY').value = settings.tankPosY;
+            document.getElementById('tankScale').value = settings.tankScale;
+            document.getElementById('collisionWidth').value = settings.collisionWidth;
+            document.getElementById('collisionHeight').value = settings.collisionHeight;
+            document.getElementById('showCollisionBox').checked = settings.showCollisionBox;
+            document.getElementById('bulletStartX').value = settings.bulletStartX;
+            document.getElementById('bulletStartY').value = settings.bulletStartY;
+
+            // Shadow controls
+            document.getElementById('bodyShadowType').value = settings.bodyShadowType;
+            document.getElementById('turretShadowType').value = settings.turretShadowType;
+            document.getElementById('shadowOpacity').value = settings.shadowOpacity;
+            document.getElementById('shadowBlur').value = settings.shadowBlur;
+            document.getElementById('shadowOffsetX').value = settings.shadowOffsetX;
+            document.getElementById('shadowOffsetY').value = settings.shadowOffsetY;
+
+            // Update value displays
+            document.getElementById('camoOpacityValue').textContent = settings.camoOpacity.toFixed(1);
+            document.getElementById('camoScaleValue').textContent = settings.camoScale.toFixed(1);
+            document.getElementById('tankPosXValue').textContent = settings.tankPosX;
+            document.getElementById('tankPosYValue').textContent = settings.tankPosY;
+            document.getElementById('tankScaleValue').textContent = settings.tankScale.toFixed(1);
+            document.getElementById('collisionWidthValue').textContent = settings.collisionWidth;
+            document.getElementById('collisionHeightValue').textContent = settings.collisionHeight;
+            document.getElementById('bulletStartXValue').textContent = settings.bulletStartX;
+            document.getElementById('bulletStartYValue').textContent = settings.bulletStartY;
+
+            // Shadow value displays
+            document.getElementById('shadowOpacityValue').textContent = settings.shadowOpacity.toFixed(1);
+            document.getElementById('shadowBlurValue').textContent = settings.shadowBlur;
+            document.getElementById('shadowOffsetXValue').textContent = settings.shadowOffsetX;
+            document.getElementById('shadowOffsetYValue').textContent = settings.shadowOffsetY;
+
+            // Update color preview
+            const colorPreview = document.getElementById('colorPreview');
+            colorPreview.style.backgroundColor = tankColors[settings.tankColor];
+        }
+
+        function drawTankLayer(image, centerX, centerY, scale, isColorMap = false, layerType = 'body') {
+            if (!image) return;
+
+            const x = centerX - (image.width * scale) / 2;
+            const y = centerY - (image.height * scale) / 2;
+            const width = image.width * scale;
+            const height = image.height * scale;
+
+            if (isColorMap) {
+                // Apply custom shadow based on layer type and settings (only for color maps)
+                if (settings.bodyShadowType !== 'NONE' || settings.turretShadowType !== 'NONE') {
+                    const shadowType = layerType === 'body' ? settings.bodyShadowType : settings.turretShadowType;
+                    
+                    if (shadowType !== 'NONE') {
+                        // Apply custom shadow settings
+                        ctx.shadowColor = 'black';
+                        ctx.shadowBlur = settings.shadowBlur;
+                        ctx.shadowOffsetX = settings.shadowOffsetX;
+                        ctx.shadowOffsetY = settings.shadowOffsetY;
+                        ctx.globalAlpha = settings.shadowOpacity;
+                        ctx.globalCompositeOperation = 'multiply';
+                    }
+                }
+
+                // For color maps, apply pixel-level color manipulation
+                // For color maps, apply pixel-level color manipulation
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = image.width;
+                tempCanvas.height = image.height;
+                
+                // Draw the original image
+                tempCtx.drawImage(image, 0, 0);
+                
+                // Get image data for manipulation
+                const imageData = tempCtx.getImageData(0, 0, image.width, image.height);
+                const data = imageData.data;
+                
+                // Convert hex color to RGB and HSL
+                const hexColor = tankColors[settings.tankColor];
+                const targetR = parseInt(hexColor.slice(1, 3), 16);
+                const targetG = parseInt(hexColor.slice(3, 5), 16);
+                const targetB = parseInt(hexColor.slice(5, 7), 16);
+                const targetHsl = rgbToHsl(targetR, targetG, targetB);
+                
+                // Apply pixel-level color manipulation
+                for (let i = 0; i < data.length; i += 4) {
+                    if (data[i + 3] > 0) { // If pixel is not transparent
+                        const pixelR = data[i];
+                        const pixelG = data[i + 1];
+                        const pixelB = data[i + 2];
+                        const pixelA = data[i + 3];
+                        
+                        let newR, newG, newB;
+                        
+                        switch (settings.colorBlendMode) {
+                            case 'hue':
+                                // Apply only hue, keep original saturation and lightness
+                                const pixelHsl = rgbToHsl(pixelR, pixelG, pixelB);
+                                const newRgb = hslToRgb(targetHsl[0], pixelHsl[1], pixelHsl[2]);
+                                newR = newRgb[0];
+                                newG = newRgb[1];
+                                newB = newRgb[2];
+                                break;
+                                
+                            case 'saturation':
+                                // Apply only saturation, keep original hue and lightness
+                                const pixelHsl2 = rgbToHsl(pixelR, pixelG, pixelB);
+                                const newRgb2 = hslToRgb(pixelHsl2[0], targetHsl[1], pixelHsl2[2]);
+                                newR = newRgb2[0];
+                                newG = newRgb2[1];
+                                newB = newRgb2[2];
+                                break;
+                                
+                            case 'hue-saturation':
+                                // Apply hue and saturation, keep original lightness
+                                const pixelHsl3 = rgbToHsl(pixelR, pixelG, pixelB);
+                                const newRgb3 = hslToRgb(targetHsl[0], targetHsl[1], pixelHsl3[2]);
+                                newR = newRgb3[0];
+                                newG = newRgb3[1];
+                                newB = newRgb3[2];
+                                break;
+                                
+                            case 'color-replace':
+                                // Replace color completely, keep original lightness
+                                const pixelHsl4 = rgbToHsl(pixelR, pixelG, pixelB);
+                                const newRgb4 = hslToRgb(targetHsl[0], targetHsl[1], targetHsl[2]);
+                                newR = newRgb4[0];
+                                newG = newRgb4[1];
+                                newB = newRgb4[2];
+                                break;
+                                
+                            case 'tint':
+                                // Add white to the target color
+                                newR = Math.min(255, pixelR + (255 - pixelR) * 0.3);
+                                newG = Math.min(255, pixelG + (255 - pixelG) * 0.3);
+                                newB = Math.min(255, pixelB + (255 - pixelB) * 0.3);
+                                break;
+                                
+                            case 'shade':
+                                // Add black to the target color
+                                newR = pixelR * 0.7;
+                                newG = pixelG * 0.7;
+                                newB = pixelB * 0.7;
+                                break;
+                                
+                            case 'tone':
+                                // Add gray to the target color
+                                const gray = (pixelR + pixelG + pixelB) / 3;
+                                newR = (pixelR + gray) / 2;
+                                newG = (pixelG + gray) / 2;
+                                newB = (pixelB + gray) / 2;
+                                break;
+                                
+                            case 'multiply-pixel':
+                                newR = (pixelR * targetR) / 255;
+                                newG = (pixelG * targetG) / 255;
+                                newB = (pixelB * targetB) / 255;
+                                break;
+                                
+                            case 'screen-pixel':
+                                newR = 255 - ((255 - pixelR) * (255 - targetR)) / 255;
+                                newG = 255 - ((255 - pixelG) * (255 - targetG)) / 255;
+                                newB = 255 - ((255 - pixelB) * (255 - targetB)) / 255;
+                                break;
+                                
+                            case 'overlay-pixel':
+                                newR = pixelR < 128 ? (2 * pixelR * targetR) / 255 : 255 - (2 * (255 - pixelR) * (255 - targetR)) / 255;
+                                newG = pixelG < 128 ? (2 * pixelG * targetG) / 255 : 255 - (2 * (255 - pixelG) * (255 - targetG)) / 255;
+                                newB = pixelB < 128 ? (2 * pixelB * targetB) / 255 : 255 - (2 * (255 - pixelB) * (255 - targetB)) / 255;
+                                break;
+                                
+                            case 'soft-light-pixel':
+                                newR = targetR < 128 ? (2 * pixelR * targetR + pixelR * pixelR * (255 - 2 * targetR) / 255) / 255 : (Math.sqrt(pixelR) * (2 * targetR - 255) + 2 * pixelR * (255 - targetR)) / 255;
+                                newG = targetG < 128 ? (2 * pixelG * targetG + pixelG * pixelG * (255 - 2 * targetG) / 255) / 255 : (Math.sqrt(pixelG) * (2 * targetG - 255) + 2 * pixelG * (255 - targetG)) / 255;
+                                newB = targetB < 128 ? (2 * pixelB * targetB + pixelB * pixelB * (255 - 2 * targetB) / 255) / 255 : (Math.sqrt(pixelB) * (2 * targetB - 255) + 2 * pixelB * (255 - targetB)) / 255;
+                                break;
+                                
+                            case 'hard-light-pixel':
+                                newR = targetR < 128 ? (2 * pixelR * targetR) / 255 : 255 - (2 * (255 - pixelR) * (255 - targetR)) / 255;
+                                newG = targetG < 128 ? (2 * pixelG * targetG) / 255 : 255 - (2 * (255 - pixelG) * (255 - targetG)) / 255;
+                                newB = targetB < 128 ? (2 * pixelB * targetB) / 255 : 255 - (2 * (255 - pixelB) * (255 - targetB)) / 255;
+                                break;
+                                
+                            case 'color-burn-pixel':
+                                newR = 255 - ((255 - pixelR) / Math.max(targetR / 255, 0.001));
+                                newG = 255 - ((255 - pixelG) / Math.max(targetG / 255, 0.001));
+                                newB = 255 - ((255 - pixelB) / Math.max(targetB / 255, 0.001));
+                                break;
+                                
+                            case 'color-dodge-pixel':
+                                newR = Math.min(255, pixelR / Math.max(1 - targetR / 255, 0.001));
+                                newG = Math.min(255, pixelG / Math.max(1 - targetG / 255, 0.001));
+                                newB = Math.min(255, pixelB / Math.max(1 - targetB / 255, 0.001));
+                                break;
+                                
+                            case 'darken-pixel':
+                                newR = Math.min(pixelR, targetR);
+                                newG = Math.min(pixelG, targetG);
+                                newB = Math.min(pixelB, targetB);
+                                break;
+                                
+                            case 'lighten-pixel':
+                                newR = Math.max(pixelR, targetR);
+                                newG = Math.max(pixelG, targetG);
+                                newB = Math.max(pixelB, targetB);
+                                break;
+                                
+                            default:
+                                newR = pixelR;
+                                newG = pixelG;
+                                newB = pixelB;
+                        }
+                        
+                        data[i] = Math.max(0, Math.min(255, Math.round(newR)));
+                        data[i + 1] = Math.max(0, Math.min(255, Math.round(newG)));
+                        data[i + 2] = Math.max(0, Math.min(255, Math.round(newB)));
+                        data[i + 3] = pixelA; // Keep original alpha
+                    }
+                }
+                
+                // Apply camo pattern if selected (independently for each layer)
+                if (settings.tankCamo !== 'none') {
+                    for (let i = 0; i < data.length; i += 4) {
+                        if (data[i + 3] > 0) { // If pixel is not transparent
+                            const pixelX = (i / 4) % image.width;
+                            const pixelY = Math.floor((i / 4) / image.width);
+                            
+                            // Get camo pattern value for this pixel (with layer-specific offset)
+                            const layerOffset = layerType === 'body' ? 0 : 
+                                              layerType === 'turret' ? 1000 : 2000;
+                            const camoValue = getCamoPixel(pixelX + layerOffset, pixelY + layerOffset, settings.tankCamo, settings.camoScale);
+                            
+                            if (camoValue > 0) {
+                                // Apply camo blending
+                                const camoResult = applyCamoBlend(
+                                    data[i], data[i + 1], data[i + 2], 
+                                    camoValue, settings.camoBlendMode, settings.camoOpacity
+                                );
+                                
+                                data[i] = Math.max(0, Math.min(255, Math.round(camoResult[0])));
+                                data[i + 1] = Math.max(0, Math.min(255, Math.round(camoResult[1])));
+                                data[i + 2] = Math.max(0, Math.min(255, Math.round(camoResult[2])));
+                            }
+                        }
+                    }
+                }
+                
+                // Put the modified image data back
+                tempCtx.putImageData(imageData, 0, 0);
+                
+                // Draw the modified image
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.drawImage(tempCanvas, x, y, width, height);
+                
+            } else {
+                // For contours, draw normally preserving transparency
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.drawImage(image, x, y, width, height);
+            }
+            
+            // Reset shadow settings after drawing
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.globalAlpha = 1.0;
+            ctx.globalCompositeOperation = 'source-over';
+        }
+        
+        // Helper functions for color conversion
+        function rgbToHsl(r, g, b) {
+            r /= 255;
+            g /= 255;
+            b /= 255;
+            
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+            
+            if (max === min) {
+                h = s = 0; // achromatic
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            
+            return [h, s, l];
+        }
+        
+        function hslToRgb(h, s, l) {
+            let r, g, b;
+            
+            if (s === 0) {
+                r = g = b = l; // achromatic
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1/6) return p + (q - p) * 6 * t;
+                    if (t < 1/2) return q;
+                    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                };
+                
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+            
+            return [
+                Math.round(r * 255),
+                Math.round(g * 255),
+                Math.round(b * 255)
+            ];
+        }
+        
+        // Load camo texture images and pre-process them
+        const camoTextures = {};
+        const camoTextureData = {};
+        const camoTextureNames = ['dazzle', 'pixel', 'geometric', 'fractal', 'topographic', 'woodlands'];
+        
+        camoTextureNames.forEach(name => {
+            const img = new Image();
+            img.onload = function() {
+                camoTextures[name] = this;
+                
+                // Pre-process the texture data for faster access
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = this.width;
+                tempCanvas.height = this.height;
+                tempCtx.drawImage(this, 0, 0);
+                
+                const imageData = tempCtx.getImageData(0, 0, this.width, this.height);
+                camoTextureData[name] = {
+                    data: imageData.data,
+                    width: this.width,
+                    height: this.height
+                };
+                
+                updateTank();
+            };
+            img.onerror = function() {
+                console.log(`Failed to load camo texture: ${name}.png`);
+            };
+            img.src = `/assets/images/textures/tank-camo/${name}.png?t=${Date.now()}`;
+        });
+        
+        // Get camo pixel value from pre-processed texture data
+        function getCamoPixel(x, y, pattern, scale) {
+            if (!camoTextureData[pattern]) return 0;
+            
+            const texture = camoTextureData[pattern];
+            const scaledX = Math.floor((x * scale) % texture.width);
+            const scaledY = Math.floor((y * scale) % texture.height);
+            
+            const index = (scaledY * texture.width + scaledX) * 4;
+            const r = texture.data[index];
+            const g = texture.data[index + 1];
+            const b = texture.data[index + 2];
+            
+            // Return grayscale value (average of RGB)
+            return (r + g + b) / 3 / 255;
+        }
+        
+        // Apply pixel-level camo blending
+        function applyCamoBlend(pixelR, pixelG, pixelB, camoValue, blendMode, opacity) {
+            const camoR = camoValue * 100; // Dark camo color
+            const camoG = camoValue * 80;
+            const camoB = camoValue * 60;
+            
+            let newR, newG, newB;
+            
+            switch (blendMode) {
+                case 'overlay-pixel':
+                    newR = pixelR < 128 ? (2 * pixelR * camoR) / 255 : 255 - (2 * (255 - pixelR) * (255 - camoR)) / 255;
+                    newG = pixelG < 128 ? (2 * pixelG * camoG) / 255 : 255 - (2 * (255 - pixelG) * (255 - camoG)) / 255;
+                    newB = pixelB < 128 ? (2 * pixelB * camoB) / 255 : 255 - (2 * (255 - pixelB) * (255 - camoB)) / 255;
+                    break;
+                    
+                case 'multiply-pixel':
+                    newR = (pixelR * camoR) / 255;
+                    newG = (pixelG * camoG) / 255;
+                    newB = (pixelB * camoB) / 255;
+                    break;
+                    
+                case 'screen-pixel':
+                    newR = 255 - ((255 - pixelR) * (255 - camoR)) / 255;
+                    newG = 255 - ((255 - pixelG) * (255 - camoG)) / 255;
+                    newB = 255 - ((255 - pixelB) * (255 - camoB)) / 255;
+                    break;
+                    
+                case 'soft-light-pixel':
+                    newR = camoR < 128 ? (2 * pixelR * camoR + pixelR * pixelR * (255 - 2 * camoR) / 255) / 255 : (Math.sqrt(pixelR) * (2 * camoR - 255) + 2 * pixelR * (255 - camoR)) / 255;
+                    newG = camoG < 128 ? (2 * pixelG * camoG + pixelG * pixelG * (255 - 2 * camoG) / 255) / 255 : (Math.sqrt(pixelG) * (2 * camoG - 255) + 2 * pixelG * (255 - camoG)) / 255;
+                    newB = camoB < 128 ? (2 * pixelB * camoB + pixelB * pixelB * (255 - 2 * camoB) / 255) / 255 : (Math.sqrt(pixelB) * (2 * camoB - 255) + 2 * pixelB * (255 - camoB)) / 255;
+                    break;
+                    
+                case 'hard-light-pixel':
+                    newR = camoR < 128 ? (2 * pixelR * camoR) / 255 : 255 - (2 * (255 - pixelR) * (255 - camoR)) / 255;
+                    newG = camoG < 128 ? (2 * pixelG * camoG) / 255 : 255 - (2 * (255 - pixelG) * (255 - camoG)) / 255;
+                    newB = camoB < 128 ? (2 * pixelB * camoB) / 255 : 255 - (2 * (255 - pixelB) * (255 - camoB)) / 255;
+                    break;
+                    
+                case 'color-burn-pixel':
+                    newR = 255 - ((255 - pixelR) / Math.max(camoR / 255, 0.001));
+                    newG = 255 - ((255 - pixelG) / Math.max(camoG / 255, 0.001));
+                    newB = 255 - ((255 - pixelB) / Math.max(camoB / 255, 0.001));
+                    break;
+                    
+                case 'color-dodge-pixel':
+                    newR = Math.min(255, pixelR / Math.max(1 - camoR / 255, 0.001));
+                    newG = Math.min(255, pixelG / Math.max(1 - camoG / 255, 0.001));
+                    newB = Math.min(255, pixelB / Math.max(1 - camoB / 255, 0.001));
+                    break;
+                    
+                case 'darken-pixel':
+                    newR = Math.min(pixelR, camoR);
+                    newG = Math.min(pixelG, camoG);
+                    newB = Math.min(pixelB, camoB);
+                    break;
+                    
+                case 'lighten-pixel':
+                    newR = Math.max(pixelR, camoR);
+                    newG = Math.max(pixelG, camoG);
+                    newB = Math.max(pixelB, camoB);
+                    break;
+                    
+                case 'difference-pixel':
+                    newR = Math.abs(pixelR - camoR);
+                    newG = Math.abs(pixelG - camoG);
+                    newB = Math.abs(pixelB - camoB);
+                    break;
+                    
+                case 'exclusion-pixel':
+                    newR = pixelR + camoR - (2 * pixelR * camoR) / 255;
+                    newG = pixelG + camoG - (2 * pixelG * camoG) / 255;
+                    newB = pixelB + camoB - (2 * pixelB * camoB) / 255;
+                    break;
+                    
+                case 'hue-pixel':
+                    const pixelHsl = rgbToHsl(pixelR, pixelG, pixelB);
+                    const camoHsl = rgbToHsl(camoR, camoG, camoB);
+                    const newRgb = hslToRgb(camoHsl[0], pixelHsl[1], pixelHsl[2]);
+                    newR = newRgb[0];
+                    newG = newRgb[1];
+                    newB = newRgb[2];
+                    break;
+                    
+                case 'saturation-pixel':
+                    const pixelHsl2 = rgbToHsl(pixelR, pixelG, pixelB);
+                    const camoHsl2 = rgbToHsl(camoR, camoG, camoB);
+                    const newRgb2 = hslToRgb(pixelHsl2[0], camoHsl2[1], pixelHsl2[2]);
+                    newR = newRgb2[0];
+                    newG = newRgb2[1];
+                    newB = newRgb2[2];
+                    break;
+                    
+                case 'color-pixel':
+                    const pixelHsl3 = rgbToHsl(pixelR, pixelG, pixelB);
+                    const camoHsl3 = rgbToHsl(camoR, camoG, camoB);
+                    const newRgb3 = hslToRgb(camoHsl3[0], camoHsl3[1], pixelHsl3[2]);
+                    newR = newRgb3[0];
+                    newG = newRgb3[1];
+                    newB = newRgb3[2];
+                    break;
+                    
+                case 'luminosity-pixel':
+                    const pixelHsl4 = rgbToHsl(pixelR, pixelG, pixelB);
+                    const camoHsl4 = rgbToHsl(camoR, camoG, camoB);
+                    const newRgb4 = hslToRgb(pixelHsl4[0], pixelHsl4[1], camoHsl4[2]);
+                    newR = newRgb4[0];
+                    newG = newRgb4[1];
+                    newB = newRgb4[2];
+                    break;
+                    
+                default:
+                    newR = pixelR;
+                    newG = pixelG;
+                    newB = pixelB;
+            }
+            
+            // Apply opacity
+            newR = pixelR + (newR - pixelR) * opacity;
+            newG = pixelG + (newG - pixelG) * opacity;
+            newB = pixelB + (newB - pixelB) * opacity;
+            
+            return [newR, newG, newB];
+        }
+
+        function updateRecoilAnimation() {
+            const currentTime = Date.now();
+            const timeSinceFire = currentTime - lastFireTime;
+            
+            if (isFiring && timeSinceFire < 1000) { // 1 second animation
+                const progress = timeSinceFire / 1000;
+                
+                // Body recoil: instant backward, smooth return
+                if (progress < 0.1) {
+                    // Instant recoil phase (first 10% of animation)
+                    bodyRecoilOffset.x = -settings.bodyRecoilDistance;
+                } else {
+                    // Smooth return phase (remaining 90%)
+                    const returnProgress = (progress - 0.1) / 0.9;
+                    // Use easeOutCubic for smooth return
+                    const easedProgress = 1 - Math.pow(1 - returnProgress, 3);
+                    const returnAmount = settings.bodyRecoilDistance * (1 - easedProgress);
+                    bodyRecoilOffset.x = -returnAmount;
+                }
+                
+                // Turret recoil: instant backward, smooth return
+                if (progress < 0.1) {
+                    // Instant recoil phase (first 10% of animation)
+                    turretRecoilOffset.x = -settings.turretRecoilDistance;
+                } else {
+                    // Smooth return phase (remaining 90%)
+                    const returnProgress = (progress - 0.1) / 0.9;
+                    // Use easeOutCubic for smooth return
+                    const easedProgress = 1 - Math.pow(1 - returnProgress, 3);
+                    const returnAmount = settings.turretRecoilDistance * (1 - easedProgress);
+                    turretRecoilOffset.x = -returnAmount;
+                }
+                
+                                    // Turret pendulum rotation (continuous during animation)
+                    const pendulumProgress = progress * settings.turretPendulumSpeed;
+                    turretPendulumAngle = Math.sin(pendulumProgress * Math.PI * 2) * Math.abs(settings.turretPendulumRange);
+                
+            } else {
+                // Reset to normal position
+                bodyRecoilOffset.x = 0;
+                bodyRecoilOffset.y = 0;
+                turretRecoilOffset.x = 0;
+                turretRecoilOffset.y = 0;
+                turretPendulumAngle = 0;
+                isFiring = false;
+            }
+        }
+        
+        function updateTank() {
+            if (!tankBodyBaseContours || !tankBodyBaseColorMap || !tankBodyElementsContours || 
+                !tankBodyElementsColorMap || !tankTurretBaseContours || 
+                !tankGunneryContours || !tankGunneryColorMap) return;
+
+            // Update recoil animation
+            updateRecoilAnimation();
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const centerX = settings.tankPosX + bodyRecoilOffset.x;
+            const centerY = settings.tankPosY + bodyRecoilOffset.y;
+            const scale = settings.tankScale * zoomLevel;
+
+            // Save context
+            ctx.save();
+
+            // Apply rotation to the entire tank around custom rotation point
+            const rotationCenterX = centerX + rotationPointX;
+            const rotationCenterY = centerY;
+            ctx.translate(rotationCenterX, rotationCenterY);
+            ctx.rotate(tankRotation * Math.PI / 180);
+            ctx.translate(-rotationCenterX, -rotationCenterY);
+
+                        // Draw tank layers in order (back to front)
+            // 1. Body base color map (furthest back)
+            drawTankLayer(tankBodyBaseColorMap, centerX, centerY, scale, true, 'body');
+            
+            // 2. Body base contours
+            drawTankLayer(tankBodyBaseContours, centerX, centerY, scale, false, 'body');
+            
+            // 3. Body elements color map
+            drawTankLayer(tankBodyElementsColorMap, centerX, centerY, scale, true, 'body');
+            
+            // 4. Body elements contours
+            drawTankLayer(tankBodyElementsContours, centerX, centerY, scale, false, 'body');
+                
+                            // 5. Turret base color map (if available)
+            if (tankTurretBaseColorMap) {
+                ctx.save();
+                ctx.translate(centerX + turretRecoilOffset.x, centerY + turretRecoilOffset.y);
+                ctx.rotate(turretPendulumAngle * Math.PI / 180);
+                drawTankLayer(tankTurretBaseColorMap, 0, 0, scale, true, 'turret');
+                ctx.restore();
+            }
+            
+            // 6. Turret base contours
+            if (tankTurretBaseContours) {
+                ctx.save();
+                ctx.translate(centerX + turretRecoilOffset.x, centerY + turretRecoilOffset.y);
+                ctx.rotate(turretPendulumAngle * Math.PI / 180);
+                drawTankLayer(tankTurretBaseContours, 0, 0, scale, false, 'turret');
+                ctx.restore();
+            }
+            
+            // 7. Gunnery color map
+            ctx.save();
+            ctx.translate(centerX + turretRecoilOffset.x, centerY + turretRecoilOffset.y);
+            ctx.rotate(turretPendulumAngle * Math.PI / 180);
+            drawTankLayer(tankGunneryColorMap, 0, 0, scale, true, 'turret');
+            ctx.restore();
+            
+            // 8. Gunnery contours (closest to front)
+            ctx.save();
+            ctx.translate(centerX + turretRecoilOffset.x, centerY + turretRecoilOffset.y);
+            ctx.rotate(turretPendulumAngle * Math.PI / 180);
+            drawTankLayer(tankGunneryContours, 0, 0, scale, false, 'turret');
+            ctx.restore();
+
+
+
+            // Fire animation
+            if (isFiring && fireAnimation < 10) {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = '#ff4444';
+                ctx.beginPath();
+                ctx.arc(
+                    centerX + settings.bulletStartX * scale,
+                    centerY + settings.bulletStartY * scale,
+                    3 + fireAnimation,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+                fireAnimation++;
+            }
+
+            // Restore context
+            ctx.restore();
+
+            // Draw collision box
+            if (settings.showCollisionBox) {
+                ctx.strokeStyle = '#ff0000';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.strokeRect(
+                    centerX - (settings.collisionWidth * scale) / 2,
+                    centerY - (settings.collisionHeight * scale) / 2,
+                    settings.collisionWidth * scale,
+                    settings.collisionHeight * scale
+                );
+                ctx.setLineDash([]);
+            }
+
+            // Draw bullet start position indicator
+            ctx.fillStyle = '#00ff00';
+            ctx.beginPath();
+            ctx.arc(
+                centerX + settings.bulletStartX * scale,
+                centerY + settings.bulletStartY * scale,
+                3,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
+        }
+
+        function updateSettingsOutput() {
+            const output = JSON.stringify(settings, null, 2);
+            document.getElementById('settingsOutput').value = output;
+        }
+
+        function copySettings() {
+            const textarea = document.getElementById('settingsOutput');
+            textarea.select();
+            document.execCommand('copy');
+            alert('Settings copied to clipboard!');
+        }
+
+        // Event listeners
+        document.getElementById('tankColor').addEventListener('change', (e) => {
+            settings.tankColor = e.target.value;
+            updateTank();
+            updateSettingsOutput();
+            updateControls();
+        });
+
+        document.getElementById('colorBlendMode').addEventListener('change', (e) => {
+            settings.colorBlendMode = e.target.value;
+            updateTank();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('tankCamo').addEventListener('change', (e) => {
+            settings.tankCamo = e.target.value;
+            updateTank();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('camoOpacity').addEventListener('input', (e) => {
+            settings.camoOpacity = parseFloat(e.target.value);
+            document.getElementById('camoOpacityValue').textContent = e.target.value;
+            updateTank();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('camoScale').addEventListener('input', (e) => {
+            settings.camoScale = parseFloat(e.target.value);
+            document.getElementById('camoScaleValue').textContent = e.target.value;
+            updateTank();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('camoBlendMode').addEventListener('change', (e) => {
+            settings.camoBlendMode = e.target.value;
+            updateTank();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('tankPosX').addEventListener('input', (e) => {
+            settings.tankPosX = parseInt(e.target.value);
+            document.getElementById('tankPosXValue').textContent = e.target.value;
+            updateTank();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('tankPosY').addEventListener('input', (e) => {
+            settings.tankPosY = parseInt(e.target.value);
+            document.getElementById('tankPosYValue').textContent = e.target.value;
+            updateTank();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('tankScale').addEventListener('input', (e) => {
+            settings.tankScale = parseFloat(e.target.value);
+            document.getElementById('tankScaleValue').textContent = e.target.value;
+            updateTank();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('collisionWidth').addEventListener('input', (e) => {
+            settings.collisionWidth = parseInt(e.target.value);
+            document.getElementById('collisionWidthValue').textContent = e.target.value;
+            updateTank();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('collisionHeight').addEventListener('input', (e) => {
+            settings.collisionHeight = parseInt(e.target.value);
+            document.getElementById('collisionHeightValue').textContent = e.target.value;
+            updateTank();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('showCollisionBox').addEventListener('change', (e) => {
+            settings.showCollisionBox = e.target.checked;
+            updateTank();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('bulletStartX').addEventListener('input', (e) => {
+            settings.bulletStartX = parseInt(e.target.value);
+            document.getElementById('bulletStartXValue').textContent = e.target.value;
+            updateTank();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('bulletStartY').addEventListener('input', (e) => {
+            settings.bulletStartY = parseInt(e.target.value);
+            document.getElementById('bulletStartYValue').textContent = e.target.value;
+            updateTank();
+            updateSettingsOutput();
+        });
+
+        // Recoil animation event listeners
+        document.getElementById('bodyRecoilDistance').addEventListener('input', (e) => {
+            settings.bodyRecoilDistance = parseFloat(e.target.value);
+            document.getElementById('bodyRecoilDistanceValue').textContent = e.target.value;
+            updateSettingsOutput();
+        });
+
+        document.getElementById('bodyRecoilSpeed').addEventListener('input', (e) => {
+            settings.bodyRecoilSpeed = parseFloat(e.target.value);
+            document.getElementById('bodyRecoilSpeedValue').textContent = e.target.value;
+            updateSettingsOutput();
+        });
+
+        document.getElementById('bodyReturnSpeed').addEventListener('input', (e) => {
+            settings.bodyReturnSpeed = parseFloat(e.target.value);
+            document.getElementById('bodyReturnSpeedValue').textContent = e.target.value;
+            updateSettingsOutput();
+        });
+
+        document.getElementById('turretRecoilDistance').addEventListener('input', (e) => {
+            settings.turretRecoilDistance = parseFloat(e.target.value);
+            document.getElementById('turretRecoilDistanceValue').textContent = e.target.value;
+            updateSettingsOutput();
+        });
+
+        document.getElementById('turretRecoilSpeed').addEventListener('input', (e) => {
+            settings.turretRecoilSpeed = parseFloat(e.target.value);
+            document.getElementById('turretRecoilSpeedValue').textContent = e.target.value;
+            updateSettingsOutput();
+        });
+
+        document.getElementById('turretReturnSpeed').addEventListener('input', (e) => {
+            settings.turretReturnSpeed = parseFloat(e.target.value);
+            document.getElementById('turretReturnSpeedValue').textContent = e.target.value;
+            updateSettingsOutput();
+        });
+
+        document.getElementById('turretPendulumRange').addEventListener('input', (e) => {
+            settings.turretPendulumRange = parseFloat(e.target.value);
+            document.getElementById('turretPendulumRangeValue').textContent = e.target.value;
+            updateSettingsOutput();
+        });
+
+        document.getElementById('turretPendulumSpeed').addEventListener('input', (e) => {
+            settings.turretPendulumSpeed = parseFloat(e.target.value);
+            document.getElementById('turretPendulumSpeedValue').textContent = e.target.value;
+            updateSettingsOutput();
+        });
+
+        // Shadow control event listeners
+        document.getElementById('bodyShadowType').addEventListener('change', (e) => {
+            settings.bodyShadowType = e.target.value;
+            updateTank();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('turretShadowType').addEventListener('change', (e) => {
+            settings.turretShadowType = e.target.value;
+            updateTank();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('shadowOpacity').addEventListener('input', (e) => {
+            settings.shadowOpacity = parseFloat(e.target.value);
+            document.getElementById('shadowOpacityValue').textContent = e.target.value;
+            updateTank();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('shadowBlur').addEventListener('input', (e) => {
+            settings.shadowBlur = parseInt(e.target.value);
+            document.getElementById('shadowBlurValue').textContent = e.target.value;
+            updateTank();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('shadowOffsetX').addEventListener('input', (e) => {
+            settings.shadowOffsetX = parseInt(e.target.value);
+            document.getElementById('shadowOffsetXValue').textContent = e.target.value;
+            updateTank();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('shadowOffsetY').addEventListener('input', (e) => {
+            settings.shadowOffsetY = parseInt(e.target.value);
+            document.getElementById('shadowOffsetYValue').textContent = e.target.value;
+            updateTank();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('zoomSlider').addEventListener('input', (e) => {
+            zoomLevel = parseFloat(e.target.value);
+            document.getElementById('zoomValue').textContent = zoomLevel.toFixed(1) + 'x';
+            updateTank();
+        });
+
+        document.getElementById('rotationSlider').addEventListener('input', (e) => {
+            tankRotation = parseInt(e.target.value);
+            document.getElementById('rotationValue').textContent = tankRotation + '°';
+            updateTank();
+        });
+
+        document.getElementById('rotationPointX').addEventListener('input', (e) => {
+            rotationPointX = parseInt(e.target.value);
+            document.getElementById('rotationPointXValue').textContent = rotationPointX;
+            updateTank();
+        });
+
+        document.getElementById('fireButton').addEventListener('click', () => {
+            isFiring = true;
+            fireAnimation = 0;
+            lastFireTime = Date.now();
+            setTimeout(() => {
+                isFiring = false;
+                fireAnimation = 0;
+            }, 200);
+        });
+
+        // Initialize
+        updateControls();
+        updateSettingsOutput();
+        
+        // Start continuous animation
+        function animateTank() {
+            updateTank();
+            requestAnimationFrame(animateTank);
+        }
+        animateTank();
+    </script>
+</body>
+</html> 

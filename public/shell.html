@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>155mm Shell Designer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        .container {
+            display: flex;
+            gap: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .shell-display {
+            flex: 1;
+            background: #2a2a2a;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .canvas-container {
+            background: #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        #shellCanvas {
+            border: 2px solid #555;
+            background: #444;
+            border-radius: 5px;
+        }
+
+        .controls {
+            flex: 1;
+            background: #2a2a2a;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #333;
+            border-radius: 8px;
+        }
+
+        .control-group h3 {
+            margin: 0 0 15px 0;
+            color: #4CAF50;
+            font-size: 16px;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+
+        .control-row label {
+            min-width: 120px;
+            font-size: 14px;
+        }
+
+        .control-row input[type="range"] {
+            flex: 1;
+        }
+
+        .control-row input[type="color"] {
+            width: 50px;
+            height: 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .control-row input[type="number"] {
+            width: 80px;
+            padding: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #444;
+            color: #fff;
+        }
+
+        .control-row select {
+            padding: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #444;
+            color: #fff;
+        }
+
+        .value-display {
+            min-width: 60px;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .copy-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #333;
+            border-radius: 8px;
+        }
+
+        .copy-section textarea {
+            width: 100%;
+            height: 100px;
+            background: #444;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #fff;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            resize: vertical;
+        }
+
+        .copy-section button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .copy-section button:hover {
+            background: #45a049;
+        }
+
+        .preset-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .preset-button {
+            background: #666;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .preset-button:hover {
+            background: #777;
+        }
+
+        .preset-button.active {
+            background: #4CAF50;
+        }
+
+        .css-editor-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #333;
+            border-radius: 8px;
+        }
+
+        .css-editor-section textarea {
+            width: 100%;
+            height: 300px;
+            background: #444;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            padding: 10px;
+            resize: vertical;
+        }
+
+
+
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+            margin-bottom: 30px;
+        }
+
+        .info {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        .zoom-controls {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .zoom-controls label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .zoom-controls input[type="range"] {
+            width: 100%;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>155mm Shell Designer</h1>
+    
+    <div class="container">
+        <div class="shell-display">
+            <div class="canvas-container">
+                <canvas id="shellCanvas" width="400" height="200"></canvas>
+                <div class="zoom-controls">
+                    <label for="zoomSlider">Zoom: <span id="zoomValue">5.0x</span></label>
+                    <input type="range" id="zoomSlider" min="0.5" max="10" value="5" step="0.1">
+                </div>
+                <div class="animation-controls">
+                    <label for="animationSpeedSlider">Animation Speed: <span id="animationSpeedValue">1.0x</span></label>
+                    <input type="range" id="animationSpeedSlider" min="0.1" max="5" value="1" step="0.1">
+                </div>
+            </div>
+            <div class="info">
+                <strong>Instructions:</strong><br>
+                • Adjust the controls on the right to modify the shell appearance<br>
+                • Use the Live CSS Editor to modify the CSS directly<br>
+                • Click "Copy Settings" to get the configuration code<br>
+                • Paste the settings in the main game to apply changes
+            </div>
+        </div>
+
+        <div class="controls">
+
+
+
+
+            <div class="control-group">
+                <h3>Trail Effect</h3>
+                <div class="control-row">
+                    <label>Trail Length:</label>
+                    <input type="range" id="trailLength" min="0" max="50" value="13" step="1">
+                    <span class="value-display" id="trailLengthValue">13</span>
+                </div>
+                <div class="control-row">
+                    <label>Trail Height:</label>
+                    <input type="range" id="trailHeight" min="1" max="50" value="6" step="1">
+                    <span class="value-display" id="trailHeightValue">6</span>
+                </div>
+                <div class="control-row">
+                    <label>Trail Width:</label>
+                    <input type="range" id="trailWidth" min="1" max="20" value="6" step="1">
+                    <span class="value-display" id="trailWidthValue">6</span>
+                </div>
+                <div class="control-row">
+                    <label>Trail Quantity:</label>
+                    <input type="range" id="trailQuantity" min="1" max="5" value="1" step="1">
+                    <span class="value-display" id="trailQuantityValue">1</span>
+                </div>
+                <div class="control-row">
+                    <label>Trail Position X:</label>
+                    <input type="range" id="trailPosX" min="-50" max="50" value="0" step="1">
+                    <span class="value-display" id="trailPosXValue">0</span>
+                </div>
+                <div class="control-row">
+                    <label>Trail Position Y:</label>
+                    <input type="range" id="trailPosY" min="-20" max="20" value="0" step="1">
+                    <span class="value-display" id="trailPosYValue">0</span>
+                </div>
+                <div class="control-row">
+                    <label>Trail Spread:</label>
+                    <input type="range" id="trailSpread" min="0" max="3" value="0.5" step="0.1">
+                    <span class="value-display" id="trailSpreadValue">0.5</span>
+                </div>
+
+                <div class="control-row">
+                    <label>Trail Color:</label>
+                    <input type="color" id="trailColor" value="#686952">
+                </div>
+                <div class="control-row">
+                    <label>Trail Opacity:</label>
+                    <input type="range" id="trailOpacity" min="0" max="1" value="0.8" step="0.1">
+                    <span class="value-display" id="trailOpacityValue">0.8</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Sprite Effect</h3>
+                <div class="control-row">
+                    <label>Width:</label>
+                    <input type="range" id="spriteWidth" min="8" max="64" value="11" step="1">
+                    <span class="value-display" id="spriteWidthValue">11</span>
+                </div>
+                <div class="control-row">
+                    <label>Height:</label>
+                    <input type="range" id="spriteHeight" min="4" max="40" value="11" step="1">
+                    <span class="value-display" id="spriteHeightValue">11</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Collision Box</h3>
+                <div class="control-row">
+                    <label>Width:</label>
+                    <input type="range" id="collisionWidth" min="4" max="60" value="20" step="1">
+                    <span class="value-display" id="collisionWidthValue">20</span>
+                </div>
+                <div class="control-row">
+                    <label>Height:</label>
+                    <input type="range" id="collisionHeight" min="4" max="40" value="5" step="1">
+                    <span class="value-display" id="collisionHeightValue">5</span>
+                </div>
+                <div class="control-row">
+                    <label>
+                        <input type="checkbox" id="showCollisionBox" checked>
+                        Show Collision Box
+                    </label>
+                </div>
+            </div>
+
+            <div class="copy-section">
+                <h3>Export Settings</h3>
+                <textarea id="settingsOutput" placeholder="Settings will appear here..."></textarea>
+                <button onclick="copySettings()">Copy Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('shellCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Shell animation sprite
+        let shellSprite = null;
+        const shellSpriteImage = new Image();
+        shellSpriteImage.onload = function() {
+            shellSprite = this;
+            console.log('Shell sprite loaded:', this.width, 'x', this.height);
+        };
+        shellSpriteImage.onerror = function() {
+            console.error('Failed to load shell sprite');
+        };
+        shellSpriteImage.src = '/assets/images/shells/shell-animation.png?t=' + Date.now(); // Cache bust
+
+        // Default settings
+        let settings = {
+            trailLength: 17,
+            trailHeight: 50,
+            trailWidth: 12,
+            trailQuantity: 5,
+            trailPosX: -40,
+            trailPosY: 0,
+            trailSpread: 2.1,
+            trailTaper: 0.3,
+            trailColor: '#606559',
+            trailOpacity: 0.5,
+            spriteWidth: 19,
+            spriteHeight: 19,
+            collisionWidth: 37,
+            collisionHeight: 10,
+            showCollisionBox: true
+        };
+
+        let zoomLevel = 5.0;
+        let animationSpeed = 1.0;
+
+
+
+        function updateControls() {
+            document.getElementById('trailLength').value = settings.trailLength;
+            document.getElementById('trailHeight').value = settings.trailHeight;
+            document.getElementById('trailWidth').value = settings.trailWidth;
+            document.getElementById('trailQuantity').value = settings.trailQuantity;
+            document.getElementById('trailPosX').value = settings.trailPosX;
+            document.getElementById('trailPosY').value = settings.trailPosY;
+            document.getElementById('trailSpread').value = settings.trailSpread;
+            document.getElementById('trailColor').value = settings.trailColor;
+            document.getElementById('trailOpacity').value = settings.trailOpacity;
+
+            // Update value displays
+            document.getElementById('trailLengthValue').textContent = settings.trailLength;
+            document.getElementById('trailHeightValue').textContent = settings.trailHeight;
+            document.getElementById('trailWidthValue').textContent = settings.trailWidth;
+            document.getElementById('trailQuantityValue').textContent = settings.trailQuantity;
+            document.getElementById('trailPosXValue').textContent = settings.trailPosX;
+            document.getElementById('trailPosYValue').textContent = settings.trailPosY;
+            document.getElementById('trailSpreadValue').textContent = settings.trailSpread;
+            document.getElementById('trailOpacityValue').textContent = settings.trailOpacity;
+        }
+
+        function updateShell() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Center the shell
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.scale(zoomLevel, zoomLevel);
+
+            // Draw trail only
+            if (settings.trailLength > 0) {
+                const trailHeight = settings.trailHeight;
+                const trailWidth = settings.trailWidth;
+                const trailQuantity = settings.trailQuantity;
+                const trailSpread = settings.trailSpread;
+                const taperFactor = settings.trailTaper;
+                
+                // Draw multiple trails
+                for (let trailIndex = 0; trailIndex < trailQuantity; trailIndex++) {
+                    const horizontalOffset = (trailIndex - (trailQuantity - 1) / 2) * 2; // Space between trails horizontally
+                    const verticalOffset = (trailIndex - (trailQuantity - 1) / 2) * 2; // Space between trails vertically
+                    const trailStartX = settings.trailPosX + horizontalOffset;
+                    const trailStartY = settings.trailPosY + verticalOffset;
+                    
+                    // Draw multiple lines to create a cone effect
+                    const numLines = Math.max(3, Math.floor(trailWidth));
+                    const lineSpacing = trailWidth / (numLines - 1);
+                    
+                    for (let i = 0; i < numLines; i++) {
+                        const offset = (i - (numLines - 1) / 2) * lineSpacing;
+                        
+                        // Calculate spread - wider at start, narrower at end
+                        const spreadFactor = trailSpread * (1 + settings.trailTaper);
+                        const startOffset = offset * (1 + spreadFactor); // Wider at start
+                        const endOffset = offset * (1 - settings.trailTaper); // Narrower at end
+                        
+                        const gradient = ctx.createLinearGradient(
+                            trailStartX + startOffset, trailStartY, 
+                            0 + endOffset, 0
+                        );
+                        gradient.addColorStop(0, `${settings.trailColor}00`);
+                        gradient.addColorStop(1, `${settings.trailColor}${Math.round(settings.trailOpacity * 255).toString(16).padStart(2, '0')}`);
+
+                        ctx.strokeStyle = gradient;
+                        ctx.lineWidth = Math.max(1, trailHeight / numLines);
+                        ctx.lineCap = 'round';
+                        ctx.beginPath();
+                        ctx.moveTo(trailStartX + startOffset, trailStartY);
+                        ctx.lineTo(0 + endOffset, 0);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Draw the shell using animated sprite if available, otherwise use CSS styles
+            if (shellSprite) {
+                drawAnimatedShell(ctx);
+            } else {
+                drawShellFromCSS(ctx);
+            }
+
+            ctx.restore();
+        }
+
+        function drawAnimatedShell(ctx) {
+            // Animate based on time
+            const frameCount = 8; // 8 frames in the sprite sheet
+            const frameWidth = 50; // Each frame is 50px wide
+            const frameHeight = 50; // Each frame is 50px tall
+            
+            // Use time to animate - cycle through frames smoothly
+            const baseAnimationSpeed = 0.02; // Base animation speed
+            const time = Date.now() * baseAnimationSpeed * animationSpeed;
+            const currentFrame = Math.floor(time) % frameCount;
+            
+            // Draw the current frame (vertical layout)
+            const sourceX = 0; // All frames are in the same column
+            const sourceY = currentFrame * frameHeight; // Each frame is stacked vertically
+            const destWidth = settings.spriteWidth * 2; // Use settings for size
+            const destHeight = settings.spriteHeight * 2;
+            
+            ctx.drawImage(
+                shellSprite,
+                sourceX, sourceY, frameWidth, frameHeight,
+                -destWidth/2, -destHeight/2, destWidth, destHeight
+            );
+
+            // Draw collision box if enabled
+            if (settings.showCollisionBox) {
+                ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([2, 2]);
+                ctx.strokeRect(
+                    -settings.collisionWidth/2, 
+                    -settings.collisionHeight/2, 
+                    settings.collisionWidth, 
+                    settings.collisionHeight
+                );
+                ctx.setLineDash([]);
+            }
+        }
+
+        function drawShellFromCSS(ctx) {
+            // Create a temporary div to get the computed styles
+            const tempDiv = document.createElement('div');
+            tempDiv.className = 'shell';
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.left = '-9999px';
+            tempDiv.style.visibility = 'hidden';
+            tempDiv.style.display = 'flex';
+            tempDiv.style.flexDirection = 'row';
+            tempDiv.style.alignItems = 'center';
+            
+            const backDiv = document.createElement('div');
+            backDiv.className = 'back';
+            const middleDiv = document.createElement('div');
+            middleDiv.className = 'middle';
+            const tipDiv = document.createElement('div');
+            tipDiv.className = 'tip';
+            
+            tempDiv.appendChild(backDiv);
+            tempDiv.appendChild(middleDiv);
+            tempDiv.appendChild(tipDiv);
+            
+            document.body.appendChild(tempDiv);
+            
+            // Force a reflow to ensure styles are computed
+            tempDiv.offsetHeight;
+            
+            // Get computed styles
+            const backStyle = window.getComputedStyle(backDiv);
+            const middleStyle = window.getComputedStyle(middleDiv);
+            const tipStyle = window.getComputedStyle(tipDiv);
+            
+            // Draw back
+            const backWidth = parseFloat(backStyle.width) || 1;
+            const backHeight = parseFloat(backStyle.height) || 3.2;
+            const backBackground = backStyle.background;
+            
+            // Parse gradient colors from background
+            const backColors = parseGradientColors(backBackground);
+            if (backColors.length >= 3) {
+                const gradient = ctx.createLinearGradient(-backWidth/2, -backHeight/2, -backWidth/2, backHeight/2);
+                gradient.addColorStop(0, backColors[0]);
+                gradient.addColorStop(0.5, backColors[1]);
+                gradient.addColorStop(1, backColors[2]);
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(-backWidth/2, -backHeight/2, backWidth, backHeight);
+            }
+            
+            // Draw middle
+            const middleWidth = parseFloat(middleStyle.width) || 9;
+            const middleHeight = parseFloat(middleStyle.height) || 4;
+            const middleBackground = middleStyle.background;
+            
+            const middleColors = parseGradientColors(middleBackground);
+            if (middleColors.length >= 3) {
+                const gradient = ctx.createLinearGradient(-middleWidth/2, -middleHeight/2, -middleWidth/2, middleHeight/2);
+                gradient.addColorStop(0, middleColors[0]);
+                gradient.addColorStop(0.5, middleColors[1]);
+                gradient.addColorStop(1, middleColors[2]);
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(-middleWidth/2, -middleHeight/2, middleWidth, middleHeight);
+            }
+            
+            // Draw tip
+            const tipWidth = parseFloat(tipStyle.width) || 4;
+            const tipHeight = parseFloat(tipStyle.height) || 3.2;
+            const tipBackground = tipStyle.background;
+            
+            const tipColors = parseGradientColors(tipBackground);
+            if (tipColors.length >= 3) {
+                const gradient = ctx.createLinearGradient(tipWidth/2, -tipHeight/2, tipWidth/2, tipHeight/2);
+                gradient.addColorStop(0, tipColors[0]);
+                gradient.addColorStop(0.5, tipColors[1]);
+                gradient.addColorStop(1, tipColors[2]);
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(tipWidth/2, -tipHeight/2, tipWidth, tipHeight);
+            }
+            
+            // Clean up
+            document.body.removeChild(tempDiv);
+        }
+
+        function parseGradientColors(gradientString) {
+            const colors = [];
+            const colorMatches = gradientString.match(/#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}|rgb\([^)]+\)/g);
+            if (colorMatches) {
+                return colorMatches;
+            }
+            return ['#000000', '#666666', '#999999']; // fallback colors
+        }
+
+        function updateSettingsOutput() {
+            const output = `// 155mm Shell Settings
+const shellSettings = {
+    trailLength: ${settings.trailLength},
+    trailHeight: ${settings.trailHeight},
+    trailWidth: ${settings.trailWidth},
+    trailQuantity: ${settings.trailQuantity},
+    trailPosX: ${settings.trailPosX},
+    trailPosY: ${settings.trailPosY},
+    trailSpread: ${settings.trailSpread},
+    trailTaper: ${settings.trailTaper},
+    trailColor: '${settings.trailColor}',
+    trailOpacity: ${settings.trailOpacity},
+    spriteWidth: ${settings.spriteWidth},
+    spriteHeight: ${settings.spriteHeight},
+    collisionWidth: ${settings.collisionWidth},
+    collisionHeight: ${settings.collisionHeight},
+    showCollisionBox: ${settings.showCollisionBox}
+};`;
+            
+            document.getElementById('settingsOutput').value = output;
+        }
+
+        function copySettings() {
+            const textarea = document.getElementById('settingsOutput');
+            textarea.select();
+            document.execCommand('copy');
+            
+            // Visual feedback
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            button.style.background = '#45a049';
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.style.background = '#4CAF50';
+            }, 1000);
+        }
+
+        // Event listeners for controls
+        // Zoom slider event listener
+        document.getElementById('zoomSlider').addEventListener('input', (e) => {
+            zoomLevel = parseFloat(e.target.value);
+            document.getElementById('zoomValue').textContent = zoomLevel.toFixed(1) + 'x';
+            updateShell();
+        });
+
+        // Animation speed slider event listener
+        document.getElementById('animationSpeedSlider').addEventListener('input', (e) => {
+            animationSpeed = parseFloat(e.target.value);
+            document.getElementById('animationSpeedValue').textContent = animationSpeed.toFixed(1) + 'x';
+            updateShell();
+        });
+
+
+
+        document.getElementById('trailLength').addEventListener('input', (e) => {
+            settings.trailLength = parseInt(e.target.value);
+            document.getElementById('trailLengthValue').textContent = e.target.value;
+            updateShell();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('trailHeight').addEventListener('input', (e) => {
+            settings.trailHeight = parseInt(e.target.value);
+            document.getElementById('trailHeightValue').textContent = e.target.value;
+            updateShell();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('trailWidth').addEventListener('input', (e) => {
+            settings.trailWidth = parseInt(e.target.value);
+            document.getElementById('trailWidthValue').textContent = e.target.value;
+            updateShell();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('trailQuantity').addEventListener('input', (e) => {
+            settings.trailQuantity = parseInt(e.target.value);
+            document.getElementById('trailQuantityValue').textContent = e.target.value;
+            updateShell();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('trailPosX').addEventListener('input', (e) => {
+            settings.trailPosX = parseInt(e.target.value);
+            document.getElementById('trailPosXValue').textContent = e.target.value;
+            updateShell();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('trailPosY').addEventListener('input', (e) => {
+            settings.trailPosY = parseInt(e.target.value);
+            document.getElementById('trailPosYValue').textContent = e.target.value;
+            updateShell();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('trailSpread').addEventListener('input', (e) => {
+            settings.trailSpread = parseFloat(e.target.value);
+            document.getElementById('trailSpreadValue').textContent = e.target.value;
+            updateShell();
+            updateSettingsOutput();
+        });
+
+
+
+        document.getElementById('trailColor').addEventListener('input', (e) => {
+            settings.trailColor = e.target.value;
+            updateShell();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('trailOpacity').addEventListener('input', (e) => {
+            settings.trailOpacity = parseFloat(e.target.value);
+            document.getElementById('trailOpacityValue').textContent = e.target.value;
+            updateShell();
+            updateSettingsOutput();
+        });
+
+        // Sprite Effect controls
+        document.getElementById('spriteWidth').addEventListener('input', (e) => {
+            settings.spriteWidth = parseInt(e.target.value);
+            document.getElementById('spriteWidthValue').textContent = e.target.value;
+            updateShell();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('spriteHeight').addEventListener('input', (e) => {
+            settings.spriteHeight = parseInt(e.target.value);
+            document.getElementById('spriteHeightValue').textContent = e.target.value;
+            updateShell();
+            updateSettingsOutput();
+        });
+
+        // Collision Box controls
+        document.getElementById('collisionWidth').addEventListener('input', (e) => {
+            settings.collisionWidth = parseInt(e.target.value);
+            document.getElementById('collisionWidthValue').textContent = e.target.value;
+            updateShell();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('collisionHeight').addEventListener('input', (e) => {
+            settings.collisionHeight = parseInt(e.target.value);
+            document.getElementById('collisionHeightValue').textContent = e.target.value;
+            updateShell();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('showCollisionBox').addEventListener('change', (e) => {
+            settings.showCollisionBox = e.target.checked;
+            updateShell();
+            updateSettingsOutput();
+        });
+
+        // Initialize
+        updateControls();
+        updateSettingsOutput();
+        
+        // Start continuous animation
+        function animateShell() {
+            updateShell();
+            requestAnimationFrame(animateShell);
+        }
+        animateShell();
+    </script>
+</body>
+</html> 

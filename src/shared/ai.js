@@ -859,8 +859,8 @@ export class AIController {
 
     // Predictive aiming with reaction time consideration
     const enemyVelocity = enemyTank.velocity || new Vector2(0, 0);
-    const bulletSpeed = this.tank.attributes.kinetics;
-    const timeToHit = distance / bulletSpeed;
+    const shellSpeed = this.tank.attributes.kinetics;
+    const timeToHit = distance / shellSpeed;
     
     // Add some "lag" to prediction based on reaction time
     const predictionAccuracy = Math.max(0.3, 1 - (this.reactionTime / 2000)); // Worse prediction for slower AIs

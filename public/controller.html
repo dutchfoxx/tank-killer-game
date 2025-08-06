@@ -368,7 +368,7 @@
         /* Attribute Banner */
         .attribute-banner {
             background-color: #1b1b1b;
-            padding: 15px;
+            padding: 10px;
             display: flex;
             justify-content: space-between;
             flex-wrap: wrap;
@@ -1173,7 +1173,6 @@
                 </div>
 
                 <button class="join-button" id="joinButton">Join Game</button>
-                <button type="button" onclick="testStateTransition()" style="margin-top: 10px; padding: 10px; background: #666;">Test State Transition</button>
             </div>
         </div>
 
@@ -2193,92 +2192,7 @@
             joinState.style.display = 'flex';
         }
 
-        // Test function to manually trigger state transition
-        function testStateTransition() {
-            console.log('=== TESTING STATE TRANSITION ===');
-            console.log('joinState element:', joinState);
-            console.log('playState element:', playState);
-            console.log('Before - joinState display:', joinState.style.display);
-            console.log('Before - playState classes:', playState.className);
-            console.log('Before - playState computed display:', window.getComputedStyle(playState).display);
-            
-            activatePlayState();
-            
-            console.log('After - joinState display:', joinState.style.display);
-            console.log('After - playState classes:', playState.className);
-            console.log('After - playState computed display:', window.getComputedStyle(playState).display);
-            console.log('After - playState computed visibility:', window.getComputedStyle(playState).visibility);
-            console.log('After - playState computed opacity:', window.getComputedStyle(playState).opacity);
-            
-            // Force a repaint
-            playState.offsetHeight;
-            console.log('After repaint - playState classes:', playState.className);
-            
-            // Check if playState is actually visible
-            const rect = playState.getBoundingClientRect();
-            console.log('playState bounding rect:', rect);
-            console.log('playState is visible:', rect.width > 0 && rect.height > 0);
-            
-            // Check playState content
-            console.log('playState children count:', playState.children.length);
-            console.log('playState innerHTML length:', playState.innerHTML.length);
-            
-            // Check if specific elements exist
-            const attributeBanner = playState.querySelector('.attribute-banner');
-            const fireButton = playState.querySelector('#fireButton');
-            const joystickContainer = playState.querySelector('#joystickContainer');
-            
-            console.log('attributeBanner exists:', !!attributeBanner);
-            console.log('fireButton exists:', !!fireButton);
-            console.log('joystickContainer exists:', !!joystickContainer);
-            
-            // Check if elements are visible
-            if (attributeBanner) {
-                const attrRect = attributeBanner.getBoundingClientRect();
-                console.log('attributeBanner computed display:', window.getComputedStyle(attributeBanner).display);
-                console.log('attributeBanner bounding rect:', attrRect);
-                console.log('attributeBanner dimensions:', attrRect.width, 'x', attrRect.height);
-                console.log('attributeBanner position:', attrRect.left, ',', attrRect.top);
-            }
-            if (fireButton) {
-                const fireRect = fireButton.getBoundingClientRect();
-                console.log('fireButton computed display:', window.getComputedStyle(fireButton).display);
-                console.log('fireButton bounding rect:', fireRect);
-                console.log('fireButton dimensions:', fireRect.width, 'x', fireRect.height);
-                console.log('fireButton position:', fireRect.left, ',', fireRect.top);
-            }
-            if (joystickContainer) {
-                const joyRect = joystickContainer.getBoundingClientRect();
-                console.log('joystickContainer computed display:', window.getComputedStyle(joystickContainer).display);
-                console.log('joystickContainer bounding rect:', joyRect);
-                console.log('joystickContainer dimensions:', joyRect.width, 'x', joyRect.height);
-                console.log('joystickContainer position:', joyRect.left, ',', joyRect.top);
-            }
-            
-            // Check viewport
-            console.log('Viewport dimensions:', window.innerWidth, 'x', window.innerHeight);
-            console.log('Document scroll position:', window.pageYOffset);
-            
-            // Check container
-            const container = document.querySelector('.container');
-            if (container) {
-                const containerRect = container.getBoundingClientRect();
-                console.log('Container bounding rect:', containerRect);
-                console.log('Container dimensions:', containerRect.width, 'x', containerRect.height);
-            }
-            
-            // Check if we need to scroll
-            console.log('Play state top position:', rect.top);
-            console.log('Viewport height:', window.innerHeight);
-            if (rect.top > window.innerHeight) {
-                console.log('Play state is below viewport - scrolling needed');
-                window.scrollTo(0, rect.top);
-            } else {
-                console.log('Play state is visible in viewport');
-                // Scroll to top to make sure play state is visible
-                window.scrollTo(0, 0);
-            }
-        }
+
 
         // Prevent context menu on long press
         document.addEventListener('contextmenu', e => e.preventDefault());

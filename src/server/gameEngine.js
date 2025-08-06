@@ -1,4 +1,4 @@
-import { GameState, Tank, Bullet, Upgrade, Tree, Vector2 } from '../shared/types.js';
+import { GameState, Tank, Shell, Upgrade, Tree, Vector2 } from '../shared/types.js';
 import { AIController } from '../shared/ai.js';
 import { checkAABBCollision, getRandomPositionAvoidingObstacles } from '../shared/collision.js';
 import { 
@@ -24,7 +24,7 @@ export class GameEngine {
         respawnTime: 5000,
         reloadTime: 1000,
         acceleration: 0.1,
-        bulletLifetime: 1000,
+        shellLifetime: 1000,
         gasolinePerUnit: GAME_PARAMS.GASOLINE_PER_UNIT,
         gasolineSpeedPenalty: GAME_PARAMS.GASOLINE_SPEED_PENALTY
       },
@@ -104,17 +104,17 @@ export class GameEngine {
     for (const [id, aiController] of this.aiControllers) {
       aiController.update(deltaTime);
       
-      // Check if AI tank shot a bullet
+      // Check if AI tank shot a shell
       const aiTank = this.gameState.tanks.get(id);
-      if (aiTank && aiTank.lastShotBullet) {
-        // Add AI bullet to game state
-        this.gameState.bullets.push(aiTank.lastShotBullet);
-        aiTank.lastShotBullet = null; // Clear the bullet reference
+      if (aiTank && aiTank.lastShotShell) {
+        // Add AI shell to game state
+        this.gameState.shells.push(aiTank.lastShotShell);
+        aiTank.lastShotShell = null; // Clear the shell reference
       }
     }
 
-    // Update bullets
-    this.updateBullets(deltaTime);
+    // Update shells
+    this.updateShells(deltaTime);
 
 
 
@@ -123,46 +123,46 @@ export class GameEngine {
       tree.update(deltaTime);
     }
 
-    // Check collisions (this handles bullet removal when they hit something)
+    // Check collisions (this handles shell removal when they hit something)
     this.checkCollisions();
 
     // Spawn new upgrades if needed
     this.spawnUpgrades();
 
-    // Clean up bullets that went off-screen (only remove those that are off the arena)
-    this.cleanupBullets();
+    // Clean up shells that went off-screen (only remove those that are off the arena)
+    this.cleanupShells();
   }
 
-  updateBullets(deltaTime) {
-    for (const bullet of this.gameState.bullets) {
-      bullet.update(deltaTime);
+  updateShells(deltaTime) {
+    for (const shell of this.gameState.shells) {
+      shell.update(deltaTime);
     }
   }
 
 
 
   checkCollisions() {
-    // Check bullet-tank collisions
-    for (let i = this.gameState.bullets.length - 1; i >= 0; i--) {
-      const bullet = this.gameState.bullets[i];
-      const bulletBox = bullet.getBoundingBox();
-      let bulletHit = false;
+    // Check shell-tank collisions
+    for (let i = this.gameState.shells.length - 1; i >= 0; i--) {
+      const shell = this.gameState.shells[i];
+      const shellBox = shell.getBoundingBox();
+      let shellHit = false;
 
       // Check collision with tanks
       for (const [tankId, tank] of this.gameState.tanks) {
         if (!tank.isAlive) continue;
 
         const tankBox = tank.getBoundingBox();
-        if (checkAABBCollision(bulletBox, tankBox)) {
-          console.log(`Bullet from ${bullet.shooterId} collided with tank ${tankId}`);
+        if (checkAABBCollision(shellBox, tankBox)) {
+          console.log(`Shell from ${shell.shooterId} collided with tank ${tankId}`);
           
           // Use robust damage system that handles immunity
-          const damageApplied = tank.takeDamage(bullet);
+          const damageApplied = tank.takeDamage(shell);
           
           if (damageApplied) {
             console.log(`Damage applied to tank ${tankId}`);
-            this.gameState.bullets.splice(i, 1);
-            bulletHit = true;
+            this.gameState.shells.splice(i, 1);
+            shellHit = true;
             break;
           } else {
             console.log(`Damage blocked for tank ${tankId} (immunity)`);
@@ -170,16 +170,16 @@ export class GameEngine {
         }
       }
 
-      // Only check tree collision if bullet didn't hit a tank
-      if (!bulletHit) {
+      // Only check tree collision if shell didn't hit a tank
+      if (!shellHit) {
         for (const tree of this.gameState.trees) {
           const treeBox = tree.getBoundingBox();
-          if (checkAABBCollision(bulletBox, treeBox)) {
-            console.log(`Bullet hit tree at position:`, tree.position);
-            // Trigger tree swing animation based on bullet velocity and speed
-            const bulletSpeed = bullet.velocity.magnitude();
-            tree.impact(bullet.velocity, bulletSpeed);
-            this.gameState.bullets.splice(i, 1);
+          if (checkAABBCollision(shellBox, treeBox)) {
+            console.log(`Shell hit tree at position:`, tree.position);
+            // Trigger tree swing animation based on shell velocity and speed
+            const shellSpeed = shell.velocity.magnitude();
+            tree.impact(shell.velocity, shellSpeed);
+            this.gameState.shells.splice(i, 1);
             break;
           }
         }
@@ -271,13 +271,13 @@ export class GameEngine {
     }
   }
 
-  cleanupBullets() {
-    // Only remove bullets that are off the game arena, not those that expired due to lifetime
-    this.gameState.bullets = this.gameState.bullets.filter(bullet => 
-      bullet.position.x >= 0 && 
-      bullet.position.x <= 1500 && 
-      bullet.position.y >= 0 && 
-      bullet.position.y <= 900
+    cleanupShells() {
+    // Only remove shells that are off the game arena, not those that expired due to lifetime
+    this.gameState.shells = this.gameState.shells.filter(shell =>
+      shell.position.x >= 0 &&
+      shell.position.x <= 1500 &&
+      shell.position.y >= 0 &&
+      shell.position.y <= 900
     );
   }
 
@@ -532,10 +532,10 @@ export class GameEngine {
     // Handle shooting
     if (input.shoot) {
       console.log(`Tank ${playerId} attempting to shoot`);
-      const bullet = tank.shoot();
-      if (bullet) {
-        console.log(`Tank ${playerId} shot bullet:`, bullet);
-        this.gameState.bullets.push(bullet);
+      const shell = tank.shoot();
+      if (shell) {
+        console.log(`Tank ${playerId} shot shell:`, shell);
+        this.gameState.shells.push(shell);
       } else {
         console.log(`Tank ${playerId} cannot shoot - conditions not met`);
       }
@@ -631,7 +631,7 @@ export class GameEngine {
     return {
       players: Array.from(this.gameState.players.values()),
       tanks: Array.from(this.gameState.tanks.values()),
-      bullets: this.gameState.bullets,
+      shells: this.gameState.shells,
       upgrades: this.gameState.upgrades,
       trees: this.gameState.trees,
 
@@ -657,7 +657,7 @@ export class GameEngine {
     // Clear all game entities
     this.gameState.tanks.clear();
     this.gameState.players.clear();
-    this.gameState.bullets = [];
+    this.gameState.shells = [];
     this.gameState.upgrades = [];
     this.gameState.trees = [];
 

@@ -97,9 +97,9 @@ export class Tank {
     this.respawnTime = 0;
     this.reloadTime = 0;
     this.lastShot = 0;
-    this.firingImmunity = 0; // Timestamp until which tank is immune to bullet damage
+    this.firingImmunity = 0; // Timestamp until which tank is immune to shell damage
     this.isAI = false;
-    this.lastShotBullet = null; // For AI tanks to store bullets before they're added to game state
+    this.lastShotShell = null; // For AI tanks to store shells before they're added to game state
   }
 
   update(deltaTime, gasolinePerUnit = GAME_PARAMS.GASOLINE_PER_UNIT, gasolineSpeedPenalty = GAME_PARAMS.GASOLINE_SPEED_PENALTY, trees = []) {
@@ -302,7 +302,7 @@ export class Tank {
     }
 
     if (!this.isAI) {
-      console.log(`Tank ${this.id} shooting bullet`);
+      console.log(`Tank ${this.id} shooting shell`);
     }
     
     // Set a brief firing immunity to prevent self-damage
@@ -312,39 +312,39 @@ export class Tank {
     this.reloadTime = 1000; // 1 second reload time
     this.lastShot = Date.now();
 
-    const bulletSpeed = this.attributes.kinetics;
+    const shellSpeed = this.attributes.kinetics;
     const direction = new Vector2(
       Math.cos(this.angle),
       Math.sin(this.angle)
     );
-    const bulletVelocity = direction.multiply(bulletSpeed);
+    const shellVelocity = direction.multiply(shellSpeed);
 
-    // Position bullet well ahead of tank to avoid any collision
-    const bulletOffset = 40; // Increased distance ahead of tank
-    const bulletPosition = this.position.add(direction.multiply(bulletOffset));
+    // Position shell well ahead of tank to avoid any collision
+    const shellOffset = 40; // Increased distance ahead of tank
+    const shellPosition = this.position.add(direction.multiply(shellOffset));
     
-    const bullet = new Bullet(
+    const shell = new Shell(
       this.id,
-      bulletPosition,
-      bulletVelocity,
+      shellPosition,
+      shellVelocity,
       Date.now(),
-      this.firingImmunity // Pass immunity time to bullet
+      this.firingImmunity // Pass immunity time to shell
     );
 
-    // For AI tanks, store the bullet to be added by the game engine
+    // For AI tanks, store the shell to be added by the game engine
     if (this.isAI) {
-      this.lastShotBullet = bullet;
+      this.lastShotShell = shell;
     }
 
     if (!this.isAI) {
-      console.log(`Tank ${this.id} shot bullet at position:`, bulletPosition);
+      console.log(`Tank ${this.id} shot shell at position:`, shellPosition);
       console.log(`Tank ${this.id} remaining ammo: ${this.attributes.ammunition}, health: ${this.attributes.health}`);
     }
     
-    return bullet;
+    return shell;
   }
 
-  takeDamage(fromBullet = null) {
+  takeDamage(fromShell = null) {
     if (!this.isAlive) return false;
 
     // Check if tank has firing immunity
@@ -354,9 +354,9 @@ export class Tank {
       return false;
     }
 
-    // Check if bullet has immunity for this tank
-    if (fromBullet && fromBullet.shooterImmunity > currentTime && fromBullet.shooterId === this.id) {
-      console.log(`Tank ${this.id} is immune to its own bullet damage`);
+    // Check if shell has immunity for this tank
+    if (fromShell && fromShell.shooterImmunity > currentTime && fromShell.shooterId === this.id) {
+      console.log(`Tank ${this.id} is immune to its own shell damage`);
       return false;
     }
 
@@ -403,23 +403,23 @@ export class Tank {
 
 }
 
-export class Bullet {
+export class Shell {
   constructor(shooterId, position, velocity, timestamp, shooterImmunity = 0) {
     this.shooterId = shooterId;
     this.position = position;
     this.velocity = velocity;
     this.timestamp = timestamp;
-    this.shooterImmunity = shooterImmunity; // Time until shooter is immune to this bullet
-    // Removed lifetime since bullets should persist until collision or going off-screen
+    this.shooterImmunity = shooterImmunity; // Time until shooter is immune to this shell
+    // Removed lifetime since shells should persist until collision or going off-screen
   }
 
   update(deltaTime) {
     this.position = this.position.add(this.velocity.multiply(deltaTime / 1000));
-    // Removed lifetime decrement since bullets should persist until collision or going off-screen
+    // Removed lifetime decrement since shells should persist until collision or going off-screen
   }
 
   isExpired() {
-    // Only consider bullets expired if they go off the game arena
+    // Only consider shells expired if they go off the game arena
     return this.position.x < 0 || 
            this.position.x > 1200 ||
            this.position.y < 0 || 
@@ -473,7 +473,7 @@ export class Tree {
     this.leafRotation = Math.random() * Math.PI * 2; // Random rotation between 0 and 2π
   }
 
-  // Called when tree is hit by something (bullet, tank, etc.)
+  // Called when tree is hit by something (shell, tank, etc.)
   impact(impactVelocity, impactForce = null) {
     // Calculate impact direction and magnitude
     const impactSpeed = impactVelocity.magnitude();
@@ -575,7 +575,7 @@ export class GameState {
   constructor() {
     this.players = new Map();
     this.tanks = new Map();
-    this.bullets = [];
+    this.shells = [];
     this.upgrades = [];
     this.trees = [];
 

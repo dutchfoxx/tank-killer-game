@@ -83,11 +83,10 @@
         }
 
         #gameCanvas {
-            width: 1500px;
-            height: 900px;
             border: 2px solid #555;
             background-color: #55492f;
             display: block;
+            /* Width and height will be set by JavaScript for zoom */
         }
 
         .settings-panel {
@@ -98,11 +97,151 @@
             border-radius: 10px;
             padding: 20px;
             max-width: 400px;
-            max-height: 80vh;
-            overflow-y: auto;
             display: none;
+        }
+
+        /* FPS Counter */
+        .fps-counter {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(27, 27, 27, 0.9);
+            color: #00ff00;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
             z-index: 1001;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border: 1px solid #333;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .fps-counter:hover {
+            background-color: rgba(27, 27, 27, 0.95);
+            border-color: #00ff00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+
+        .fps-counter.low {
+            color: #ff0000;
+        }
+
+        .fps-counter.medium {
+            color: #ffff00;
+        }
+
+        /* Performance Popup */
+        .performance-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #1b1b1b;
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 500px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 1002;
+            display: none;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+        }
+
+        .performance-popup.show {
+            display: block;
+        }
+
+        .performance-popup h3 {
+            color: #b83400;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .performance-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background-color: #2a2a2a;
+            border-radius: 5px;
+            border-left: 3px solid #555;
+        }
+
+        .performance-item.critical {
+            border-left-color: #ff0000;
+            background-color: rgba(255, 0, 0, 0.1);
+        }
+
+        .performance-item.warning {
+            border-left-color: #ffff00;
+            background-color: rgba(255, 255, 0, 0.1);
+        }
+
+        .performance-item.good {
+            border-left-color: #00ff00;
+            background-color: rgba(0, 255, 0, 0.1);
+        }
+
+        .performance-label {
+            font-weight: bold;
+            color: #ccc;
+        }
+
+        .performance-value {
+            font-family: 'Courier New', monospace;
+            color: #fff;
+        }
+
+        .performance-bar {
+            width: 100px;
+            height: 8px;
+            background-color: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-left: 10px;
+        }
+
+        .performance-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
+            transition: width 0.3s ease;
+        }
+
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            display: none;
+        }
+
+        .popup-overlay.show {
+            display: block;
+        }
+
+        .close-popup {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .close-popup:hover {
+            color: #fff;
         }
 
         .settings-panel.show {
@@ -849,8 +988,8 @@
                 <input type="number" id="acceleration" value="0.1" step="0.01">
             </div>
             <div class="setting-item">
-                <label>Bullet Lifetime (ms):</label>
-                <input type="number" id="bulletLifetime" value="1000">
+                        <label>Shell Lifetime (ms):</label>
+        <input type="number" id="shellLifetime" value="1000">
             </div>
             <div class="setting-item">
                 <label>Gasoline Per Unit:</label>
@@ -1018,7 +1157,7 @@
                         document.getElementById('respawnTime').value = settings.gameParams.respawnTime || 5000;
                         document.getElementById('reloadTime').value = settings.gameParams.reloadTime || 1000;
                         document.getElementById('acceleration').value = settings.gameParams.acceleration || 0.1;
-                        document.getElementById('bulletLifetime').value = settings.gameParams.bulletLifetime || 1000;
+                        document.getElementById('shellLifetime').value = settings.gameParams.shellLifetime || 1000;
                         document.getElementById('gasolinePerUnit').value = settings.gameParams.gasolinePerUnit || 2.0;
                         document.getElementById('gasolineSpeedPenalty').value = settings.gameParams.gasolineSpeedPenalty || 0.5;
                     }
@@ -1072,7 +1211,7 @@
         let gameState = {
             players: [],
             tanks: [],
-            bullets: [],
+            shells: [],
             upgrades: [],
             trees: [],
             gameTime: 0
@@ -1087,27 +1226,47 @@
             // Get device pixel ratio for high-DPI displays
             const devicePixelRatio = window.devicePixelRatio || 1;
             
-            // Set display size (CSS pixels)
-            const displayWidth = 1500;
-            const displayHeight = 900;
+            // Calculate optimal canvas size based on game arena - keep perfect gameplay size
+            const maxWidth = 1500; // Original perfect game arena width
+            const maxHeight = 900;  // Original perfect game arena height
             
-            // Set actual canvas size in memory (account for extra pixel density)
-            canvas.width = displayWidth * devicePixelRatio;
-            canvas.height = displayHeight * devicePixelRatio;
+            // Set display size (CSS pixels) - use optimized size
+            const displayWidth = maxWidth;
+            const displayHeight = maxHeight;
             
-            // Scale the canvas back down using CSS
-            canvas.style.width = displayWidth + 'px';
-            canvas.style.height = displayHeight + 'px';
+            // Set actual canvas size in memory (use reasonable scaling for performance)
+            // Limit device pixel ratio to avoid excessive memory usage
+            const limitedPixelRatio = Math.min(devicePixelRatio, 1.2);
+            canvas.width = displayWidth * limitedPixelRatio;
+            canvas.height = displayHeight * limitedPixelRatio;
+            
+            // Calculate zoom factor to fill screen real estate
+            const screenWidth = window.innerWidth - 40;
+            const screenHeight = window.innerHeight - 100;
+            const scaleX = screenWidth / displayWidth;
+            const scaleY = screenHeight / displayHeight;
+            const zoomFactor = Math.min(scaleX, scaleY, 2.0); // Cap at 2x zoom max
+            
+            // Scale the canvas to fill screen real estate
+            canvas.style.width = (displayWidth * zoomFactor) + 'px';
+            canvas.style.height = (displayHeight * zoomFactor) + 'px';
+            
+            // Store zoom factor for persistence
+            canvas.dataset.zoomFactor = zoomFactor;
+            
+            console.log(`Canvas zoomed: ${displayWidth}x${displayHeight} -> ${(displayWidth * zoomFactor).toFixed(0)}x${(displayHeight * zoomFactor).toFixed(0)} (${zoomFactor.toFixed(2)}x zoom)`);
             
             // Scale the drawing context so everything draws at the correct size
-            ctx.scale(devicePixelRatio, devicePixelRatio);
+            ctx.scale(limitedPixelRatio, limitedPixelRatio);
             
             // Improve image rendering quality for high-res images
             ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
+            ctx.imageSmoothingQuality = 'medium'; // Changed from 'high' to 'medium' for better performance
             
-            // Set better rendering hints for high quality
-            ctx.textRenderingOptimization = 'optimizeQuality';
+            console.log(`Canvas optimized: ${displayWidth}x${displayHeight} (${canvas.width}x${canvas.height} with limited DPI scaling)`);
+            console.log(`Window size: ${window.innerWidth}x${window.innerHeight}`);
+            console.log(`Device pixel ratio: ${devicePixelRatio} (limited to ${limitedPixelRatio})`);
+            console.log(`Canvas style size: ${canvas.style.width} x ${canvas.style.height}`);
         }
         
         setupCanvas();
@@ -1884,7 +2043,7 @@
                     respawnTime: parseInt(document.getElementById('respawnTime').value),
                     reloadTime: parseInt(document.getElementById('reloadTime').value),
                     acceleration: parseFloat(document.getElementById('acceleration').value),
-                    bulletLifetime: parseInt(document.getElementById('bulletLifetime').value),
+                    shellLifetime: parseInt(document.getElementById('shellLifetime').value),
                     gasolinePerUnit: parseFloat(document.getElementById('gasolinePerUnit').value),
                     gasolineSpeedPenalty: parseFloat(document.getElementById('gasolineSpeedPenalty').value)
                 },
@@ -1995,7 +2154,7 @@
                     respawnTime: parseInt(document.getElementById('respawnTime').value),
                     reloadTime: parseInt(document.getElementById('reloadTime').value),
                     acceleration: parseFloat(document.getElementById('acceleration').value),
-                    bulletLifetime: parseInt(document.getElementById('bulletLifetime').value),
+                    shellLifetime: parseInt(document.getElementById('shellLifetime').value),
                     gasolinePerUnit: parseFloat(document.getElementById('gasolinePerUnit').value),
                     gasolineSpeedPenalty: parseFloat(document.getElementById('gasolineSpeedPenalty').value)
                 },
@@ -2129,7 +2288,7 @@
             console.log('[DEBUG] Game state after reset:', {
                 trees: gameState.trees?.length || 0,
                 tanks: gameState.tanks?.length || 0,
-                bullets: gameState.bullets?.length || 0,
+                shells: gameState.shells?.length || 0,
                 upgrades: gameState.upgrades?.length || 0
             });
             
@@ -2204,7 +2363,7 @@
                     respawnTime: parseInt(document.getElementById('respawnTime').value),
                     reloadTime: parseInt(document.getElementById('reloadTime').value),
                     acceleration: parseFloat(document.getElementById('acceleration').value),
-                    bulletLifetime: parseInt(document.getElementById('bulletLifetime').value),
+                    shellLifetime: parseInt(document.getElementById('shellLifetime').value),
                     gasolinePerUnit: parseFloat(document.getElementById('gasolinePerUnit').value),
                     gasolineSpeedPenalty: parseFloat(document.getElementById('gasolineSpeedPenalty').value)
                 },
@@ -2296,6 +2455,18 @@
 
         // Tank texture mapping - will be loaded from shared config
         let tankTextures = {};
+        
+        // Shell animation sprite
+        let shellSprite = null;
+        const shellSpriteImage = new Image();
+        shellSpriteImage.onload = function() {
+            shellSprite = this;
+            console.log('Shell sprite loaded:', this.width, 'x', this.height);
+        };
+        shellSpriteImage.onerror = function() {
+            console.error('Failed to load shell sprite');
+        };
+        shellSpriteImage.src = '/assets/images/shells/shell-animation.png?t=' + Date.now(); // Cache bust
 
         // Load tank textures from shared config
         tankTextures = tankCamos;
@@ -2315,62 +2486,382 @@
             img.src = `/assets/images/${info.texture}`;
         });
 
+        // Tank images - new layered system
+        let tankBodyBaseContours = null;
+        let tankBodyBaseColorMap = null;
+        let tankBodyElementsContours = null;
+        let tankBodyElementsColorMap = null;
+        let tankTurretBaseContours = null;
+        let tankTurretBaseColorMap = null;
+        let tankGunneryContours = null;
+        let tankGunneryColorMap = null;
+
+        // Load tank images
+        function loadTankImages() {
+            console.log('Loading tank images...');
+            
+            // Load contour images
+            const tankBodyBaseContoursImage = new Image();
+            tankBodyBaseContoursImage.onload = function() {
+                tankBodyBaseContours = this;
+                console.log('Loaded tank body base contours');
+            };
+            tankBodyBaseContoursImage.onerror = function() {
+                console.error('Failed to load tank body base contours');
+            };
+            tankBodyBaseContoursImage.src = '/assets/images/tanks/bodyBase_contours.png';
+
+            const tankBodyElementsContoursImage = new Image();
+            tankBodyElementsContoursImage.onload = function() {
+                tankBodyElementsContours = this;
+                console.log('Loaded tank body elements contours');
+            };
+            tankBodyElementsContoursImage.onerror = function() {
+                console.error('Failed to load tank body elements contours');
+            };
+            tankBodyElementsContoursImage.src = '/assets/images/tanks/bodyElements_contours.png';
+
+            const tankTurretBaseContoursImage = new Image();
+            tankTurretBaseContoursImage.onload = function() {
+                tankTurretBaseContours = this;
+                console.log('Loaded tank turret base contours');
+            };
+            tankTurretBaseContoursImage.onerror = function() {
+                console.error('Failed to load tank turret base contours');
+            };
+            tankTurretBaseContoursImage.src = '/assets/images/tanks/turretBase_contours.png';
+
+            const tankGunneryContoursImage = new Image();
+            tankGunneryContoursImage.onload = function() {
+                tankGunneryContours = this;
+                console.log('Loaded tank gunnery contours');
+            };
+            tankGunneryContoursImage.onerror = function() {
+                console.error('Failed to load tank gunnery contours');
+            };
+            tankGunneryContoursImage.src = '/assets/images/tanks/turretGunnery_contours.png';
+
+            // Load color map images
+            const tankBodyBaseColorMapImage = new Image();
+            tankBodyBaseColorMapImage.onload = function() {
+                tankBodyBaseColorMap = this;
+                console.log('Loaded tank body base color map');
+            };
+            tankBodyBaseColorMapImage.onerror = function() {
+                console.error('Failed to load tank body base color map');
+            };
+            tankBodyBaseColorMapImage.src = '/assets/images/tanks/bodyBase_colourMap.png';
+
+            const tankBodyElementsColorMapImage = new Image();
+            tankBodyElementsColorMapImage.onload = function() {
+                tankBodyElementsColorMap = this;
+                console.log('Loaded tank body elements color map');
+            };
+            tankBodyElementsColorMapImage.onerror = function() {
+                console.error('Failed to load tank body elements color map');
+            };
+            tankBodyElementsColorMapImage.src = '/assets/images/tanks/bodyElements_colourMap.png';
+
+            const tankTurretBaseColorMapImage = new Image();
+            tankTurretBaseColorMapImage.onload = function() {
+                tankTurretBaseColorMap = this;
+                console.log('Loaded tank turret base color map');
+            };
+            tankTurretBaseColorMapImage.onerror = function() {
+                console.error('Failed to load tank turret base color map');
+            };
+            tankTurretBaseColorMapImage.src = '/assets/images/tanks/turretBase_colourMap.png';
+
+            const tankGunneryColorMapImage = new Image();
+            tankGunneryColorMapImage.onload = function() {
+                tankGunneryColorMap = this;
+                console.log('Loaded tank gunnery color map');
+            };
+            tankGunneryColorMapImage.onerror = function() {
+                console.error('Failed to load tank gunnery color map');
+            };
+            tankGunneryColorMapImage.src = '/assets/images/tanks/turretGunnery_colourMap.png';
+        }
+
+        // Load tank images on startup
+        loadTankImages();
+
+        // Helper functions for tank rendering
+        function rgbToHsl(r, g, b) {
+            r /= 255;
+            g /= 255;
+            b /= 255;
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max === min) {
+                h = s = 0;
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return [h * 360, s * 100, l * 100];
+        }
+
+        function hslToRgb(h, s, l) {
+            h /= 360;
+            s /= 100;
+            l /= 100;
+            const hue2rgb = (p, q, t) => {
+                if (t < 0) t += 1;
+                if (t > 1) t -= 1;
+                if (t < 1/6) return p + (q - p) * 6 * t;
+                if (t < 1/2) return q;
+                if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                return p;
+            };
+            let r, g, b;
+            if (s === 0) {
+                r = g = b = l;
+            } else {
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+            return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+        }
+
+        function getCamoPixel(x, y, pattern, scale) {
+            if (!camoTextureData[pattern]) return 0;
+            const data = camoTextureData[pattern];
+            const scaledX = Math.floor(x * scale) % 256;
+            const scaledY = Math.floor(y * scale) % 256;
+            const index = (scaledY * 256 + scaledX) * 4;
+            return data[index] / 255; // Return grayscale value
+        }
+
+        function applyCamoBlend(pixelR, pixelG, pixelB, camoValue, blendMode, opacity) {
+            const camoR = camoValue * 255;
+            const camoG = camoValue * 255;
+            const camoB = camoValue * 255;
+            
+            let newR, newG, newB;
+            
+            switch (blendMode) {
+                case 'overlay-pixel':
+                    newR = pixelR < 128 ? (2 * pixelR * camoR) / 255 : 255 - (2 * (255 - pixelR) * (255 - camoR)) / 255;
+                    newG = pixelG < 128 ? (2 * pixelG * camoG) / 255 : 255 - (2 * (255 - pixelG) * (255 - camoG)) / 255;
+                    newB = pixelB < 128 ? (2 * pixelB * camoB) / 255 : 255 - (2 * (255 - pixelB) * (255 - camoB)) / 255;
+                    break;
+                default:
+                    newR = pixelR;
+                    newG = pixelG;
+                    newB = pixelB;
+            }
+            
+            // Apply opacity
+            newR = pixelR + (newR - pixelR) * opacity;
+            newG = pixelG + (newG - pixelG) * opacity;
+            newB = pixelB + (newB - pixelB) * opacity;
+            
+            return [newR, newG, newB];
+        }
+
+        // Pre-process camo textures for performance
+        const camoTextureData = {};
+        Object.entries(tankTextures).forEach(([key, info]) => {
+            if (info.texture) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = 256;
+                    canvas.height = 256;
+                    ctx.drawImage(img, 0, 0, 256, 256);
+                    camoTextureData[key] = ctx.getImageData(0, 0, 256, 256).data;
+                };
+                img.src = `/assets/images/${info.texture}`;
+            }
+        });
+
         // Render functions
+        function drawTankLayer(image, centerX, centerY, scale, isColorMap = false, layerType = 'body', player = null) {
+            if (!image) return;
+
+            // Use original image dimensions scaled down
+            const width = image.width * scale;
+            const height = image.height * scale;
+            
+            const x = centerX - width / 2;
+            const y = centerY - height / 2;
+
+            if (isColorMap && player) {
+                // For color maps, apply pixel-level color manipulation
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = image.width;
+                tempCanvas.height = image.height;
+                
+                // Draw the original image
+                tempCtx.drawImage(image, 0, 0);
+                
+                // Get image data for manipulation
+                const imageData = tempCtx.getImageData(0, 0, image.width, image.height);
+                const data = imageData.data;
+                
+                // Convert hex color to RGB and HSL
+                const hexColor = player.tankColor || '#888888';
+                const targetR = parseInt(hexColor.slice(1, 3), 16);
+                const targetG = parseInt(hexColor.slice(3, 5), 16);
+                const targetB = parseInt(hexColor.slice(5, 7), 16);
+                const targetHsl = rgbToHsl(targetR, targetG, targetB);
+                
+                // Apply pixel-level color manipulation (hard-light-pixel as default)
+                for (let i = 0; i < data.length; i += 4) {
+                    if (data[i + 3] > 0) { // If pixel is not transparent
+                        const pixelR = data[i];
+                        const pixelG = data[i + 1];
+                        const pixelB = data[i + 2];
+                        const pixelA = data[i + 3];
+                        
+                        // Apply hard-light-pixel blending
+                        let newR, newG, newB;
+                        newR = targetR < 128 ? (2 * pixelR * targetR) / 255 : 255 - (2 * (255 - pixelR) * (255 - targetR)) / 255;
+                        newG = targetG < 128 ? (2 * pixelG * targetG) / 255 : 255 - (2 * (255 - pixelG) * (255 - targetG)) / 255;
+                        newB = targetB < 128 ? (2 * pixelB * targetB) / 255 : 255 - (2 * (255 - pixelB) * (255 - targetB)) / 255;
+                        
+                        data[i] = Math.max(0, Math.min(255, Math.round(newR)));
+                        data[i + 1] = Math.max(0, Math.min(255, Math.round(newG)));
+                        data[i + 2] = Math.max(0, Math.min(255, Math.round(newB)));
+                        data[i + 3] = pixelA; // Keep original alpha
+                    }
+                }
+                
+                // Apply camo pattern if selected
+                if (player.tankCamo && player.tankCamo !== 'none') {
+                    for (let i = 0; i < data.length; i += 4) {
+                        if (data[i + 3] > 0) { // If pixel is not transparent
+                            const pixelX = (i / 4) % image.width;
+                            const pixelY = Math.floor((i / 4) / image.width);
+                            
+                            // Get camo pattern value for this pixel (with layer-specific offset)
+                            const layerOffset = layerType === 'body' ? 0 : 
+                                              layerType === 'turret' ? 1000 : 2000;
+                            const camoValue = getCamoPixel(pixelX + layerOffset, pixelY + layerOffset, player.tankCamo, 1.0);
+                            
+                            if (camoValue > 0) {
+                                // Apply camo blending
+                                const camoResult = applyCamoBlend(
+                                    data[i], data[i + 1], data[i + 2], 
+                                    camoValue, 'overlay-pixel', 1.0
+                                );
+                                
+                                data[i] = Math.max(0, Math.min(255, Math.round(camoResult[0])));
+                                data[i + 1] = Math.max(0, Math.min(255, Math.round(camoResult[1])));
+                                data[i + 2] = Math.max(0, Math.min(255, Math.round(camoResult[2])));
+                            }
+                        }
+                    }
+                }
+                
+                // Put the modified image data back
+                tempCtx.putImageData(imageData, 0, 0);
+                
+                // Draw the modified image
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.drawImage(tempCanvas, x, y, width, height);
+                
+            } else {
+                // For contours, draw normally preserving transparency
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.drawImage(image, x, y, width, height);
+            }
+        }
+
         function renderTank(tank, player) {
             if (!tank.isAlive) return;
+
+            // Check if tank images are loaded
+            if (!tankBodyBaseContours || !tankBodyBaseColorMap || !tankBodyElementsContours || 
+                !tankBodyElementsColorMap || !tankTurretBaseContours || 
+                !tankGunneryContours || !tankGunneryColorMap) {
+                console.log('Tank images not loaded, using fallback rendering');
+                console.log('Loaded images:', {
+                    tankBodyBaseContours: !!tankBodyBaseContours,
+                    tankBodyBaseColorMap: !!tankBodyBaseColorMap,
+                    tankBodyElementsContours: !!tankBodyElementsContours,
+                    tankBodyElementsColorMap: !!tankBodyElementsColorMap,
+                    tankTurretBaseContours: !!tankTurretBaseContours,
+                    tankGunneryContours: !!tankGunneryContours,
+                    tankGunneryColorMap: !!tankGunneryColorMap
+                });
+                
+                // Fallback to simple rendering if images aren't loaded
+                ctx.save();
+                ctx.translate(tank.position.x, tank.position.y);
+                ctx.rotate(tank.angle);
+                
+                let tankColor = '#888888'; // Default gray for AI
+                if (player) {
+                    tankColor = player.tankColor;
+                } else if (tank.isAI) {
+                    tankColor = '#888888'; // Specific gray for AI tanks
+                }
+                
+                ctx.fillStyle = tankColor;
+                ctx.fillRect(-10, -10, 20, 20);
+                
+                // Tank barrel
+                ctx.fillStyle = '#333333';
+                ctx.fillRect(0, -2, 15, 4);
+                
+                ctx.restore();
+                return;
+            }
+
+            console.log('Using layered tank rendering');
 
             // Draw tank body (rotated)
             ctx.save();
             ctx.translate(tank.position.x, tank.position.y);
             ctx.rotate(tank.angle);
 
-            // Tank body - handle AI tanks properly
-            let tankColor = '#888888'; // Default gray for AI
-            if (player) {
-                tankColor = player.tankColor;
-            } else if (tank.isAI) {
-                tankColor = '#888888'; // Specific gray for AI tanks
+            const scale = 0.067; // 3 times smaller than tank designer (0.2 / 3)
+            const centerX = 0;
+            const centerY = 0;
+
+            // Draw tank layers in order (back to front)
+            // 1. Body base color map (furthest back)
+            drawTankLayer(tankBodyBaseColorMap, centerX, centerY, scale, true, 'body', player);
+            
+            // 2. Body base contours
+            drawTankLayer(tankBodyBaseContours, centerX, centerY, scale, false, 'body', player);
+            
+            // 3. Body elements color map
+            drawTankLayer(tankBodyElementsColorMap, centerX, centerY, scale, true, 'body', player);
+            
+            // 4. Body elements contours
+            drawTankLayer(tankBodyElementsContours, centerX, centerY, scale, false, 'body', player);
+            
+            // 5. Turret base color map (if available)
+            if (tankTurretBaseColorMap) {
+                drawTankLayer(tankTurretBaseColorMap, centerX, centerY, scale, true, 'turret', player);
             }
             
-            ctx.fillStyle = tankColor;
-            ctx.fillRect(-10, -10, 20, 20);
-
-            // Apply texture if available and loaded (skip for AI tanks)
-            if (player && player.tankCamo && !tank.isAI) {
-                const textureInfo = tankTextures[player.tankCamo];
-                const textureImage = tankTextureImages[player.tankCamo];
-                
-                if (textureInfo && textureImage) {
-                ctx.save();
-                ctx.globalAlpha = textureInfo.opacity;
-                
-                // Check for blend mode overrides based on base color
-                let blendMode = textureInfo.blendMode || 'normal';
-                if (textureInfo.overrides && player.tankColor) {
-                    // Find the color key by matching the hex value
-                    console.log('tankColors object:', tankColors);
-                    const colorKey = getColorKeyFromHex(player.tankColor);
-                    console.log('Color lookup:', { tankColor: player.tankColor, colorKey, overrides: textureInfo.overrides });
-                    if (colorKey && textureInfo.overrides[colorKey]) {
-                        blendMode = textureInfo.overrides[colorKey].blendMode;
-                        console.log('Using override blend mode:', blendMode);
-                    }
-                }
-                ctx.globalCompositeOperation = blendMode;
-                
-                // Apply scaling for texture
-                const scale = textureInfo.scale || 1;
-                const scaledSize = 20 * scale;
-                const offset = (scaledSize - 20) / 2;
-                
-                    ctx.drawImage(textureImage, -10 - offset, -10 - offset, scaledSize, scaledSize);
-                    ctx.restore();
-                }
+            // 6. Turret base contours
+            if (tankTurretBaseContours) {
+                drawTankLayer(tankTurretBaseContours, centerX, centerY, scale, false, 'turret', player);
             }
-
-            // Tank barrel (for all tanks including AI)
-            ctx.fillStyle = '#333333';
-            ctx.fillRect(0, -2, 15, 4);
+            
+            // 7. Gunnery color map
+            drawTankLayer(tankGunneryColorMap, centerX, centerY, scale, true, 'turret', player);
+            
+            // 8. Gunnery contours (closest to front)
+            drawTankLayer(tankGunneryContours, centerX, centerY, scale, false, 'turret', player);
 
             ctx.restore();
 
@@ -2413,23 +2904,23 @@
             ctx.restore();
         }
 
-        function renderBullet(bullet) {
+        function renderShell(shell) {
             ctx.save();
-            ctx.translate(bullet.position.x, bullet.position.y);
+            ctx.translate(shell.position.x, shell.position.y);
 
-            // Bullet trail
-            const trailLength = 10;
+            // Shell trail
+            const trailLength = 13;
             // Calculate magnitude manually since velocity loses methods after network transmission
-            const velocityMagnitude = Math.sqrt(bullet.velocity.x * bullet.velocity.x + bullet.velocity.y * bullet.velocity.y);
+            const velocityMagnitude = Math.sqrt(shell.velocity.x * shell.velocity.x + shell.velocity.y * shell.velocity.y);
             
             if (velocityMagnitude > 0) {
-                // Calculate trail start position relative to bullet position (since we're already translated)
-                const trailStartX = -bullet.velocity.x * trailLength / velocityMagnitude;
-                const trailStartY = -bullet.velocity.y * trailLength / velocityMagnitude;
+                // Calculate trail start position relative to shell position (since we're already translated)
+                const trailStartX = -shell.velocity.x * trailLength / velocityMagnitude;
+                const trailStartY = -shell.velocity.y * trailLength / velocityMagnitude;
 
                 const gradient = ctx.createLinearGradient(trailStartX, trailStartY, 0, 0);
-                gradient.addColorStop(0, 'rgba(255, 255, 0, 0)');
-                gradient.addColorStop(1, 'rgba(255, 255, 0, 0.8)');
+                gradient.addColorStop(0, 'rgba(104, 105, 82, 0)'); // #686952 with 0 opacity
+                gradient.addColorStop(1, 'rgba(104, 105, 82, 0.8)'); // #686952 with 0.8 opacity
 
                 ctx.strokeStyle = gradient;
                 ctx.lineWidth = 3;
@@ -2439,11 +2930,79 @@
                 ctx.stroke();
             }
 
-            // Bullet
-            ctx.fillStyle = '#FFFF00';
-            ctx.beginPath();
-            ctx.arc(0, 0, 2, 0, Math.PI * 2);
-            ctx.fill();
+            // Calculate shell rotation based on velocity direction
+            const shellAngle = Math.atan2(shell.velocity.y, shell.velocity.x);
+            ctx.rotate(shellAngle);
+
+            // Use animated shell sprite if available
+            if (shellSprite) {
+                // Animate based on shell velocity or time
+                const frameCount = 6; // 6 frames in the sprite sheet
+                const frameWidth = 50; // Each frame is 50px wide
+                const frameHeight = 50; // Each frame is 50px tall
+                
+                // Use velocity magnitude to determine animation speed
+                const animationSpeed = Math.min(velocityMagnitude / 50, 2); // Faster animation
+                const time = Date.now() * animationSpeed;
+                const currentFrame = Math.floor(time) % frameCount;
+                
+                // Draw the current frame (vertical layout)
+                const sourceX = 0; // All frames are in the same column
+                const sourceY = currentFrame * frameHeight; // Each frame is stacked vertically
+                const destWidth = 11; // Shell size from settings
+                const destHeight = 11;
+                
+                ctx.drawImage(
+                    shellSprite,
+                    sourceX, sourceY, frameWidth, frameHeight,
+                    -destWidth/2, -destHeight/2, destWidth, destHeight
+                );
+            } else {
+                // Fallback to geometric shell if sprite not loaded
+                const shellLength = 8;
+                const shellWidth = 3;
+                const tipLength = 3;
+                const backLength = 2;
+                
+                // Draw shell body
+                ctx.fillStyle = '#797a62';
+                ctx.beginPath();
+                const bodyX = shellLength/2 - tipLength - (shellLength - tipLength - backLength);
+                const bodyY = -shellWidth/2;
+                const bodyWidth = shellLength - tipLength - backLength;
+                const bodyHeight = shellWidth;
+                const radius = shellWidth/2;
+                
+                ctx.moveTo(bodyX + radius, bodyY);
+                ctx.lineTo(bodyX + bodyWidth - radius, bodyY);
+                ctx.quadraticCurveTo(bodyX + bodyWidth, bodyY, bodyX + bodyWidth, bodyY + radius);
+                ctx.lineTo(bodyX + bodyWidth, bodyY + bodyHeight - radius);
+                ctx.quadraticCurveTo(bodyX + bodyWidth, bodyY + bodyHeight, bodyX + bodyWidth - radius, bodyY + bodyHeight);
+                ctx.lineTo(bodyX + radius, bodyY + bodyHeight);
+                ctx.quadraticCurveTo(bodyX, bodyY + bodyHeight, bodyX, bodyY + bodyHeight - radius);
+                ctx.lineTo(bodyX, bodyY + radius);
+                ctx.quadraticCurveTo(bodyX, bodyY, bodyX + radius, bodyY);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Draw shell tip
+                ctx.fillStyle = '#5e5e58';
+                ctx.beginPath();
+                ctx.moveTo(shellLength/2, 0);
+                ctx.lineTo(shellLength/2 - tipLength, -shellWidth/2);
+                ctx.lineTo(shellLength/2 - tipLength, shellWidth/2);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Draw shell back
+                const backGradient = ctx.createLinearGradient(-shellLength/2, 0, -shellLength/2 + backLength, 0);
+                backGradient.addColorStop(0, '#312404');
+                backGradient.addColorStop(0.5, '#ecc77d');
+                backGradient.addColorStop(1, '#7b581b');
+                
+                ctx.fillStyle = backGradient;
+                ctx.fillRect(-shellLength/2, -shellWidth/2, backLength, shellWidth);
+            }
 
             ctx.restore();
         }
@@ -2688,10 +3247,10 @@
 
 
 
-            // Render bullets
-            if (gameState.bullets && Array.isArray(gameState.bullets)) {
-                gameState.bullets.forEach(renderBullet);
-            }
+                    // Render shells
+        if (gameState.shells && Array.isArray(gameState.shells)) {
+            gameState.shells.forEach(renderShell);
+        }
 
                     // Render tanks
         if (gameState.tanks && Array.isArray(gameState.tanks)) {
@@ -2719,6 +3278,325 @@
 
         // Start rendering
         render();
+    </script>
+
+    <!-- FPS Counter -->
+    <div class="fps-counter" id="fpsCounter">FPS: 60</div>
+
+    <!-- Performance Popup Overlay -->
+    <div class="popup-overlay" id="popupOverlay"></div>
+
+    <!-- Performance Popup -->
+    <div class="performance-popup" id="performancePopup">
+        <button class="close-popup" id="closePopup">&times;</button>
+        <h3>Performance Monitor</h3>
+        <div id="performanceContent">
+            <!-- Performance items will be dynamically generated here -->
+        </div>
+    </div>
+
+    <script>
+        // FPS Counter and Performance Monitoring
+        let fpsCounter = 0;
+        let frameCount = 0;
+        let lastTime = performance.now();
+        let fpsHistory = [];
+        const maxFpsHistory = 60;
+
+        // Performance monitoring
+        let performanceData = {
+            fps: { current: 0, average: 0, min: 0, max: 0 },
+            memory: { used: 0, total: 0, percentage: 0 },
+            renderTime: { current: 0, average: 0 },
+            gameObjects: { tanks: 0, shells: 0, trees: 0, upgrades: 0 },
+            network: { latency: 0, packetsPerSecond: 0 }
+        };
+
+        // FPS Counter Update
+        function updateFPS() {
+            const currentTime = performance.now();
+            const deltaTime = currentTime - lastTime;
+            
+            if (deltaTime > 0) {
+                const currentFPS = 1000 / deltaTime;
+                fpsHistory.push(currentFPS);
+                
+                if (fpsHistory.length > maxFpsHistory) {
+                    fpsHistory.shift();
+                }
+                
+                const averageFPS = fpsHistory.reduce((a, b) => a + b, 0) / fpsHistory.length;
+                const minFPS = Math.min(...fpsHistory);
+                const maxFPS = Math.max(...fpsHistory);
+                
+                performanceData.fps = {
+                    current: Math.round(currentFPS),
+                    average: Math.round(averageFPS),
+                    min: Math.round(minFPS),
+                    max: Math.round(maxFPS)
+                };
+                
+                // Update FPS counter display
+                const fpsElement = document.getElementById('fpsCounter');
+                fpsElement.textContent = `FPS: ${performanceData.fps.current}`;
+                
+                // Color coding based on FPS
+                fpsElement.classList.remove('low', 'medium');
+                if (performanceData.fps.current < 30) {
+                    fpsElement.classList.add('low');
+                } else if (performanceData.fps.current < 50) {
+                    fpsElement.classList.add('medium');
+                }
+                
+                // Auto-enable performance mode if FPS is critically low
+                // DISABLED: This was overriding the zoom. User wants to maintain zoom regardless of FPS.
+                /*
+                if (performanceData.fps.current < 15 && !performanceMode && fpsHistory.length > 10) {
+                    console.log('Auto-enabling performance mode due to low FPS');
+                    performanceMode = true;
+                    
+                    const ultraMaxWidth = 1200;
+                    const ultraMaxHeight = 800;
+                    
+                    canvas.width = ultraMaxWidth * (window.devicePixelRatio || 1);
+                    canvas.height = ultraMaxHeight * (window.devicePixelRatio || 1);
+                    
+                    // Calculate reduced zoom for auto-performance mode
+                    const screenWidth = window.innerWidth - 40;
+                    const screenHeight = window.innerHeight - 100;
+                    const scaleX = screenWidth / ultraMaxWidth;
+                    const scaleY = screenHeight / ultraMaxHeight;
+                    const zoomFactor = Math.min(scaleX, scaleY, 1.5); // Reduced zoom cap for performance
+                    
+                    canvas.style.width = (ultraMaxWidth * zoomFactor) + 'px';
+                    canvas.style.height = (ultraMaxHeight * zoomFactor) + 'px';
+                    
+                    fpsElement.style.color = '#ff6600';
+                    fpsElement.textContent = `FPS: ${performanceData.fps.current} (AUTO PERF)`;
+                }
+                */
+            }
+            
+            lastTime = currentTime;
+            requestAnimationFrame(updateFPS);
+        }
+
+        // Performance Monitoring
+        function updatePerformanceData() {
+            // Memory usage (if available)
+            if (performance.memory) {
+                const memory = performance.memory;
+                performanceData.memory = {
+                    used: Math.round(memory.usedJSHeapSize / 1024 / 1024),
+                    total: Math.round(memory.totalJSHeapSize / 1024 / 1024),
+                    percentage: Math.round((memory.usedJSHeapSize / memory.totalJSHeapSize) * 100)
+                };
+            }
+
+            // Game objects count
+            if (gameState) {
+                performanceData.gameObjects = {
+                    tanks: gameState.tanks ? gameState.tanks.length : 0,
+                    shells: gameState.shells ? gameState.shells.length : 0,
+                    trees: gameState.trees ? gameState.trees.length : 0,
+                    upgrades: gameState.upgrades ? gameState.upgrades.length : 0
+                };
+            }
+
+            // Network latency (if socket is available)
+            if (socket && socket.connected) {
+                const startTime = performance.now();
+                socket.emit('ping', () => {
+                    const latency = performance.now() - startTime;
+                    performanceData.network.latency = Math.round(latency);
+                });
+            }
+
+            // Update every second
+            setTimeout(updatePerformanceData, 1000);
+        }
+
+        // Generate performance report
+        function generatePerformanceReport() {
+            const content = document.getElementById('performanceContent');
+            content.innerHTML = '';
+
+            // FPS Section
+            addPerformanceItem(content, 'Current FPS', `${performanceData.fps.current}`, performanceData.fps.current, 60);
+            addPerformanceItem(content, 'Average FPS', `${performanceData.fps.average}`, performanceData.fps.average, 60);
+            addPerformanceItem(content, 'Min FPS', `${performanceData.fps.min}`, performanceData.fps.min, 60);
+            addPerformanceItem(content, 'Max FPS', `${performanceData.fps.max}`, performanceData.fps.max, 60);
+
+            // Memory Section
+            if (performanceData.memory.used > 0) {
+                addPerformanceItem(content, 'Memory Used', `${performanceData.memory.used} MB`, performanceData.memory.percentage, 100);
+                addPerformanceItem(content, 'Memory Total', `${performanceData.memory.total} MB`, 100, 100);
+            }
+
+            // Game Objects Section
+            addPerformanceItem(content, 'Tanks', `${performanceData.gameObjects.tanks}`, performanceData.gameObjects.tanks, 50);
+            addPerformanceItem(content, 'Shells', `${performanceData.gameObjects.shells}`, performanceData.gameObjects.shells, 100);
+            addPerformanceItem(content, 'Trees', `${performanceData.gameObjects.trees}`, performanceData.gameObjects.trees, 200);
+            addPerformanceItem(content, 'Upgrades', `${performanceData.gameObjects.upgrades}`, performanceData.gameObjects.upgrades, 50);
+
+            // Network Section
+            if (performanceData.network.latency > 0) {
+                addPerformanceItem(content, 'Network Latency', `${performanceData.network.latency}ms`, performanceData.network.latency, 100);
+            }
+
+            // System Info
+            addPerformanceItem(content, 'Screen Resolution', `${window.screen.width}x${window.screen.height}`, 100, 100);
+            addPerformanceItem(content, 'Canvas Size', `${canvas.width}x${canvas.height}`, 100, 100);
+            
+            // Canvas optimization info
+            const canvasPixels = canvas.width * canvas.height;
+            const maxRecommended = 1500 * 900; // 1.35M pixels for game arena
+            addPerformanceItem(content, 'Canvas Pixels', `${(canvasPixels / 1000000).toFixed(1)}M`, canvasPixels, maxRecommended);
+            
+            // Zoom info
+            const zoomFactor = parseFloat(canvas.style.width) / 1500;
+            addPerformanceItem(content, 'Visual Zoom', `${zoomFactor.toFixed(2)}x`, zoomFactor * 100, 200);
+            
+            // Performance recommendations
+            if (performanceData.fps.current < 20) {
+                addPerformanceItem(content, 'RECOMMENDATION', 'Double-click FPS counter for performance mode', 100, 100);
+            }
+            
+            // Add refresh button for canvas optimization
+            const refreshButton = document.createElement('button');
+            refreshButton.textContent = 'Force Canvas Optimization';
+            refreshButton.style.cssText = `
+                background: #b83400;
+                color: white;
+                border: none;
+                padding: 8px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+                margin-top: 10px;
+                width: 100%;
+            `;
+            refreshButton.onclick = () => {
+                setupCanvas();
+                generatePerformanceReport();
+            };
+            content.appendChild(refreshButton);
+            
+            addPerformanceItem(content, 'User Agent', navigator.userAgent.substring(0, 50) + '...', 100, 100);
+        }
+
+        function addPerformanceItem(container, label, value, current, max) {
+            const item = document.createElement('div');
+            item.className = 'performance-item';
+            
+            const percentage = Math.min((current / max) * 100, 100);
+            
+            if (percentage > 80) {
+                item.classList.add('critical');
+            } else if (percentage > 60) {
+                item.classList.add('warning');
+            } else {
+                item.classList.add('good');
+            }
+
+            item.innerHTML = `
+                <div class="performance-label">${label}</div>
+                <div class="performance-value">${value}</div>
+                <div class="performance-bar">
+                    <div class="performance-bar-fill" style="width: ${percentage}%"></div>
+                </div>
+            `;
+            
+            container.appendChild(item);
+        }
+
+        // Popup controls
+        document.getElementById('fpsCounter').addEventListener('click', () => {
+            generatePerformanceReport();
+            document.getElementById('performancePopup').classList.add('show');
+            document.getElementById('popupOverlay').classList.add('show');
+        });
+
+        document.getElementById('closePopup').addEventListener('click', () => {
+            document.getElementById('performancePopup').classList.remove('show');
+            document.getElementById('popupOverlay').classList.remove('show');
+        });
+
+        document.getElementById('popupOverlay').addEventListener('click', () => {
+            document.getElementById('performancePopup').classList.remove('show');
+            document.getElementById('popupOverlay').classList.remove('show');
+        });
+
+        // Performance mode toggle
+        let performanceMode = false;
+        
+        // Add performance mode button to FPS counter
+        document.getElementById('fpsCounter').addEventListener('dblclick', () => {
+            performanceMode = !performanceMode;
+            if (performanceMode) {
+                // Enable performance mode - reduce zoom for better performance
+                const ultraMaxWidth = 1200;
+                const ultraMaxHeight = 800;
+                
+                canvas.width = ultraMaxWidth * (window.devicePixelRatio || 1);
+                canvas.height = ultraMaxHeight * (window.devicePixelRatio || 1);
+                
+                // Calculate reduced zoom for performance mode
+                const screenWidth = window.innerWidth - 40;
+                const screenHeight = window.innerHeight - 100;
+                const scaleX = screenWidth / ultraMaxWidth;
+                const scaleY = screenHeight / ultraMaxHeight;
+                const zoomFactor = Math.min(scaleX, scaleY, 1.5); // Reduced zoom cap for performance
+                
+                canvas.style.width = (ultraMaxWidth * zoomFactor) + 'px';
+                canvas.style.height = (ultraMaxHeight * zoomFactor) + 'px';
+                
+                document.getElementById('fpsCounter').style.color = '#ff6600';
+                document.getElementById('fpsCounter').textContent = `FPS: ${performanceData.fps.current} (PERF MODE)`;
+                console.log('Performance mode enabled - ultra low resolution');
+            } else {
+                // Disable performance mode - restore normal size
+                setupCanvas();
+                document.getElementById('fpsCounter').style.color = '#00ff00';
+                console.log('Performance mode disabled - normal resolution');
+            }
+        });
+        
+        // Function to maintain zoom
+        function maintainZoom() {
+            if (canvas.dataset.zoomFactor) {
+                const zoomFactor = parseFloat(canvas.dataset.zoomFactor);
+                const baseWidth = 1500;
+                const baseHeight = 900;
+                const expectedWidth = (baseWidth * zoomFactor) + 'px';
+                const expectedHeight = (baseHeight * zoomFactor) + 'px';
+                
+                // Reapply zoom if it was reset
+                if (canvas.style.width !== expectedWidth || canvas.style.height !== expectedHeight) {
+                    canvas.style.width = expectedWidth;
+                    canvas.style.height = expectedHeight;
+                    console.log('Zoom maintained:', zoomFactor.toFixed(2) + 'x');
+                }
+            }
+        }
+        
+        // Start monitoring
+        updateFPS();
+        updatePerformanceData();
+        
+        // Debug: Watch for canvas style changes
+        const canvasObserver = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && (mutation.attributeName === 'style')) {
+                    console.log('Canvas style changed:', canvas.style.width, 'x', canvas.style.height);
+                    console.trace('Canvas style change stack trace:');
+                }
+            });
+        });
+        
+        canvasObserver.observe(canvas, { attributes: true, attributeFilter: ['style'] });
+        
+        // Don't maintain zoom automatically - let it be set once and stay
+        // setInterval(maintainZoom, 1000);
     </script>
 </body>
 </html> 

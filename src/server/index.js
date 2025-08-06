@@ -93,7 +93,7 @@ io.on('connection', (socket) => {
     console.log('[SERVER DEBUG] Current game state before AI toggle:', {
       trees: gameEngine.gameState.trees.length,
       tanks: gameEngine.gameState.tanks.size,
-      bullets: gameEngine.gameState.bullets.length,
+      shells: gameEngine.gameState.shells.length,
       upgrades: gameEngine.gameState.upgrades.length
     });
     
@@ -120,7 +120,7 @@ io.on('connection', (socket) => {
     console.log('[SERVER DEBUG] Game state after AI toggle:', {
       trees: gameEngine.gameState.trees.length,
       tanks: gameEngine.gameState.tanks.size,
-      bullets: gameEngine.gameState.bullets.length,
+      shells: gameEngine.gameState.shells.length,
       upgrades: gameEngine.gameState.upgrades.length
     });
   });
@@ -162,7 +162,7 @@ io.on('connection', (socket) => {
     console.log('[SERVER DEBUG] Current game state before settings apply:', {
       trees: gameEngine.gameState.trees.length,
       tanks: gameEngine.gameState.tanks.size,
-      bullets: gameEngine.gameState.bullets.length,
+      shells: gameEngine.gameState.shells.length,
       upgrades: gameEngine.gameState.upgrades.length
     });
     
@@ -334,13 +334,21 @@ app.get('/controller', (req, res) => {
   res.sendFile(path.join(__dirname, '../../public/controller.html'));
 });
 
+app.get('/shell', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../public/shell.html'));
+});
+
+app.get('/tank', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../public/tank.html'));
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     players: gameEngine.gameState.players.size,
     tanks: gameEngine.gameState.tanks.size,
-    bullets: gameEngine.gameState.bullets.length,
+    shells: gameEngine.gameState.shells.length,
     upgrades: gameEngine.gameState.upgrades.length,
     trees: gameEngine.gameState.trees.length
   });
@@ -353,7 +361,7 @@ app.get('/settings', (req, res) => {
       respawnTime: 5000,
       reloadTime: 1000,
       acceleration: 0.1,
-      bulletLifetime: 1000,
+      shellLifetime: 1000,
       damageFeedbackDuration: 300,
       gasolineSpeedPenalty: 0.5
     },
@@ -393,4 +401,6 @@ server.listen(PORT, () => {
   console.log(`Tank Killer server running on port ${PORT}`);
   console.log(`Battlefield: http://localhost:${PORT}/battlefield`);
   console.log(`Controller: http://localhost:${PORT}/controller`);
+  console.log(`Shell Designer: http://localhost:${PORT}/shell`);
+  console.log(`Tank Designer: http://localhost:${PORT}/tank`);
 }); 

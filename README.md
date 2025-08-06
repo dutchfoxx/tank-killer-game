@@ -10,7 +10,7 @@ A real-time multiplayer tank battle game built with Node.js, Express, Socket.io,
 - **Attribute system**: Health, Speed, Gasoline, Rotation, Kinetics, and Ammunition
 - **Upgrade system**: Collect power-ups to improve stats
 - **AI opponents**: Smart AI tanks that hunt players and collect upgrades
-- **Collision detection**: AABB-based collision system with trees and bullets
+- **Collision detection**: AABB-based collision system with trees and shells
 
 ### Player Features
 - **Persistent player data**: Player settings saved in localStorage
