@@ -287,7 +287,6 @@
 
         .ai-list {
             max-height: 250px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
             padding-top: 8px;
         }
 
@@ -1506,8 +1505,8 @@
                 const aiPlayer = gameState.players ? gameState.players.find(p => p.id === tank.id) : null;
                 const displayName = aiPlayer ? aiPlayer.callname : 'AI';
                 
-                // Draw robot icon (🤖) and name
-                ctx.fillText('🤖 ' + displayName, 0, -5);
+                // Draw robot icon and name (using text symbol for better compatibility)
+                ctx.fillText('[AI] ' + displayName, 0, -5);
 
                 // Health bar background (underneath)
                 ctx.fillStyle = '#1b1b1b';
