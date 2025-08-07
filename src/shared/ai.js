@@ -287,7 +287,7 @@ export class AIController {
     // Occasionally "lose" targets to simulate human-like attention lapses
     // Higher chance for easier AI levels
     if (this.target && Math.random() < this.getTargetLossChance()) {
-      console.log(`AI ${this.tank.id} temporarily lost target due to attention lapse`);
+              // Removed excessive AI attention logging
       this.target = null;
       this.targetType = null;
       this.pendingTarget = null;
@@ -897,14 +897,11 @@ export class AIController {
     
     // Shoot if aimed well and within effective range
     if (angleOk && distanceOk && speedOk && accuracyCheck) {
-      console.log(`AI ${this.tank.id} SHOOTING! distance=${distance.toFixed(3)}, angle=${angleDiff.toFixed(2)}, accuracy=${effectiveAccuracy.toFixed(2)}`);
+              // Removed excessive AI shooting logging
       this.tank.shoot();
       this.lastShotTime = currentTime;
     } else {
-      // Log failed attempts occasionally to debug
-      if (Math.random() < 0.05) { // 5% chance to log failed attempts
-        console.log(`AI ${this.tank.id} not shooting: distance=${distance.toFixed(3)} (ok:${distanceOk}), angle=${angleDiff.toFixed(2)} (ok:${angleOk}, tol:${angleTolerance.toFixed(2)}), speed ok:${speedOk}, accuracy ok:${accuracyCheck} (eff:${effectiveAccuracy.toFixed(2)})`);
-      }
+      // Removed excessive AI decision logging
     }
   }
 

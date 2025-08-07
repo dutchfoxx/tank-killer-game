@@ -1,78 +1,67 @@
 // Tank camouflage textures
 const tankCamos = {
-    'dazzle': {
-        name: 'Dazzle',
-        texture: 'textures/tank-camo/dazzle.png',
-        opacity: 1,
+    'none': {
+        name: 'None',
+        texture: null,
+        opacity: 0,
         scale: 1,
-        blendMode: 'normal',
-        overrides: {
-            'desert': {
-                blendMode: 'difference'
-            },
-            'arctic': {
-                blendMode: 'difference'
-            }
-        }
+        blendMode: 'normal'
     },
     'pixel': {
         name: 'Pixel',
-        texture: 'textures/tank-camo/pixel.png',
-        opacity: 1,
+        texture: 'textures/camo/base_pixel.png',
+        opacity: 0.8,
         scale: 1,
-        blendMode: 'color-dodge',
-        overrides: {
-            'arctic': {
-                blendMode: 'difference'
-            },
-            'desert': {
-                blendMode: 'difference'
-            },
-            'forest': {
-                blendMode: 'hard-light'
-            }
-        }
-    },
-    'geometric': {
-        name: 'Geometric',
-        texture: 'textures/tank-camo/geometric.png',
-        opacity: 1,
-        scale: 1,
-        blendMode: 'multiply',
-        overrides: {
-            'forest': {
-                blendMode: 'exclusion'
-            }
-        }
-    },
-    'fractal': {
-        name: 'Fractal',
-        texture: 'textures/tank-camo/fractal.png',
-        opacity: 1,
-        scale: 1,
-        blendMode: 'multiply'
-    },
-    'topographic': {
-        name: 'Topographic',
-        texture: 'textures/tank-camo/topographic.png',
-        opacity: 1,
-        scale: 3,
-        blendMode: 'multiply'
+        blendMode: 'auto'
     },
     'woodlands': {
         name: 'Woodlands',
-        texture: 'textures/tank-camo/woodlands.png',
-        opacity: 0.5,
+        texture: 'textures/camo/base_woodlands.png',
+        opacity: 0.8,
         scale: 1,
-        blendMode: 'color-dodge',
-        overrides: {
-            'desert': {
-                blendMode: 'exclusion'
-            },
-            'arctic': {
-                blendMode: 'difference'
-            }
-        }
+        blendMode: 'auto'
+    },
+    'multicam': {
+        name: 'Multicam',
+        texture: 'textures/camo/base_multicam.png',
+        opacity: 0.8,
+        scale: 1,
+        blendMode: 'auto'
+    },
+    'modern': {
+        name: 'Modern',
+        texture: 'textures/camo/base_modern.png',
+        opacity: 0.8,
+        scale: 1,
+        blendMode: 'auto'
+    },
+    'flecktarn': {
+        name: 'Flecktarn',
+        texture: 'textures/camo/base_flecktarn.png',
+        opacity: 0.8,
+        scale: 1,
+        blendMode: 'auto'
+    },
+    'lizard': {
+        name: 'Lizard',
+        texture: 'textures/camo/base_lizard.png',
+        opacity: 0.8,
+        scale: 1,
+        blendMode: 'auto'
+    },
+    'jigsaw': {
+        name: 'Jigsaw',
+        texture: 'textures/camo/base_jigsaw.png',
+        opacity: 0.8,
+        scale: 1,
+        blendMode: 'auto'
+    },
+    'geometric': {
+        name: 'Geometric',
+        texture: 'textures/camo/base_geometric.png',
+        opacity: 0.8,
+        scale: 1,
+        blendMode: 'auto'
     }
 };
 

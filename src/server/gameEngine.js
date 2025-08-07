@@ -59,7 +59,7 @@ export class GameEngine {
         health: { min: 0, max: 100 },
         speed: { min: 5, max: 50 },
         gasoline: { min: 0, max: 100 },
-        rotation: { min: 5, max: 50 },
+        rotation: { min: 5, max: 30 },
         ammunition: { min: 0, max: 14 },
         kinetics: { min: 50, max: 300 }
       }
@@ -303,9 +303,7 @@ export class GameEngine {
     const tank = new Tank(playerId, new Vector2(position.x, position.y));
     
     // Apply current balance settings to new player
-    console.log('=== NEW PLAYER: Applying balance settings ===');
-    console.log('Default tank attributes:', tank.attributes);
-    console.log('Current balance limits:', this.gameSettings.attributeLimits);
+
     
     // Apply max values from current balance settings as starting values
     tank.attributes.health = this.gameSettings.attributeLimits.health.max;
@@ -315,10 +313,9 @@ export class GameEngine {
     tank.attributes.ammunition = this.gameSettings.attributeLimits.ammunition.max;
     tank.attributes.kinetics = this.gameSettings.attributeLimits.kinetics.max;
     
-    console.log(`[DEBUG] Tank ${playerId} created with health: ${tank.attributes.health}, isAlive: ${tank.isAlive}`);
+
     
-    console.log('Final tank attributes after balance settings:', tank.attributes);
-    console.log('=== NEW PLAYER: Balance settings applied ===');
+
     
     this.gameState.tanks.set(playerId, tank);
 
@@ -332,66 +329,63 @@ export class GameEngine {
   }
 
   setPlayerAttributes(attributes) {
-    console.log('=== GAME ENGINE: setPlayerAttributes called ===');
-    console.log('Attributes to set:', attributes);
-    console.log('Total tanks in game:', this.gameState.tanks.size);
+
+    // Reduced debug logging to prevent spam
     
     let playerTanksFound = 0;
     let attributesSet = 0;
     
     // Set attributes for all player tanks (not AI tanks)
     for (const [playerId, tank] of this.gameState.tanks) {
-      console.log(`Checking tank ${playerId}, isAI:`, tank.isAI);
+      // Reduced debug logging to prevent spam
       
       if (!tank.isAI) {
         playerTanksFound++;
-        console.log(`Setting attributes for player tank ${playerId}`);
-        console.log('Current attributes:', tank.attributes);
+        // Reduced debug logging to prevent spam
         
         // Only update the attributes that were provided
         if (attributes.health !== undefined) {
           tank.attributes.health = attributes.health;
           attributesSet++;
-          console.log(`  Set health to ${attributes.health}`);
+          // Reduced debug logging to prevent spam
         }
         if (attributes.speed !== undefined) {
           tank.attributes.speed = attributes.speed;
           attributesSet++;
-          console.log(`  Set speed to ${attributes.speed}`);
+          // Reduced debug logging to prevent spam
         }
         if (attributes.gasoline !== undefined) {
           tank.attributes.gasoline = attributes.gasoline;
           attributesSet++;
-          console.log(`  Set gasoline to ${attributes.gasoline}`);
+          // Reduced debug logging to prevent spam
         }
         if (attributes.rotation !== undefined) {
           tank.attributes.rotation = attributes.rotation;
           attributesSet++;
-          console.log(`  Set rotation to ${attributes.rotation}`);
+          // Reduced debug logging to prevent spam
         }
         if (attributes.ammunition !== undefined) {
           tank.attributes.ammunition = attributes.ammunition;
           attributesSet++;
-          console.log(`  Set ammunition to ${attributes.ammunition}`);
+          // Reduced debug logging to prevent spam
         }
         if (attributes.kinetics !== undefined) {
           tank.attributes.kinetics = attributes.kinetics;
           attributesSet++;
-          console.log(`  Set kinetics to ${attributes.kinetics}`);
+          // Reduced debug logging to prevent spam
         }
         
-        console.log(`Final attributes for player ${playerId}:`, tank.attributes);
+        // Reduced debug logging to prevent spam
       }
     }
     
-    console.log(`Summary: Found ${playerTanksFound} player tanks, set ${attributesSet} attributes`);
-    console.log('=== GAME ENGINE: setPlayerAttributes completed ===');
+    // Reduced debug logging to prevent spam
+
   }
 
   setPlayerAttributeLimit(attributeName, type, value) {
-    console.log('=== GAME ENGINE: setPlayerAttributeLimit called ===');
-    console.log(`Setting ${attributeName} ${type} to ${value}`);
-    console.log('Current limits:', this.gameSettings.attributeLimits[attributeName]);
+
+    // Reduced debug logging to prevent spam
     
     // Update the balance settings for future players
     if (!this.gameSettings.attributeLimits[attributeName]) {
@@ -400,7 +394,7 @@ export class GameEngine {
     }
     
     this.gameSettings.attributeLimits[attributeName][type] = value;
-    console.log('Updated limits:', this.gameSettings.attributeLimits[attributeName]);
+    // Reduced debug logging to prevent spam
     
     // Apply appropriate changes to existing players
     let playersUpdated = 0;
@@ -412,11 +406,11 @@ export class GameEngine {
         if (type === 'max' && currentValue > value) {
           // Cap players who exceed the new maximum
           newValue = value;
-          console.log(`Capping player ${playerId} ${attributeName} from ${currentValue} to ${value}`);
+          // Reduced debug logging to prevent spam
         } else if (type === 'min' && currentValue < value) {
           // Boost players who are below the new minimum
           newValue = value;
-          console.log(`Boosting player ${playerId} ${attributeName} from ${currentValue} to ${value}`);
+          // Reduced debug logging to prevent spam
         }
         
         if (newValue !== currentValue) {
@@ -426,8 +420,8 @@ export class GameEngine {
       }
     }
     
-    console.log(`Updated ${playersUpdated} existing players`);
-    console.log('=== GAME ENGINE: setPlayerAttributeLimit completed ===');
+    // Reduced debug logging to prevent spam
+
   }
 
   addAITank(aiLevel = 'intermediate') {
@@ -500,16 +494,30 @@ export class GameEngine {
   }
 
   updatePlayerInput(playerId, input) {
-    console.log(`Updating input for player ${playerId}:`, input);
+
     
     const tank = this.gameState.tanks.get(playerId);
     if (!tank) {
-      console.log(`No tank found for player ${playerId}`);
+      // Reduced logging - only log once per player per session to prevent spam
+      if (!this.loggedMissingTanks) {
+        this.loggedMissingTanks = new Set();
+      }
+      if (!this.loggedMissingTanks.has(playerId)) {
+        console.log(`No tank found for player ${playerId} (logging once per session)`);
+        this.loggedMissingTanks.add(playerId);
+      }
       return;
     }
     
     if (!tank.isAlive) {
-      console.log(`Tank ${playerId} is not alive`);
+      // Reduced logging - only log once per tank per session
+      if (!this.loggedDeadTanks) {
+        this.loggedDeadTanks = new Set();
+      }
+      if (!this.loggedDeadTanks.has(playerId)) {
+        console.log(`Tank ${playerId} is not alive (logging once per session)`);
+        this.loggedDeadTanks.add(playerId);
+      }
       return;
     }
 
@@ -520,7 +528,7 @@ export class GameEngine {
 
     // Update tank movement
     if (input.movement) {
-      console.log(`Setting tank ${playerId} velocity to:`, input.movement);
+  
       // Scale the movement vector by tank speed
       const speed = tank.attributes.speed;
       tank.targetVelocity = new Vector2(input.movement.x * speed, input.movement.y * speed);
@@ -531,13 +539,24 @@ export class GameEngine {
 
     // Handle shooting
     if (input.shoot) {
-      console.log(`Tank ${playerId} attempting to shoot`);
+      // Reduced logging - only log shooting attempts occasionally
+      if (!this.shootLogCounter) {
+        this.shootLogCounter = 0;
+      }
+      this.shootLogCounter++;
+      
+      if (this.shootLogCounter % 10 === 0) { // Log every 10th attempt
+        console.log(`Tank ${playerId} attempting to shoot (attempt #${this.shootLogCounter})`);
+      }
+      
       const shell = tank.shoot();
       if (shell) {
-        console.log(`Tank ${playerId} shot shell:`, shell);
+        if (this.shootLogCounter % 10 === 0) { // Log every 10th successful shot
+          console.log(`Tank ${playerId} shot shell successfully`);
+        }
         this.gameState.shells.push(shell);
       } else {
-        console.log(`Tank ${playerId} cannot shoot - conditions not met`);
+        // Don't log failed shots to reduce spam
       }
     }
   }
@@ -559,15 +578,7 @@ export class GameEngine {
       treeParams.minTrees
     );
 
-    console.log('[DEBUG] Tree generation with params:', {
-      minTrees: treeParams.minTrees,
-      maxTrees: treeParams.maxTrees,
-      treeSize: treeParams.treeSize,
-      treeSizeVariance: treeParams.treeSizeVariance,
-      clusterGroups: treeParams.clusterGroups,
-      clustering: treeParams.clustering,
-      actualTreeCount: treeCount
-    });
+
 
     // Get clustering parameters from game settings
     const clustering = treeParams.clustering || 0;

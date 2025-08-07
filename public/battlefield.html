@@ -117,6 +117,22 @@
             border: 1px solid #333;
             transition: all 0.3s ease;
             user-select: none;
+            width: 80px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        
+        .fps-label {
+            font-size: 10px;
+            opacity: 0.8;
+        }
+        
+        .fps-value {
+            font-size: 16px;
+            font-weight: bold;
         }
 
         .fps-counter:hover {
@@ -125,11 +141,11 @@
             box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
         }
 
-        .fps-counter.low {
+        .fps-value.low {
             color: #ff0000;
         }
 
-        .fps-counter.medium {
+        .fps-value.medium {
             color: #ffff00;
         }
 
@@ -529,164 +545,7 @@
             font-size: 0.9rem;
         }
 
-        /* Terrain Editor Popup Styles */
-        .terrain-popup {
-            position: fixed;
-            top: 70px;
-            right: 20px;
-            background-color: #1b1b1b;
-            border-radius: 10px;
-            padding: 20px;
-            max-width: 400px;
-            max-height: 80vh;
-            overflow-y: auto;
-            display: none;
-            z-index: 1001;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
 
-        .terrain-popup.show {
-            display: block;
-        }
-
-        .terrain-popup-header {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .terrain-popup-header h3 {
-            color: #b83400;
-        }
-
-        .terrain-popup-close {
-            background: none;
-            border: none;
-            color: #FFFFFF;
-            cursor: pointer;
-            padding: 4px;
-            border-radius: 3px;
-            transition: background-color 0.3s ease;
-        }
-
-        .terrain-popup-close:hover {
-            background-color: #555555;
-        }
-
-        .terrain-popup-close .material-icons {
-            font-size: 18px;
-        }
-
-        .terrain-layer {
-            margin-bottom: 20px;
-        }
-
-        .terrain-layer-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #555555;
-            padding-bottom: 5px;
-        }
-
-        .terrain-layer-title {
-            color: #CCCCCC;
-        }
-
-        .terrain-layer-toggle {
-            background: none;
-            border: none;
-            color: #FFFFFF;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 0.8rem;
-            transition: background-color 0.3s ease;
-        }
-
-        .terrain-layer-toggle:hover {
-            background-color: #555555;
-        }
-
-        .terrain-layer-toggle.active {
-            background-color: #4CAF50;
-        }
-
-        .terrain-control {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-            gap: 10px;
-            justify-content: space-between;
-        }
-
-        .terrain-control label {
-            min-width: 120px;
-            flex-shrink: 0;
-            font-size: 0.9rem;
-        }
-
-        .terrain-control input {
-            width: 80px;
-            background-color: #555555;
-            border: 1px solid #777777;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 3px;
-            text-align: left;
-        }
-
-        .terrain-control select {
-            width: 80px;
-            background-color: #555555;
-            border: 1px solid #777777;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 3px;
-            text-align: left;
-        }
-
-        .terrain-color-preview {
-            width: 25px;
-            height: 18px;
-            border: 1px solid #777777;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-
-        .terrain-actions {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .terrain-action-button {
-            background-color: #b83400;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: background-color 0.3s ease;
-        }
-
-        .terrain-action-button:hover {
-            background-color: #a03000;
-        }
-
-        .terrain-action-button.secondary {
-            background-color: #555555;
-        }
-
-        .terrain-action-button.secondary:hover {
-            background-color: #666666;
-        }
 
 
         @media (max-width: 768px) {
@@ -712,10 +571,7 @@
     <div class="header">
         <h1>Battlefield</h1>
         <div class="header-controls">
-            <button class="control-button" id="terrainButton">
-                <span class="material-icons">landscape</span>
-                Terrain
-            </button>
+            
             <button class="control-button" id="aiButton">
                 <span class="material-icons">smart_toy</span>
                 AI
@@ -767,205 +623,7 @@
         </div>
     </div>
 
-    <div class="terrain-popup" id="terrainPopup">
-        <div class="terrain-popup-header">
-            <h3>Terrain Editor</h3>
-        </div>
-                 <div class="terrain-layer">
-             <div class="terrain-layer-header">
-                 <h4 class="terrain-layer-title">Mud Color</h4>
-                 <button class="terrain-layer-toggle" id="toggleMudColorLayer">
-                     <span class="material-icons">expand_more</span>
-                 </button>
-             </div>
-             <div class="terrain-control">
-                 <label>Color:</label>
-                 <input type="color" id="mudColor" value="#70543e">
-                 <div class="terrain-color-preview" id="mudColorPreview"></div>
-             </div>
-             <div class="terrain-control">
-                 <label>Opacity:</label>
-                 <input type="range" id="mudColorOpacity" min="0" max="1" step="0.01" value="1">
-                 <span id="mudColorOpacityValue">100%</span>
-             </div>
-         </div>
-         <div class="terrain-layer">
-             <div class="terrain-layer-header">
-                 <h4 class="terrain-layer-title">Mud Texture</h4>
-                 <button class="terrain-layer-toggle" id="toggleMudTextureLayer">
-                     <span class="material-icons">expand_more</span>
-                 </button>
-             </div>
-             <div class="terrain-control">
-                 <label>Opacity:</label>
-                 <input type="range" id="mudTextureOpacity" min="0" max="1" step="0.01" value="1">
-                 <span id="mudTextureOpacityValue">100%</span>
-             </div>
-             <div class="terrain-control">
-                 <label>Blend Mode:</label>
-                 <select id="mudTextureBlendMode">
-                     <option value="normal">Normal</option>
-                     <option value="multiply" selected>Multiply</option>
-                     <option value="screen">Screen</option>
-                     <option value="overlay">Overlay</option>
-                     <option value="darken">Darken</option>
-                     <option value="lighten">Lighten</option>
-                     <option value="color-dodge">Color Dodge</option>
-                     <option value="color-burn">Color Burn</option>
-                     <option value="hard-light">Hard Light</option>
-                     <option value="soft-light">Soft Light</option>
-                     <option value="difference">Difference</option>
-                     <option value="exclusion">Exclusion</option>
-                     <option value="hue">Hue</option>
-                     <option value="saturation">Saturation</option>
-                     <option value="color">Color</option>
-                     <option value="luminosity">Luminosity</option>
-                 </select>
-             </div>
-             <div class="terrain-control">
-                 <label>Scale:</label>
-                 <input type="range" id="mudTextureScale" min="0.1" max="3" step="0.1" value="1">
-                 <span id="mudTextureScaleValue">1.0x</span>
-             </div>
-         </div>
-                 <div class="terrain-layer">
-             <div class="terrain-layer-header">
-                 <h4 class="terrain-layer-title">Grass Color</h4>
-                 <button class="terrain-layer-toggle" id="toggleGrassColorLayer">
-                     <span class="material-icons">expand_more</span>
-                 </button>
-             </div>
-             <div class="terrain-control">
-                 <label>Color:</label>
-                 <input type="color" id="grassColor" value="#344518">
-                 <div class="terrain-color-preview" id="grassColorPreview"></div>
-             </div>
-             <div class="terrain-control">
-                 <label>Opacity:</label>
-                 <input type="range" id="grassColorOpacity" min="0" max="1" step="0.01" value="1">
-                 <span id="grassColorOpacityValue">100%</span>
-             </div>
-         </div>
-         <div class="terrain-layer">
-             <div class="terrain-layer-header">
-                 <h4 class="terrain-layer-title">Grass Texture</h4>
-                 <button class="terrain-layer-toggle" id="toggleGrassTextureLayer">
-                     <span class="material-icons">expand_more</span>
-                 </button>
-             </div>
-             <div class="terrain-control">
-                 <label>Opacity:</label>
-                 <input type="range" id="grassTextureOpacity" min="0" max="1" step="0.01" value="1">
-                 <span id="grassTextureOpacityValue">100%</span>
-             </div>
-             <div class="terrain-control">
-                 <label>Blend Mode:</label>
-                 <select id="grassTextureBlendMode">
-                     <option value="normal">Normal</option>
-                     <option value="multiply" selected>Multiply</option>
-                     <option value="screen">Screen</option>
-                     <option value="overlay">Overlay</option>
-                     <option value="darken">Darken</option>
-                     <option value="lighten">Lighten</option>
-                     <option value="color-dodge">Color Dodge</option>
-                     <option value="color-burn">Color Burn</option>
-                     <option value="hard-light">Hard Light</option>
-                     <option value="soft-light">Soft Light</option>
-                     <option value="difference">Difference</option>
-                     <option value="exclusion">Exclusion</option>
-                     <option value="hue">Hue</option>
-                     <option value="saturation">Saturation</option>
-                     <option value="color">Color</option>
-                     <option value="luminosity">Luminosity</option>
-                 </select>
-             </div>
-             <div class="terrain-control">
-                 <label>Scale:</label>
-                 <input type="range" id="grassTextureScale" min="0.1" max="3" step="0.1" value="1">
-                 <span id="grassTextureScaleValue">1.0x</span>
-             </div>
-         </div>
 
-        <div class="terrain-layer">
-            <div class="terrain-layer-header">
-                <h4 class="terrain-layer-title">Shadow Parameters</h4>
-            </div>
-            <div class="terrain-control">
-                <label>Shadow Type:</label>
-                <select id="shadowType">
-                    <option value="DEFAULT" selected>Default</option>
-                    <option value="LIGHT">Light</option>
-                    <option value="STRONG">Strong</option>
-                </select>
-            </div>
-            <div class="terrain-control">
-                <label>Shadow Color:</label>
-                <input type="color" id="shadowColor" value="#000000">
-            </div>
-            <div class="terrain-control">
-                <label>Shadow Blur:</label>
-                <input type="range" id="shadowBlur" min="0" max="20" step="1" value="8">
-                <span id="shadowBlurValue">8</span>
-            </div>
-            <div class="terrain-control">
-                <label>Shadow Offset X:</label>
-                <input type="range" id="shadowOffsetX" min="0" max="10" step="1" value="4">
-                <span id="shadowOffsetXValue">4</span>
-            </div>
-            <div class="terrain-control">
-                <label>Shadow Offset Y:</label>
-                <input type="range" id="shadowOffsetY" min="0" max="10" step="1" value="4">
-                <span id="shadowOffsetYValue">4</span>
-            </div>
-            <div class="terrain-control">
-                <label>Shadow Alpha:</label>
-                <input type="range" id="shadowAlpha" min="0" max="1" step="0.1" value="0.5">
-                <span id="shadowAlphaValue">0.5</span>
-            </div>
-        </div>
-
-        <div class="terrain-layer">
-            <div class="terrain-layer-header">
-                <h4 class="terrain-layer-title">Tree Parameters</h4>
-            </div>
-            <div class="terrain-control">
-                <label>Min Trees:</label>
-                <input type="number" id="minTrees" value="10">
-                <span id="minTreesValue">10</span>
-            </div>
-            <div class="terrain-control">
-                <label>Max Trees:</label>
-                <input type="number" id="maxTrees" value="25">
-                <span id="maxTreesValue">25</span>
-            </div>
-            <div class="terrain-control">
-                <label>Tree Size:</label>
-                <input type="number" id="treeSize" value="30">
-                <span id="treeSizeValue">30</span>
-            </div>
-            <div class="terrain-control">
-                <label>Tree Size Variance:</label>
-                <input type="number" id="treeSizeVariance" value="15">
-                <span id="treeSizeVarianceValue">15</span>
-            </div>
-            <div class="terrain-control">
-                <label>Cluster Groups (1-20):</label>
-                <input type="number" id="clusterGroups" min="1" max="20" value="1">
-                <span id="clusterGroupsValue">1</span>
-            </div>
-            <div class="terrain-control">
-                <label>Tree Clustering (0-100):</label>
-                <input type="range" id="treeClustering" min="0" max="100" value="0">
-                <span id="treeClusteringValue">0</span>
-            </div>
-        </div>
-
-        <div class="terrain-actions">
-            <button class="terrain-action-button" id="applyTerrain">Apply Terrain</button>
-            <button class="terrain-action-button secondary" id="resetTerrain">Reset Terrain</button>
-            <button class="terrain-action-button secondary" id="exportTerrain">Export Settings</button>
-        </div>
-    </div>
 
     <div class="settings-panel" id="settingsPanel">
         <div class="settings-header">
@@ -1095,7 +753,7 @@
             <div class="setting-item">
                 <label>Max Rotation:</label>
                 <button class="set-button" onclick="setAttribute('rotation', 'max', event)">Set</button>
-                <input type="number" id="maxRotation" value="50">
+                <input type="number" id="maxRotation" value="5">
             </div>
             <div class="setting-item">
                 <label>Min Ammunition:</label>
@@ -1136,7 +794,7 @@
                 document.getElementById('minGasoline').value = balanceSettings.gasoline?.min || 0;
                 document.getElementById('maxGasoline').value = balanceSettings.gasoline?.max || 100;
                 document.getElementById('minRotation').value = balanceSettings.rotation?.min || 5;
-                document.getElementById('maxRotation').value = balanceSettings.rotation?.max || 50;
+                document.getElementById('maxRotation').value = balanceSettings.rotation?.max || 5;
                 document.getElementById('minAmmunition').value = balanceSettings.ammunition?.min || 0;
                 document.getElementById('maxAmmunition').value = balanceSettings.ammunition?.max || 14;
                 document.getElementById('minKinetics').value = balanceSettings.kinetics?.min || 50;
@@ -1181,19 +839,9 @@
                         document.getElementById('healthUpgrades').value = settings.upgradeTypes.health?.count || 0;
                     }
                     
-                    // Restore tree parameters
-                    if (settings.treeParams) {
-                        document.getElementById('minTrees').value = settings.treeParams.minTrees || 10;
-                        document.getElementById('maxTrees').value = settings.treeParams.maxTrees || 25;
-                        document.getElementById('treeSize').value = settings.treeParams.treeSize || 30;
-                        document.getElementById('treeSizeVariance').value = settings.treeParams.treeSizeVariance || 15;
-                    }
+
                     
-                    // Restore upgrade parameters
-                    if (settings.upgradeParams) {
-                        terrainSettings.upgradeParams.size = settings.upgradeParams.size || 22.5;
-                        terrainSettings.upgradeParams.rotationRange = settings.upgradeParams.rotationRange || 30;
-                    }
+
                     
                     // Note: Balance settings are now handled by updateBalancePopup() from server
                     
@@ -1287,67 +935,21 @@
         const settingsButton = document.getElementById('settingsButton');
         const settingsPanel = document.getElementById('settingsPanel');
         const aiButton = document.getElementById('aiButton');
-        const terrainButton = document.getElementById('terrainButton');
+
         const copySettingsButton = document.getElementById('copySettings');
         const applySettingsButton = document.getElementById('applySettings');
         const aiPopup = document.getElementById('aiPopup');
         const aiPopupClose = document.getElementById('aiPopupClose');
-        const terrainPopup = document.getElementById('terrainPopup');
-        const terrainPopupClose = document.getElementById('terrainPopupClose');
+
 
         let aiEnabled = false;
         let aiTankId = null;
 
-        // Terrain system
-        let terrainSettings = {
-            mudColor: {
-                color: '#70543e',
-                opacity: 0.32,
-                enabled: true
-            },
-            mudTexture: {
-                opacity: 0.51,
-                blendMode: 'color-burn',
-                scale: 0.9,
-                enabled: true
-            },
-            grassColor: {
-                color: '#394428',
-                opacity: 0.68,
-                enabled: true
-            },
-            grassTexture: {
-                opacity: 0.85,
-                blendMode: 'soft-light',
-                scale: 2.1,
-                enabled: true
-            },
-            shadows: {
-                type: 'DEFAULT',
-                color: '#000000',
-                blur: 8,
-                offsetX: 4,
-                offsetY: 4,
-                alpha: 0.5
-            },
-            treeParams: {
-                minTrees: 10,
-                maxTrees: 25,
-                treeSize: 36,
-                treeSizeVariance: 18,
-                clusterGroups: 1,
-                clustering: 0
-            },
-            upgradeParams: {
-                size: 22.5,
-                rotationRange: 30
-            }
-        };
-
-        // Terrain texture images
-        const terrainTextures = {
-            mud: null,
-            grass: null
+        // Simple terrain defaults (no editing)
+        const terrainDefaults = {
+            mudColor: '#70543e',
+            grassColor: '#394428',
+            upgradeSize: 22.5
         };
 
         // Tree images
@@ -1366,26 +968,6 @@
             KINETICS: null,
             HEALTH: null
         };
-
-        // Load terrain textures
-        function loadTerrainTextures() {
-            const texturePaths = {
-                mud: '/assets/images/textures/terrain/mud-layer.png',
-                grass: '/assets/images/textures/terrain/grass-layer.png'
-            };
-
-            Object.entries(texturePaths).forEach(([key, path]) => {
-                const img = new Image();
-                img.onload = function() {
-                    terrainTextures[key] = img;
-                    console.log('Loaded terrain texture:', key, 'Size:', img.width, 'x', img.height);
-                };
-                img.onerror = function() {
-                    console.error('Failed to load terrain texture:', key, path);
-                };
-                img.src = path;
-            });
-        }
 
         // Load tree images
         function loadTreeImages() {
@@ -1433,27 +1015,15 @@
             });
         }
 
-        // Initialize terrain textures, tree images, and upgrade images
-        loadTerrainTextures();
+        // Initialize tree images and upgrade images
         loadTreeImages();
         loadUpgradeImages();
 
-        // Terrain button toggle
-        terrainButton.addEventListener('click', () => {
-            // Close other popups first
-            settingsPanel.classList.remove('show');
-            aiPopup.classList.remove('show');
-            
-            terrainPopup.classList.toggle('show');
-            if (terrainPopup.classList.contains('show')) {
-                updateTerrainEditor();
-            }
-        });
+
 
         // Balance button toggle
         settingsButton.addEventListener('click', () => {
             // Close other popups first
-            terrainPopup.classList.remove('show');
             aiPopup.classList.remove('show');
             
             settingsPanel.classList.toggle('show');
@@ -1466,7 +1036,6 @@
             
             // Close other popups first
             settingsPanel.classList.remove('show');
-            terrainPopup.classList.remove('show');
             
             // Toggle AI panel
             aiPopup.classList.toggle('show');
@@ -1474,374 +1043,7 @@
 
 
 
-        // Terrain editor functions
-        function updateTerrainEditor() {
-            // Update color inputs
-            document.getElementById('mudColor').value = terrainSettings.mudColor.color;
-            document.getElementById('grassColor').value = terrainSettings.grassColor.color;
 
-            // Update opacity inputs
-            document.getElementById('mudColorOpacity').value = terrainSettings.mudColor.opacity;
-            document.getElementById('mudTextureOpacity').value = terrainSettings.mudTexture.opacity;
-            document.getElementById('grassColorOpacity').value = terrainSettings.grassColor.opacity;
-            document.getElementById('grassTextureOpacity').value = terrainSettings.grassTexture.opacity;
-
-            // Update opacity value displays
-            document.getElementById('mudColorOpacityValue').textContent = Math.round(terrainSettings.mudColor.opacity * 100) + '%';
-            document.getElementById('mudTextureOpacityValue').textContent = Math.round(terrainSettings.mudTexture.opacity * 100) + '%';
-            document.getElementById('grassColorOpacityValue').textContent = Math.round(terrainSettings.grassColor.opacity * 100) + '%';
-            document.getElementById('grassTextureOpacityValue').textContent = Math.round(terrainSettings.grassTexture.opacity * 100) + '%';
-
-            // Update blend mode selects
-            document.getElementById('mudTextureBlendMode').value = terrainSettings.mudTexture.blendMode;
-            document.getElementById('grassTextureBlendMode').value = terrainSettings.grassTexture.blendMode;
-
-            // Update scale inputs
-            document.getElementById('mudTextureScale').value = terrainSettings.mudTexture.scale;
-            document.getElementById('grassTextureScale').value = terrainSettings.grassTexture.scale;
-
-            // Update scale value displays
-            document.getElementById('mudTextureScaleValue').textContent = terrainSettings.mudTexture.scale.toFixed(1) + 'x';
-            document.getElementById('grassTextureScaleValue').textContent = terrainSettings.grassTexture.scale.toFixed(1) + 'x';
-
-            // Update color previews
-            updateColorPreview('mudColorPreview', terrainSettings.mudColor.color);
-            updateColorPreview('grassColorPreview', terrainSettings.grassColor.color);
-
-            // Update shadow parameters
-            document.getElementById('shadowType').value = terrainSettings.shadows.type;
-            document.getElementById('shadowColor').value = terrainSettings.shadows.color;
-            document.getElementById('shadowBlur').value = terrainSettings.shadows.blur;
-            document.getElementById('shadowOffsetX').value = terrainSettings.shadows.offsetX;
-            document.getElementById('shadowOffsetY').value = terrainSettings.shadows.offsetY;
-            document.getElementById('shadowAlpha').value = terrainSettings.shadows.alpha;
-
-            // Update shadow value displays
-            document.getElementById('shadowBlurValue').textContent = terrainSettings.shadows.blur;
-            document.getElementById('shadowOffsetXValue').textContent = terrainSettings.shadows.offsetX;
-            document.getElementById('shadowOffsetYValue').textContent = terrainSettings.shadows.offsetY;
-            document.getElementById('shadowAlphaValue').textContent = terrainSettings.shadows.alpha;
-
-            // Update tree parameter inputs and value displays
-            document.getElementById('minTrees').value = terrainSettings.treeParams.minTrees;
-            document.getElementById('maxTrees').value = terrainSettings.treeParams.maxTrees;
-            document.getElementById('treeSize').value = terrainSettings.treeParams.treeSize;
-            document.getElementById('treeSizeVariance').value = terrainSettings.treeParams.treeSizeVariance;
-            document.getElementById('clusterGroups').value = terrainSettings.treeParams.clusterGroups;
-            document.getElementById('treeClustering').value = terrainSettings.treeParams.clustering;
-            
-            document.getElementById('minTreesValue').textContent = terrainSettings.treeParams.minTrees;
-            document.getElementById('maxTreesValue').textContent = terrainSettings.treeParams.maxTrees;
-            document.getElementById('treeSizeValue').textContent = terrainSettings.treeParams.treeSize;
-            document.getElementById('treeSizeVarianceValue').textContent = terrainSettings.treeParams.treeSizeVariance;
-            document.getElementById('clusterGroupsValue').textContent = terrainSettings.treeParams.clusterGroups;
-            document.getElementById('treeClusteringValue').textContent = terrainSettings.treeParams.clustering;
-        }
-
-        function updateColorPreview(elementId, color) {
-            const preview = document.getElementById(elementId);
-            if (preview) {
-                preview.style.backgroundColor = color;
-            }
-        }
-
-        // Terrain control event listeners
-        function setupTerrainControls() {
-            // Mud Color controls
-            document.getElementById('mudColor').addEventListener('input', (e) => {
-                terrainSettings.mudColor.color = e.target.value;
-                updateColorPreview('mudColorPreview', e.target.value);
-            });
-
-            document.getElementById('mudColorOpacity').addEventListener('input', (e) => {
-                terrainSettings.mudColor.opacity = parseFloat(e.target.value);
-                document.getElementById('mudColorOpacityValue').textContent = Math.round(terrainSettings.mudColor.opacity * 100) + '%';
-            });
-
-            // Mud Texture controls
-            document.getElementById('mudTextureOpacity').addEventListener('input', (e) => {
-                terrainSettings.mudTexture.opacity = parseFloat(e.target.value);
-                document.getElementById('mudTextureOpacityValue').textContent = Math.round(terrainSettings.mudTexture.opacity * 100) + '%';
-            });
-
-            document.getElementById('mudTextureBlendMode').addEventListener('change', (e) => {
-                terrainSettings.mudTexture.blendMode = e.target.value;
-            });
-
-            document.getElementById('mudTextureScale').addEventListener('input', (e) => {
-                terrainSettings.mudTexture.scale = parseFloat(e.target.value);
-                document.getElementById('mudTextureScaleValue').textContent = terrainSettings.mudTexture.scale.toFixed(1) + 'x';
-            });
-
-            // Grass Color controls
-            document.getElementById('grassColor').addEventListener('input', (e) => {
-                terrainSettings.grassColor.color = e.target.value;
-                updateColorPreview('grassColorPreview', e.target.value);
-            });
-
-            document.getElementById('grassColorOpacity').addEventListener('input', (e) => {
-                terrainSettings.grassColor.opacity = parseFloat(e.target.value);
-                document.getElementById('grassColorOpacityValue').textContent = Math.round(terrainSettings.grassColor.opacity * 100) + '%';
-            });
-
-            // Grass Texture controls
-            document.getElementById('grassTextureOpacity').addEventListener('input', (e) => {
-                terrainSettings.grassTexture.opacity = parseFloat(e.target.value);
-                document.getElementById('grassTextureOpacityValue').textContent = Math.round(terrainSettings.grassTexture.opacity * 100) + '%';
-            });
-
-            document.getElementById('grassTextureBlendMode').addEventListener('change', (e) => {
-                terrainSettings.grassTexture.blendMode = e.target.value;
-            });
-
-            document.getElementById('grassTextureScale').addEventListener('input', (e) => {
-                terrainSettings.grassTexture.scale = parseFloat(e.target.value);
-                document.getElementById('grassTextureScaleValue').textContent = terrainSettings.grassTexture.scale.toFixed(1) + 'x';
-            });
-
-            // Shadow controls
-            document.getElementById('shadowType').addEventListener('change', (e) => {
-                terrainSettings.shadows.type = e.target.value;
-                applyTerrainSettingsInRealTime();
-            });
-
-            document.getElementById('shadowColor').addEventListener('input', (e) => {
-                terrainSettings.shadows.color = e.target.value;
-                applyTerrainSettingsInRealTime();
-            });
-
-            document.getElementById('shadowBlur').addEventListener('input', (e) => {
-                terrainSettings.shadows.blur = parseInt(e.target.value);
-                document.getElementById('shadowBlurValue').textContent = terrainSettings.shadows.blur;
-                applyTerrainSettingsInRealTime();
-            });
-
-            document.getElementById('shadowOffsetX').addEventListener('input', (e) => {
-                terrainSettings.shadows.offsetX = parseInt(e.target.value);
-                document.getElementById('shadowOffsetXValue').textContent = terrainSettings.shadows.offsetX;
-                applyTerrainSettingsInRealTime();
-            });
-
-            document.getElementById('shadowOffsetY').addEventListener('input', (e) => {
-                terrainSettings.shadows.offsetY = parseInt(e.target.value);
-                document.getElementById('shadowOffsetYValue').textContent = terrainSettings.shadows.offsetY;
-                applyTerrainSettingsInRealTime();
-            });
-
-            document.getElementById('shadowAlpha').addEventListener('input', (e) => {
-                terrainSettings.shadows.alpha = parseFloat(e.target.value);
-                document.getElementById('shadowAlphaValue').textContent = terrainSettings.shadows.alpha;
-                applyTerrainSettingsInRealTime();
-            });
-
-            // Tree parameter controls with real-time application
-            document.getElementById('minTrees').addEventListener('input', (e) => {
-                terrainSettings.treeParams.minTrees = parseInt(e.target.value);
-                document.getElementById('minTreesValue').textContent = e.target.value;
-                applyTreeSettingsInRealTime();
-            });
-
-            document.getElementById('maxTrees').addEventListener('input', (e) => {
-                terrainSettings.treeParams.maxTrees = parseInt(e.target.value);
-                document.getElementById('maxTreesValue').textContent = e.target.value;
-                applyTreeSettingsInRealTime();
-            });
-
-            document.getElementById('treeSize').addEventListener('input', (e) => {
-                terrainSettings.treeParams.treeSize = parseInt(e.target.value);
-                document.getElementById('treeSizeValue').textContent = e.target.value;
-                applyTreeSettingsInRealTime();
-            });
-
-            document.getElementById('treeSizeVariance').addEventListener('input', (e) => {
-                terrainSettings.treeParams.treeSizeVariance = parseInt(e.target.value);
-                document.getElementById('treeSizeVarianceValue').textContent = e.target.value;
-                applyTreeSettingsInRealTime();
-            });
-
-            document.getElementById('clusterGroups').addEventListener('input', (e) => {
-                terrainSettings.treeParams.clusterGroups = parseInt(e.target.value);
-                document.getElementById('clusterGroupsValue').textContent = e.target.value;
-                applyTreeSettingsInRealTime();
-            });
-
-            document.getElementById('treeClustering').addEventListener('input', (e) => {
-                terrainSettings.treeParams.clustering = parseInt(e.target.value);
-                document.getElementById('treeClusteringValue').textContent = e.target.value;
-                applyTreeSettingsInRealTime();
-            });
-
-            // Action buttons
-            document.getElementById('applyTerrain').addEventListener('click', () => {
-                console.log('Terrain settings applied:', terrainSettings);
-                
-                // Get tree parameters from the terrain popup
-                const treeParams = {
-                    minTrees: parseInt(document.getElementById('minTrees').value),
-                    maxTrees: parseInt(document.getElementById('maxTrees').value),
-                    treeSize: parseInt(document.getElementById('treeSize').value),
-                    treeSizeVariance: parseInt(document.getElementById('treeSizeVariance').value),
-                    clusterGroups: parseInt(document.getElementById('clusterGroups').value),
-                    clustering: parseInt(document.getElementById('treeClustering').value)
-                };
-                
-                // Send tree parameters to server with reset flag for terrain changes
-                const settings = {
-                    treeParams: treeParams,
-                    forceReset: true  // Force reset for terrain changes
-                };
-                socket.emit('applySettings', settings);
-                
-                // Show notification
-                const notification = document.createElement('div');
-                notification.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: #4CAF50;
-                    color: white;
-                    padding: 10px 15px;
-                    border-radius: 5px;
-                    z-index: 1000;
-                    font-family: Arial, sans-serif;
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-                `;
-                notification.textContent = 'Terrain and tree settings applied!';
-                document.body.appendChild(notification);
-                
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 2000);
-            });
-
-            document.getElementById('resetTerrain').addEventListener('click', () => {
-                terrainSettings = {
-                    mudColor: {
-                        color: '#70543e',
-                        opacity: 0.32,
-                        enabled: true
-                    },
-                    mudTexture: {
-                        opacity: 0.19,
-                        blendMode: 'color-burn',
-                        scale: 2.2,
-                        enabled: true
-                    },
-                    grassColor: {
-                        color: '#394428',
-                        opacity: 0.51,
-                        enabled: true
-                    },
-                    grassTexture: {
-                        opacity: 0.6,
-                        blendMode: 'soft-light',
-                        scale: 2.7,
-                        enabled: true
-                    },
-                    shadows: {
-                        type: 'DEFAULT',
-                        color: '#000000',
-                        blur: 8,
-                        offsetX: 4,
-                        offsetY: 4,
-                        alpha: 0.5
-                    },
-                    treeParams: {
-                        minTrees: 10,
-                        maxTrees: 25,
-                        treeSize: 36,
-                        treeSizeVariance: 18,
-                        clusterGroups: 1,
-                        clustering: 0
-                    }
-                };
-                updateTerrainEditor();
-            });
-
-            document.getElementById('exportTerrain').addEventListener('click', () => {
-                exportTerrainSettings();
-                
-                // Show notification
-                const notification = document.createElement('div');
-                notification.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: #2196F3;
-                    color: white;
-                    padding: 10px 15px;
-                    border-radius: 5px;
-                    z-index: 1000;
-                    font-family: Arial, sans-serif;
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-                `;
-                notification.textContent = 'Terrain settings exported to console!';
-                document.body.appendChild(notification);
-                
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 3000);
-            });
-
-            // Reset tree parameters to defaults
-            document.getElementById('minTrees').value = '10';
-            document.getElementById('maxTrees').value = '25';
-            document.getElementById('treeSize').value = '36';
-            document.getElementById('treeSizeVariance').value = '18';
-            document.getElementById('clusterGroups').value = '1';
-            document.getElementById('treeClustering').value = '0';
-            
-            // Update value displays
-            document.getElementById('minTreesValue').textContent = '10';
-            document.getElementById('maxTreesValue').textContent = '25';
-            document.getElementById('treeSizeValue').textContent = '36';
-            document.getElementById('treeSizeVarianceValue').textContent = '18';
-            document.getElementById('clusterGroupsValue').textContent = '1';
-            document.getElementById('treeClusteringValue').textContent = '0';
-            
-                    // Update terrainSettings object
-        terrainSettings.treeParams.minTrees = 10;
-        terrainSettings.treeParams.maxTrees = 25;
-        terrainSettings.treeParams.treeSize = 36;
-        terrainSettings.treeParams.treeSizeVariance = 18;
-        terrainSettings.treeParams.clusterGroups = 1;
-        terrainSettings.treeParams.clustering = 0;
-        terrainSettings.upgradeParams.size = 22.5;
-        terrainSettings.upgradeParams.rotationRange = 30;
-        }
-
-        // Real-time terrain settings application
-        function applyTerrainSettingsInRealTime() {
-            // Apply shadow settings immediately
-            console.log('Applying terrain settings in real-time:', terrainSettings);
-            
-            // Update the global shadow configuration
-            if (window.SHADOW_CONFIG) {
-                // Update the DEFAULT shadow preset with current settings
-                window.SHADOW_CONFIG.DEFAULT = {
-                    color: terrainSettings.shadows.color,
-                    blur: terrainSettings.shadows.blur,
-                    offsetX: terrainSettings.shadows.offsetX,
-                    offsetY: terrainSettings.shadows.offsetY,
-                    alpha: terrainSettings.shadows.alpha,
-                    composite: 'source-over'
-                };
-            }
-        }
-
-        // Real-time tree settings application (disabled to prevent connection issues)
-        function applyTreeSettingsInRealTime() {
-            // Disabled real-time updates to prevent game resets and connection issues
-            // Tree settings will only be applied when "Apply Terrain" button is clicked
-            console.log('Real-time tree updates disabled to prevent connection issues');
-        }
-
-        // Initialize terrain controls
-        setupTerrainControls();
 
         // AI settings change handlers (auto-apply)
         document.getElementById('aiCount').addEventListener('input', () => {
@@ -1994,25 +1196,7 @@
             });
         }
 
-        // Function to export terrain settings
-        function exportTerrainSettings() {
-            const settings = JSON.stringify(terrainSettings, null, 2);
-            console.log('=== TERRAIN SETTINGS ===');
-            console.log(settings);
-            console.log('=== COPY THE ABOVE SETTINGS ===');
-            
-            // Also copy to clipboard if possible
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(settings).then(() => {
-                    console.log('Terrain settings copied to clipboard!');
-                });
-            }
-            
-            return settings;
-        }
 
-        // Add export function to window for easy access
-        window.exportTerrainSettings = exportTerrainSettings;
 
         // Reset button functionality
         resetButton.addEventListener('click', (e) => {
@@ -2061,14 +1245,6 @@
                     ammunition: { count: parseInt(document.getElementById('ammunitionUpgrades').value) },
                     kinetics: { count: parseInt(document.getElementById('kineticsUpgrades').value) },
                     health: { count: parseInt(document.getElementById('healthUpgrades').value) }
-                },
-                treeParams: {
-                    minTrees: parseInt(document.getElementById('minTrees').value),
-                    maxTrees: parseInt(document.getElementById('maxTrees').value),
-                    treeSize: parseInt(document.getElementById('treeSize').value),
-                    treeSizeVariance: parseInt(document.getElementById('treeSizeVariance').value),
-                    clusterGroups: parseInt(document.getElementById('clusterGroups').value),
-                    clustering: parseInt(document.getElementById('treeClustering').value)
                 },
                 attributeLimits: {
                     health: {
@@ -2173,14 +1349,6 @@
                     kinetics: { count: parseInt(document.getElementById('kineticsUpgrades').value) },
                     health: { count: parseInt(document.getElementById('healthUpgrades').value) }
                 },
-                treeParams: {
-                    minTrees: parseInt(document.getElementById('minTrees').value),
-                    maxTrees: parseInt(document.getElementById('maxTrees').value),
-                    treeSize: parseInt(document.getElementById('treeSize').value),
-                    treeSizeVariance: parseInt(document.getElementById('treeSizeVariance').value),
-                    clusterGroups: parseInt(document.getElementById('clusterGroups').value),
-                    clustering: parseInt(document.getElementById('treeClustering').value)
-                },
                 attributeLimits: {
                     health: {
                         min: parseInt(document.getElementById('minHealth').value),
@@ -2232,13 +1400,12 @@
             health: { min: 0, max: 100 },
             speed: { min: 15, max: 50 },
             gasoline: { min: 0, max: 100 },
-            rotation: { min: 5, max: 50 },
+            rotation: { min: 5, max: 5 },
             ammunition: { min: 0, max: 14 },
             kinetics: { min: 50, max: 300 }
         };
 
-        socket.on('gameState', (data) => {
-            console.log('[DEBUG] gameState event received - trees:', data.trees?.length || 0, 'tanks:', data.tanks?.length || 0, 'players:', data.players?.length || 0);
+            socket.on('gameState', (data) => {
             gameState = data;
             
             // Create AI status panels for existing AI tanks
@@ -2382,14 +1549,6 @@
                     kinetics: { count: parseInt(document.getElementById('kineticsUpgrades').value) },
                     health: { count: parseInt(document.getElementById('healthUpgrades').value) }
                 },
-                treeParams: {
-                    minTrees: parseInt(document.getElementById('minTrees').value),
-                    maxTrees: parseInt(document.getElementById('maxTrees').value),
-                    treeSize: parseInt(document.getElementById('treeSize').value),
-                    treeSizeVariance: parseInt(document.getElementById('treeSizeVariance').value),
-                    clusterGroups: parseInt(document.getElementById('clusterGroups').value),
-                    clustering: parseInt(document.getElementById('treeClustering').value)
-                },
                 attributeLimits: {
                     health: {
                         min: parseInt(document.getElementById('minHealth').value),
@@ -2486,81 +1645,48 @@
             img.src = `/assets/images/${info.texture}`;
         });
 
-        // Tank images - new layered system
-        let tankBodyBaseContours = null;
-        let tankBodyBaseColorMap = null;
-        let tankBodyElementsContours = null;
-        let tankBodyElementsColorMap = null;
-        let tankTurretBaseContours = null;
+        // Tank images - simplified layered system
+        let tankBodyContours = null;
+        let tankBodyColorMap = null;
+        let tankTurretContours = null;
         let tankTurretBaseColorMap = null;
-        let tankGunneryContours = null;
-        let tankGunneryColorMap = null;
+        let tankTurretGunneryColorMap = null;
 
         // Load tank images
         function loadTankImages() {
             console.log('Loading tank images...');
             
             // Load contour images
-            const tankBodyBaseContoursImage = new Image();
-            tankBodyBaseContoursImage.onload = function() {
-                tankBodyBaseContours = this;
-                console.log('Loaded tank body base contours');
+            const tankBodyContoursImage = new Image();
+            tankBodyContoursImage.onload = function() {
+                tankBodyContours = this;
+                console.log('Loaded tank body contours');
             };
-            tankBodyBaseContoursImage.onerror = function() {
-                console.error('Failed to load tank body base contours');
+            tankBodyContoursImage.onerror = function() {
+                console.error('Failed to load tank body contours');
             };
-            tankBodyBaseContoursImage.src = '/assets/images/tanks/bodyBase_contours.png';
+            tankBodyContoursImage.src = '/assets/images/tanks/body_contours.png';
 
-            const tankBodyElementsContoursImage = new Image();
-            tankBodyElementsContoursImage.onload = function() {
-                tankBodyElementsContours = this;
-                console.log('Loaded tank body elements contours');
+            const tankTurretContoursImage = new Image();
+            tankTurretContoursImage.onload = function() {
+                tankTurretContours = this;
+                console.log('Loaded tank turret contours');
             };
-            tankBodyElementsContoursImage.onerror = function() {
-                console.error('Failed to load tank body elements contours');
+            tankTurretContoursImage.onerror = function() {
+                console.error('Failed to load tank turret contours');
             };
-            tankBodyElementsContoursImage.src = '/assets/images/tanks/bodyElements_contours.png';
-
-            const tankTurretBaseContoursImage = new Image();
-            tankTurretBaseContoursImage.onload = function() {
-                tankTurretBaseContours = this;
-                console.log('Loaded tank turret base contours');
-            };
-            tankTurretBaseContoursImage.onerror = function() {
-                console.error('Failed to load tank turret base contours');
-            };
-            tankTurretBaseContoursImage.src = '/assets/images/tanks/turretBase_contours.png';
-
-            const tankGunneryContoursImage = new Image();
-            tankGunneryContoursImage.onload = function() {
-                tankGunneryContours = this;
-                console.log('Loaded tank gunnery contours');
-            };
-            tankGunneryContoursImage.onerror = function() {
-                console.error('Failed to load tank gunnery contours');
-            };
-            tankGunneryContoursImage.src = '/assets/images/tanks/turretGunnery_contours.png';
+            tankTurretContoursImage.src = '/assets/images/tanks/turret_contours.png';
 
             // Load color map images
-            const tankBodyBaseColorMapImage = new Image();
-            tankBodyBaseColorMapImage.onload = function() {
-                tankBodyBaseColorMap = this;
-                console.log('Loaded tank body base color map');
+            const tankBodyColorMapImage = new Image();
+            tankBodyColorMapImage.onload = function() {
+                tankBodyColorMap = this;
+                console.log('Loaded tank body color map');
             };
-            tankBodyBaseColorMapImage.onerror = function() {
-                console.error('Failed to load tank body base color map');
+            tankBodyColorMapImage.onerror = function() {
+                console.error('Failed to load tank body color map');
             };
-            tankBodyBaseColorMapImage.src = '/assets/images/tanks/bodyBase_colourMap.png';
-
-            const tankBodyElementsColorMapImage = new Image();
-            tankBodyElementsColorMapImage.onload = function() {
-                tankBodyElementsColorMap = this;
-                console.log('Loaded tank body elements color map');
-            };
-            tankBodyElementsColorMapImage.onerror = function() {
-                console.error('Failed to load tank body elements color map');
-            };
-            tankBodyElementsColorMapImage.src = '/assets/images/tanks/bodyElements_colourMap.png';
+            tankBodyColorMapImage.src = '/assets/images/tanks/bodyBase_colourMap.png';
 
             const tankTurretBaseColorMapImage = new Image();
             tankTurretBaseColorMapImage.onload = function() {
@@ -2572,15 +1698,15 @@
             };
             tankTurretBaseColorMapImage.src = '/assets/images/tanks/turretBase_colourMap.png';
 
-            const tankGunneryColorMapImage = new Image();
-            tankGunneryColorMapImage.onload = function() {
-                tankGunneryColorMap = this;
-                console.log('Loaded tank gunnery color map');
+            const tankTurretGunneryColorMapImage = new Image();
+            tankTurretGunneryColorMapImage.onload = function() {
+                tankTurretGunneryColorMap = this;
+                console.log('Loaded tank turret gunnery color map');
             };
-            tankGunneryColorMapImage.onerror = function() {
-                console.error('Failed to load tank gunnery color map');
+            tankTurretGunneryColorMapImage.onerror = function() {
+                console.error('Failed to load tank turret gunnery color map');
             };
-            tankGunneryColorMapImage.src = '/assets/images/tanks/turretGunnery_colourMap.png';
+            tankTurretGunneryColorMapImage.src = '/assets/images/tanks/turretGunnery_colourMap.png';
         }
 
         // Load tank images on startup
@@ -2688,16 +1814,26 @@
             }
         });
 
-        // Render functions
+        // Render functions - Exact copy from tank.html
+        function drawCamoLayer(image, centerX, centerY, scale, layerType = 'body') {
+            if (!image) return;
+
+            const x = centerX - (image.width * scale) / 2;
+            const y = centerY - (image.height * scale) / 2;
+            const width = image.width * scale;
+            const height = image.height * scale;
+
+            // For camo layers, draw normally preserving transparency and blend mode
+            ctx.drawImage(image, x, y, width, height);
+        }
+
         function drawTankLayer(image, centerX, centerY, scale, isColorMap = false, layerType = 'body', player = null) {
             if (!image) return;
 
-            // Use original image dimensions scaled down
+            const x = centerX - (image.width * scale) / 2;
+            const y = centerY - (image.height * scale) / 2;
             const width = image.width * scale;
             const height = image.height * scale;
-            
-            const x = centerX - width / 2;
-            const y = centerY - height / 2;
 
             if (isColorMap && player) {
                 // For color maps, apply pixel-level color manipulation
@@ -2741,65 +1877,133 @@
                     }
                 }
                 
-                // Apply camo pattern if selected
-                if (player.tankCamo && player.tankCamo !== 'none') {
-                    for (let i = 0; i < data.length; i += 4) {
-                        if (data[i + 3] > 0) { // If pixel is not transparent
-                            const pixelX = (i / 4) % image.width;
-                            const pixelY = Math.floor((i / 4) / image.width);
-                            
-                            // Get camo pattern value for this pixel (with layer-specific offset)
-                            const layerOffset = layerType === 'body' ? 0 : 
-                                              layerType === 'turret' ? 1000 : 2000;
-                            const camoValue = getCamoPixel(pixelX + layerOffset, pixelY + layerOffset, player.tankCamo, 1.0);
-                            
-                            if (camoValue > 0) {
-                                // Apply camo blending
-                                const camoResult = applyCamoBlend(
-                                    data[i], data[i + 1], data[i + 2], 
-                                    camoValue, 'overlay-pixel', 1.0
-                                );
-                                
-                                data[i] = Math.max(0, Math.min(255, Math.round(camoResult[0])));
-                                data[i + 1] = Math.max(0, Math.min(255, Math.round(camoResult[1])));
-                                data[i + 2] = Math.max(0, Math.min(255, Math.round(camoResult[2])));
-                            }
-                        }
-                    }
-                }
-                
                 // Put the modified image data back
                 tempCtx.putImageData(imageData, 0, 0);
                 
-                // Draw the modified image
+                // Apply dual shadows using the new shadow system (FOR COLOR MAPS)
+                if (typeof applyContourAndAmbientShadows !== 'undefined') {
+                    // Apply contour shadow and draw shadow version
+                    applyContourAndAmbientShadows(ctx);
+                    ctx.drawImage(tempCanvas, x, y, width, height);
+                    
+                    // Apply ambient shadow and draw shadow version
+                    applyAmbientShadowAfterContour(ctx);
+                    ctx.drawImage(tempCanvas, x, y, width, height);
+                } else {
+                    // Fallback to legacy shadow if new system not available
+                    applyShadow(ctx, 'DEFAULT');
+                    ctx.drawImage(tempCanvas, x, y, width, height);
+                }
+                
+                // Draw the modified image (shadows are already drawn above)
                 ctx.globalCompositeOperation = 'source-over';
                 ctx.drawImage(tempCanvas, x, y, width, height);
                 
             } else {
-                // For contours, draw normally preserving transparency
+                // For contours, draw normally preserving transparency (NO SHADOWS)
                 ctx.globalCompositeOperation = 'source-over';
                 ctx.drawImage(image, x, y, width, height);
             }
+            
+            // Reset shadow settings after drawing
+            if (typeof resetShadows !== 'undefined') {
+                resetShadows(ctx);
+            } else {
+                // Fallback reset
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+                ctx.globalAlpha = 1.0;
+                ctx.globalCompositeOperation = 'source-over';
+            }
+        }
+
+        // Helper functions for color conversion (exact copy from tank.html)
+        function rgbToHsl(r, g, b) {
+            r /= 255;
+            g /= 255;
+            b /= 255;
+            
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+            
+            if (max === min) {
+                h = s = 0; // achromatic
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            
+            return [h, s, l];
+        }
+        
+        function hslToRgb(h, s, l) {
+            let r, g, b;
+            
+            if (s === 0) {
+                r = g = b = l; // achromatic
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1/6) return p + (q - p) * 6 * t;
+                    if (t < 1/2) return q;
+                    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                };
+                
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+            
+            return [
+                Math.round(r * 255),
+                Math.round(g * 255),
+                Math.round(b * 255)
+            ];
+        }
+
+        // Helper function to determine if a color is light (exact copy from tank.html)
+        function isColorLight(hexColor) {
+            const r = parseInt(hexColor.slice(1, 3), 16);
+            const g = parseInt(hexColor.slice(3, 5), 16);
+            const b = parseInt(hexColor.slice(5, 7), 16);
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            return luminance > 0.4; // Threshold for light colors
+        }
+
+        // Helper function to load camo images
+        function loadCamoImage(camoType, layerType) {
+            const image = new Image();
+            image.src = `/assets/images/textures/camo/${layerType}_${camoType}.png`;
+            
+            // Store in window for reuse
+            if (layerType === 'base') {
+                window.camoBaseImage = image;
+            } else if (layerType === 'turret') {
+                window.camoTurretImage = image;
+            }
+            
+            return image;
         }
 
         function renderTank(tank, player) {
             if (!tank.isAlive) return;
 
             // Check if tank images are loaded
-            if (!tankBodyBaseContours || !tankBodyBaseColorMap || !tankBodyElementsContours || 
-                !tankBodyElementsColorMap || !tankTurretBaseContours || 
-                !tankGunneryContours || !tankGunneryColorMap) {
-                console.log('Tank images not loaded, using fallback rendering');
-                console.log('Loaded images:', {
-                    tankBodyBaseContours: !!tankBodyBaseContours,
-                    tankBodyBaseColorMap: !!tankBodyBaseColorMap,
-                    tankBodyElementsContours: !!tankBodyElementsContours,
-                    tankBodyElementsColorMap: !!tankBodyElementsColorMap,
-                    tankTurretBaseContours: !!tankTurretBaseContours,
-                    tankGunneryContours: !!tankGunneryContours,
-                    tankGunneryColorMap: !!tankGunneryColorMap
-                });
-                
+            if (!tankBodyContours || !tankBodyColorMap) {
                 // Fallback to simple rendering if images aren't loaded
                 ctx.save();
                 ctx.translate(tank.position.x, tank.position.y);
@@ -2823,45 +2027,87 @@
                 return;
             }
 
-            console.log('Using layered tank rendering');
-
             // Draw tank body (rotated)
             ctx.save();
             ctx.translate(tank.position.x, tank.position.y);
             ctx.rotate(tank.angle);
 
-            const scale = 0.067; // 3 times smaller than tank designer (0.2 / 3)
+            const scale = 0.067; // Match tank designer scale
             const centerX = 0;
-            const centerY = 0;
+            const centerY = 0; // Back to center rotation point
 
-            // Draw tank layers in order (back to front)
-            // 1. Body base color map (furthest back)
-            drawTankLayer(tankBodyBaseColorMap, centerX, centerY, scale, true, 'body', player);
+            // Draw tank layers in order (back to front) - Exact copy from tank.html
+            // 1. Body color map (furthest back)
+            drawTankLayer(tankBodyColorMap, centerX, centerY, scale, true, 'body', player);
             
-            // 2. Body base contours
-            drawTankLayer(tankBodyBaseContours, centerX, centerY, scale, false, 'body', player);
+            // 2. Body camo (if available) - above base, below elements
+            if (player && player.tankCamo && player.tankCamo !== 'none') {
+                // Load camo images if not already loaded
+                const camoBaseImage = window.camoBaseImage || loadCamoImage(player.tankCamo, 'base');
+                if (camoBaseImage) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.8; // Default camo opacity
+                    
+                    // Auto-set blend mode based on tank color brightness
+                    const currentColor = player.tankColor || '#888888';
+                    const isLightColor = isColorLight(currentColor);
+                    const autoBlendMode = isLightColor ? 'multiply' : 'soft-light';
+                    
+                    ctx.globalCompositeOperation = autoBlendMode;
+                    drawCamoLayer(camoBaseImage, centerX, centerY, scale, 'body');
+                    ctx.restore();
+                }
+            }
             
-            // 3. Body elements color map
-            drawTankLayer(tankBodyElementsColorMap, centerX, centerY, scale, true, 'body', player);
+            // 3. Body contours
+            drawTankLayer(tankBodyContours, centerX, centerY, scale, false, 'body', player);
             
-            // 4. Body elements contours
-            drawTankLayer(tankBodyElementsContours, centerX, centerY, scale, false, 'body', player);
-            
-            // 5. Turret base color map (if available)
+            // 4. Turret base color map (if available)
             if (tankTurretBaseColorMap) {
-                drawTankLayer(tankTurretBaseColorMap, centerX, centerY, scale, true, 'turret', player);
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(tank.turretAngle || 0);
+                drawTankLayer(tankTurretBaseColorMap, 0, 0, scale, true, 'turret', player);
+                ctx.restore();
             }
             
-            // 6. Turret base contours
-            if (tankTurretBaseContours) {
-                drawTankLayer(tankTurretBaseContours, centerX, centerY, scale, false, 'turret', player);
+            // 5. Turret camo (if available) - above base, below gunnery
+            if (player && player.tankCamo && player.tankCamo !== 'none') {
+                const camoTurretImage = window.camoTurretImage || loadCamoImage(player.tankCamo, 'turret');
+                if (camoTurretImage) {
+                    ctx.save();
+                    ctx.translate(centerX, centerY);
+                    ctx.rotate(tank.turretAngle || 0);
+                    ctx.globalAlpha = 0.8; // Default camo opacity
+                    
+                    // Auto-set blend mode based on tank color brightness
+                    const currentColor = player.tankColor || '#888888';
+                    const isLightColor = isColorLight(currentColor);
+                    const autoBlendMode = isLightColor ? 'multiply' : 'soft-light';
+                    
+                    ctx.globalCompositeOperation = autoBlendMode;
+                    drawCamoLayer(camoTurretImage, 0, 0, scale, 'turret');
+                    ctx.restore();
+                }
             }
             
-            // 7. Gunnery color map
-            drawTankLayer(tankGunneryColorMap, centerX, centerY, scale, true, 'turret', player);
+            // 6. Turret gunnery color map (if available)
+            if (tankTurretGunneryColorMap) {
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(tank.turretAngle || 0);
+                drawTankLayer(tankTurretGunneryColorMap, 0, 0, scale, true, 'turret', player);
+                ctx.restore();
+            }
             
-            // 8. Gunnery contours (closest to front)
-            drawTankLayer(tankGunneryContours, centerX, centerY, scale, false, 'turret', player);
+            // 7. Turret contours (if available)
+            if (tankTurretContours) {
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(tank.turretAngle || 0);
+                drawTankLayer(tankTurretContours, 0, 0, scale, false, 'turret', player);
+                ctx.restore();
+            }
 
             ctx.restore();
 
@@ -3021,7 +2267,7 @@
             }
 
             const upgradeImage = upgradeImages[upgrade.type];
-            const size = terrainSettings.upgradeParams.size;
+            const size = terrainDefaults.upgradeSize;
 
             if (upgradeImage) {
                 // Calculate image size with proper aspect ratio
@@ -3029,10 +2275,19 @@
                 const scaledWidth = size;
                 const scaledHeight = size / imageAspectRatio;
                 
-                // Draw shadow first using centralized config (same as trees)
+                // Draw shadow first using new dual-shadow system
                 ctx.save();
-                if (typeof SHADOW_CONFIG !== 'undefined') {
-                    applyShadow(ctx, 'DEFAULT'); // Use same shadow as trees
+                if (typeof applyContourAndAmbientShadows !== 'undefined') {
+                    // Apply contour shadow and draw shadow version
+                    applyContourAndAmbientShadows(ctx);
+                    ctx.drawImage(upgradeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
+                    
+                    // Apply ambient shadow and draw shadow version
+                    applyAmbientShadowAfterContour(ctx);
+                    ctx.drawImage(upgradeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
+                } else if (typeof SHADOW_CONFIG !== 'undefined') {
+                    applyShadow(ctx, 'DEFAULT'); // Fallback to legacy shadow
+                    ctx.drawImage(upgradeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
                 } else {
                     // Fallback if shadow config not loaded
                     ctx.globalAlpha = 0.5;
@@ -3041,18 +2296,30 @@
                     ctx.shadowBlur = 8;
                     ctx.shadowOffsetX = 4;
                     ctx.shadowOffsetY = 4;
+                    ctx.drawImage(upgradeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
                 }
-                ctx.drawImage(upgradeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
                 ctx.restore();
                 
                 // Draw the main upgrade image
                 ctx.drawImage(upgradeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
             } else {
                 // Fallback to original style if image not loaded
-                // Enhanced fallback with shadow (same as trees)
+                // Enhanced fallback with new dual-shadow system
                 ctx.save();
-                if (typeof SHADOW_CONFIG !== 'undefined') {
-                    applyShadow(ctx, 'DEFAULT');
+                if (typeof applyContourAndAmbientShadows !== 'undefined') {
+                    // Apply contour shadow and draw shadow version
+                    applyContourAndAmbientShadows(ctx);
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.fillRect(-size/2, -size/2, size, size);
+                    
+                    // Apply ambient shadow and draw shadow version
+                    applyAmbientShadowAfterContour(ctx);
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.fillRect(-size/2, -size/2, size, size);
+                } else if (typeof SHADOW_CONFIG !== 'undefined') {
+                    applyShadow(ctx, 'DEFAULT'); // Fallback to legacy shadow
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.fillRect(-size/2, -size/2, size, size);
                 } else {
                     ctx.globalAlpha = 0.5;
                     ctx.globalCompositeOperation = 'multiply';
@@ -3060,9 +2327,9 @@
                     ctx.shadowBlur = 8;
                     ctx.shadowOffsetX = 4;
                     ctx.shadowOffsetY = 4;
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.fillRect(-size/2, -size/2, size, size);
                 }
-                ctx.fillStyle = '#4CAF50';
-                ctx.fillRect(-size/2, -size/2, size, size);
                 ctx.restore();
                 
                 // Main upgrade background
@@ -3084,16 +2351,18 @@
             ctx.save();
             ctx.translate(tree.position.x, tree.position.y);
 
-            // Tree trunk (rectangular base) - stays fixed with darker brown and 20% opacity
-            ctx.save();
-            ctx.globalAlpha = 0.2;
-            ctx.fillStyle = '#2D1810'; // Much darker brown
-            ctx.fillRect(-2, -tree.size/2, 4, tree.size/2);
-            ctx.restore();
-
             // Apply swing animation with static random rotation offset
+            // Tree trunk circle (1/6th of tree size) - centered in tree and rendered behind leaves in black
+            ctx.save();
+            ctx.fillStyle = 'black'; // Black trunk
+            ctx.beginPath();
+            ctx.arc(0, -tree.size/2, tree.size / 6, 0, Math.PI * 2); // Centered in the leaves circle
+            ctx.fill();
+            ctx.restore();
+            
             ctx.save();
             ctx.translate(0, -tree.size/2); // Move to foliage center
+            ctx.translate(tree.foliageOffsetX || 0, tree.foliageOffsetY || 0); // Apply translation offset
             ctx.rotate(tree.leafRotation); // Apply static random rotation first
             ctx.rotate(tree.swingAngle || 0); // Then apply dynamic swing animation
             
@@ -3108,10 +2377,19 @@
                 const scaledWidth = imageSize;
                 const scaledHeight = imageSize / imageAspectRatio;
                 
-                // Draw shadow first using centralized config
+                // Draw shadow first using new dual-shadow system
                 ctx.save();
-                if (typeof SHADOW_CONFIG !== 'undefined') {
-                    applyShadow(ctx, 'DEFAULT'); // Use default shadow for trees
+                if (typeof applyContourAndAmbientShadows !== 'undefined') {
+                    // Apply contour shadow and draw shadow version
+                    applyContourAndAmbientShadows(ctx);
+                    ctx.drawImage(treeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
+                    
+                    // Apply ambient shadow and draw shadow version
+                    applyAmbientShadowAfterContour(ctx);
+                    ctx.drawImage(treeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
+                } else if (typeof SHADOW_CONFIG !== 'undefined') {
+                    applyShadow(ctx, 'DEFAULT'); // Fallback to legacy shadow
+                    ctx.drawImage(treeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
                 } else {
                     // Fallback if shadow config not loaded
                     ctx.globalAlpha = 0.5;
@@ -3120,18 +2398,36 @@
                     ctx.shadowBlur = 8;
                     ctx.shadowOffsetX = 4;
                     ctx.shadowOffsetY = 4;
+                    ctx.drawImage(treeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
                 }
-                ctx.drawImage(treeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
                 ctx.restore();
                 
                 // Draw the main tree image
                 ctx.drawImage(treeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
             } else {
                 // Fallback to simple circle if image not loaded
-                // Draw shadow first using centralized config
+                // Draw shadow first using new dual-shadow system
                 ctx.save();
-                if (typeof SHADOW_CONFIG !== 'undefined') {
-                    applyShadow(ctx, 'DEFAULT');
+                if (typeof applyContourAndAmbientShadows !== 'undefined') {
+                    // Apply contour shadow and draw shadow version
+                    applyContourAndAmbientShadows(ctx);
+                    ctx.fillStyle = '#5e6936';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, tree.size/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Apply ambient shadow and draw shadow version
+                    applyAmbientShadowAfterContour(ctx);
+                    ctx.fillStyle = '#5e6936';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, tree.size/2, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (typeof SHADOW_CONFIG !== 'undefined') {
+                    applyShadow(ctx, 'DEFAULT'); // Fallback to legacy shadow
+                    ctx.fillStyle = '#5e6936';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, tree.size/2, 0, Math.PI * 2);
+                    ctx.fill();
                 } else {
                     // Fallback if shadow config not loaded
                     ctx.globalAlpha = 0.5;
@@ -3140,11 +2436,11 @@
                     ctx.shadowBlur = 8;
                     ctx.shadowOffsetX = 4;
                     ctx.shadowOffsetY = 4;
+                    ctx.fillStyle = '#5e6936';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, tree.size/2, 0, Math.PI * 2);
+                    ctx.fill();
                 }
-                ctx.fillStyle = '#5e6936';
-                ctx.beginPath();
-                ctx.arc(0, 0, tree.size/2, 0, Math.PI * 2);
-                ctx.fill();
                 ctx.restore();
                 
                 // Draw main foliage
@@ -3156,83 +2452,17 @@
             
             ctx.restore(); // Restore foliage transform
 
-            // Tree trunk circle (1/4th of tree size) - centered in tree and rendered above leaves (stays fixed)
-            const trunkRadius = tree.size / 8; // 1/4th of tree size
-            ctx.save();
-            ctx.globalAlpha = 0.2;
-            ctx.fillStyle = '#2D1810'; // Much darker brown
-            ctx.beginPath();
-            ctx.arc(0, -tree.size/2, trunkRadius, 0, Math.PI * 2); // Centered in the leaves circle
-            ctx.fill();
-            ctx.restore();
-
             ctx.restore();
         }
 
-        // Terrain rendering function
+        // Simple terrain rendering with defaults
         function renderTerrain() {
-            // Start with transparent canvas
+            // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // 1. Mud Color Layer
-            if (terrainSettings.mudColor.enabled) {
-                ctx.save();
-                ctx.globalAlpha = terrainSettings.mudColor.opacity;
-                ctx.fillStyle = terrainSettings.mudColor.color;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.restore();
-            }
-
-            // 2. Mud Texture Layer (blended into mud color)
-            if (terrainSettings.mudTexture.enabled && terrainTextures.mud) {
-                ctx.save();
-                ctx.globalAlpha = terrainSettings.mudTexture.opacity;
-                ctx.globalCompositeOperation = terrainSettings.mudTexture.blendMode;
-                
-                // Create scaled pattern
-                const mudPattern = ctx.createPattern(terrainTextures.mud, 'repeat');
-                if (mudPattern) {
-                    // Apply scaling transformation
-                    const scale = terrainSettings.mudTexture.scale;
-                    const matrix = new DOMMatrix();
-                    matrix.scaleSelf(scale, scale);
-                    mudPattern.setTransform(matrix);
-                    
-                    ctx.fillStyle = mudPattern;
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                }
-                ctx.restore();
-            }
-
-            // 3. Grass Color Layer
-            if (terrainSettings.grassColor.enabled) {
-                ctx.save();
-                ctx.globalAlpha = terrainSettings.grassColor.opacity;
-                ctx.fillStyle = terrainSettings.grassColor.color;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.restore();
-            }
-
-            // 4. Grass Texture Layer (blended into grass color)
-            if (terrainSettings.grassTexture.enabled && terrainTextures.grass) {
-                ctx.save();
-                ctx.globalAlpha = terrainSettings.grassTexture.opacity;
-                ctx.globalCompositeOperation = terrainSettings.grassTexture.blendMode;
-                
-                // Create scaled pattern
-                const grassPattern = ctx.createPattern(terrainTextures.grass, 'repeat');
-                if (grassPattern) {
-                    // Apply scaling transformation
-                    const scale = terrainSettings.grassTexture.scale;
-                    const matrix = new DOMMatrix();
-                    matrix.scaleSelf(scale, scale);
-                    grassPattern.setTransform(matrix);
-                    
-                    ctx.fillStyle = grassPattern;
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                }
-                ctx.restore();
-            }
+            
+            // Simple terrain background using defaults
+            ctx.fillStyle = terrainDefaults.mudColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
         // Main render loop
@@ -3254,16 +2484,14 @@
 
                     // Render tanks
         if (gameState.tanks && Array.isArray(gameState.tanks)) {
+            // Create a map of players for O(1) lookup instead of O(n) find
+            const playerMap = new Map();
+            if (gameState.players && Array.isArray(gameState.players)) {
+                gameState.players.forEach(player => playerMap.set(player.id, player));
+            }
+            
             gameState.tanks.forEach(tank => {
-                const player = gameState.players && Array.isArray(gameState.players) 
-                    ? gameState.players.find(p => p.id === tank.id) 
-                    : null;
-                
-                // Debug: Log tank state (only if there's an issue)
-                if (tank.id && !tank.id.startsWith('ai_') && !tank.isAlive) {
-                    console.log(`[DEBUG] Tank ${tank.id} is not alive: health=${tank.attributes?.health}, position=(${tank.position?.x}, ${tank.position?.y})`);
-                }
-                
+                const player = playerMap.get(tank.id) || null;
                 renderTank(tank, player);
             });
         }
@@ -3281,7 +2509,10 @@
     </script>
 
     <!-- FPS Counter -->
-    <div class="fps-counter" id="fpsCounter">FPS: 60</div>
+    <div class="fps-counter" id="fpsCounter">
+        <div class="fps-label">FPS</div>
+        <div class="fps-value" id="fpsValue">60</div>
+    </div>
 
     <!-- Performance Popup Overlay -->
     <div class="popup-overlay" id="popupOverlay"></div>
@@ -3302,6 +2533,12 @@
         let lastTime = performance.now();
         let fpsHistory = [];
         const maxFpsHistory = 60;
+        let fpsUpdateCounter = 0;
+        const fpsUpdateInterval = 10; // Update FPS display every 10 frames (roughly 6 times per second at 60fps)
+        
+        // Cache DOM elements for performance
+        const fpsElement = document.getElementById('fpsCounter');
+        const fpsValueElement = document.getElementById('fpsValue');
 
         // Performance monitoring
         let performanceData = {
@@ -3336,16 +2573,25 @@
                     max: Math.round(maxFPS)
                 };
                 
-                // Update FPS counter display
-                const fpsElement = document.getElementById('fpsCounter');
-                fpsElement.textContent = `FPS: ${performanceData.fps.current}`;
-                
-                // Color coding based on FPS
-                fpsElement.classList.remove('low', 'medium');
-                if (performanceData.fps.current < 30) {
-                    fpsElement.classList.add('low');
-                } else if (performanceData.fps.current < 50) {
-                    fpsElement.classList.add('medium');
+                // Only update display every few frames to reduce jitter
+                fpsUpdateCounter++;
+                if (fpsUpdateCounter >= fpsUpdateInterval) {
+                    // Use a smoother average for display
+                    const recentFPS = fpsHistory.slice(-10); // Last 10 frames
+                    const displayFPS = Math.round(recentFPS.reduce((a, b) => a + b, 0) / recentFPS.length);
+                    
+                    // Update FPS counter display
+                    fpsValueElement.textContent = displayFPS;
+                    
+                    // Color coding based on FPS
+                    fpsValueElement.classList.remove('low', 'medium');
+                    if (displayFPS < 30) {
+                        fpsValueElement.classList.add('low');
+                    } else if (displayFPS < 50) {
+                        fpsValueElement.classList.add('medium');
+                    }
+                    
+                    fpsUpdateCounter = 0; // Reset counter
                 }
                 
                 // Auto-enable performance mode if FPS is critically low
@@ -3550,14 +2796,14 @@
                 canvas.style.width = (ultraMaxWidth * zoomFactor) + 'px';
                 canvas.style.height = (ultraMaxHeight * zoomFactor) + 'px';
                 
-                document.getElementById('fpsCounter').style.color = '#ff6600';
-                document.getElementById('fpsCounter').textContent = `FPS: ${performanceData.fps.current} (PERF MODE)`;
-                console.log('Performance mode enabled - ultra low resolution');
+                fpsElement.style.color = '#ff6600';
+                fpsElement.textContent = `FPS: ${performanceData.fps.current} (PERF MODE)`;
+
             } else {
                 // Disable performance mode - restore normal size
                 setupCanvas();
-                document.getElementById('fpsCounter').style.color = '#00ff00';
-                console.log('Performance mode disabled - normal resolution');
+                fpsElement.style.color = '#00ff00';
+
             }
         });
         
@@ -3574,7 +2820,7 @@
                 if (canvas.style.width !== expectedWidth || canvas.style.height !== expectedHeight) {
                     canvas.style.width = expectedWidth;
                     canvas.style.height = expectedHeight;
-                    console.log('Zoom maintained:', zoomFactor.toFixed(2) + 'x');
+
                 }
             }
         }
@@ -3587,8 +2833,7 @@
         const canvasObserver = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
                 if (mutation.type === 'attributes' && (mutation.attributeName === 'style')) {
-                    console.log('Canvas style changed:', canvas.style.width, 'x', canvas.style.height);
-                    console.trace('Canvas style change stack trace:');
+                    // Debug logging removed for performance
                 }
             });
         });

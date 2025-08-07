@@ -159,54 +159,59 @@ export class Tank {
     const oldPosition = this.position.clone();
     this.position = this.position.add(this.velocity.multiply(deltaTime / 1000));
     
-    // Check collision with trees using gentle physics
+    // Check collision with trees using simplified circle-to-circle physics
     if (trees && trees.length > 0) {
-      const tankRadius = 15; // Tank collision radius
+      const tankRadius = 20; // Tank collision radius (simplified circular collision)
       
       for (const tree of trees) {
-        const trunkRadius = tree.size / 16; // Tree trunk collision radius (smaller)
+        const trunkRadius = tree.size / 16; // Tree trunk collision radius (even smaller)
         
-        // Calculate distance between tank center and tree center
-        const dx = this.position.x - tree.position.x;
-        const dy = this.position.y - tree.position.y;
+        // Calculate trunk position (same as visual trunk position)
+        const trunkX = tree.position.x;
+        const trunkY = tree.position.y - tree.size / 2; // Trunk is positioned at -tree.size/2 relative to tree center
+        
+        // Calculate distance between tank center and trunk center
+        const dx = this.position.x - trunkX;
+        const dy = this.position.y - trunkY;
         const distance = Math.sqrt(dx * dx + dy * dy);
         const minDistance = tankRadius + trunkRadius;
         
         // Check if circles are overlapping
         if (distance < minDistance && distance > 0.1) {
-          // Calculate collision normal (unit vector from tree to tank)
+          // Calculate collision normal (unit vector from trunk to tank)
           const normalX = dx / distance;
           const normalY = dy / distance;
           
-          // Calculate how much the tank is penetrating into the tree
+          // Separate the circles (prevent overlap)
           const overlap = minDistance - distance;
+          this.position.x += normalX * overlap;
+          this.position.y += normalY * overlap;
           
-          // Very gentle separation - just push tank out slowly
-          const separationStrength = 0.1; // Very weak separation force
-          this.position.x += normalX * overlap * separationStrength;
-          this.position.y += normalY * overlap * separationStrength;
-          
-          // Calculate velocity component moving toward tree
+          // Calculate velocity component moving toward trunk
           const velocityTowardTree = -(this.velocity.x * normalX + this.velocity.y * normalY);
           
-          // Only apply gentle resistance if moving toward tree
+          // Only apply physics if moving toward tree
           if (velocityTowardTree > 0) {
-            // Very subtle resistance - just slow down the component moving toward tree
-            const resistanceStrength = 0.05; // Very gentle resistance (5%)
-            const resistanceX = normalX * velocityTowardTree * resistanceStrength;
-            const resistanceY = normalY * velocityTowardTree * resistanceStrength;
+            // Elastic collision: reflect velocity along normal
+            const reflectionX = normalX * velocityTowardTree * 0.8; // 80% bounce
+            const reflectionY = normalY * velocityTowardTree * 0.8;
             
-            // Apply resistance to velocity
-            this.velocity.x -= resistanceX;
-            this.velocity.y -= resistanceY;
+            // Apply reflection to velocity
+            this.velocity.x += reflectionX;
+            this.velocity.y += reflectionY;
             
-            // Trigger very subtle tree animation
-            const impactForce = velocityTowardTree * 0.5; // Much gentler force
+            // Apply friction (slow down slightly)
+            const friction = 0.95; // 5% speed reduction
+            this.velocity.x *= friction;
+            this.velocity.y *= friction;
+            
+            // Trigger tree animation
+            const impactForce = velocityTowardTree * 0.3;
             tree.impact(new Vector2(-this.velocity.x, -this.velocity.y), impactForce);
             
-            // Only log significant collisions
+            // Log significant collisions
             if (velocityTowardTree > 20) {
-              console.log(`Tank ${this.id} gentle collision: speed=${velocityTowardTree.toFixed(1)}`);
+              console.log(`Tank ${this.id} collision: speed=${velocityTowardTree.toFixed(1)}`);
             }
           }
         }
@@ -275,34 +280,19 @@ export class Tank {
            this.attributes.ammunition > 0 && 
            this.reloadTime <= 0;
     
-    // Only log for human players to reduce AI spam
-    if (!this.isAI) {
-      console.log(`Tank ${this.id} canShoot check:`, {
-        isAlive: this.isAlive,
-        ammunition: this.attributes.ammunition,
-        reloadTime: this.reloadTime,
-        canShoot: canShoot
-      });
+    // Removed excessive logging - only log critical failures
+    if (!this.isAI && !canShoot && this.attributes.ammunition <= 0) {
+      // Only log when out of ammo to help with debugging
+      console.log(`Tank ${this.id} cannot shoot - out of ammunition`);
     }
     
     return canShoot;
   }
 
   shoot() {
-    // Reduce logging for AI tanks to prevent spam
-    if (!this.isAI) {
-      console.log(`Tank ${this.id} shoot() called - health: ${this.attributes.health}, ammo: ${this.attributes.ammunition}`);
-    }
-    
+    // Removed excessive logging - only log critical events
     if (!this.canShoot()) {
-      if (!this.isAI) {
-        console.log(`Tank ${this.id} cannot shoot - conditions not met`);
-      }
       return null;
-    }
-
-    if (!this.isAI) {
-      console.log(`Tank ${this.id} shooting shell`);
     }
     
     // Set a brief firing immunity to prevent self-damage
@@ -336,10 +326,7 @@ export class Tank {
       this.lastShotShell = shell;
     }
 
-    if (!this.isAI) {
-      console.log(`Tank ${this.id} shot shell at position:`, shellPosition);
-      console.log(`Tank ${this.id} remaining ammo: ${this.attributes.ammunition}, health: ${this.attributes.health}`);
-    }
+    // Removed excessive logging - only log critical events
     
     return shell;
   }
@@ -367,10 +354,15 @@ export class Tank {
     this.attributes.kinetics = Math.max(50, this.attributes.kinetics - 10);
     this.attributes.gasoline = Math.max(0, this.attributes.gasoline - 5);
     
-    console.log(`Tank ${this.id} health after damage: ${this.attributes.health}`);
+    // Only log critical damage events for human players
+    if (!this.isAI && this.attributes.health <= 10) {
+      console.log(`Tank ${this.id} critical damage - health: ${this.attributes.health}`);
+    }
 
     if (this.attributes.health <= 0) {
-      console.log(`Tank ${this.id} died from damage`);
+      if (!this.isAI) {
+        console.log(`Tank ${this.id} died from damage`);
+      }
       this.die();
     }
     
@@ -378,7 +370,10 @@ export class Tank {
   }
 
   die() {
-    console.log(`Tank ${this.id} die() called - setting isAlive to false`);
+    // Only log death for human players
+    if (!this.isAI) {
+      console.log(`Tank ${this.id} died`);
+    }
     this.isAlive = false;
     this.respawnTime = 5000; // 5 seconds
   }
@@ -482,26 +477,31 @@ export class Tree {
     
     const impactDirection = impactVelocity.normalize();
     
-    // Convert impact to very subtle pendulum motion
-    // Use force if provided, otherwise use speed
-    const forceScale = impactForce ? Math.min(impactForce / 500, 0.2) : Math.min(impactSpeed / 200, 0.2);
-    const swingImpulse = -impactDirection.x * forceScale * 0.001; // Much more subtle
+    // Extremely visible spring-damper response for both rotation and translation
+    const forceScale = impactForce ? Math.min(impactForce / 10, 5.0) : Math.min(impactSpeed / 5, 5.0);
     
-    // Add impulse to current angular velocity
+    // Proper pendulum impulse based on impact direction - much less intense
+    // Calculate the angle of the impact direction
+    const impactAngle = Math.atan2(impactDirection.y, impactDirection.x);
+    // The tree should swing in the opposite direction of the impact
+    const swingImpulse = -impactAngle * forceScale * 0.02; // Reduced from 0.1 to 0.02 (5x less)
     this.swingVelocity += swingImpulse;
+    this.swingVelocity = Math.max(-1.5, Math.min(1.5, this.swingVelocity)); // Reduced from ±3.0 to ±1.5
     
-    // Keep swing very small and stable
-    this.swingVelocity = Math.max(-0.2, Math.min(0.2, this.swingVelocity));
+    // Translation impulse (move foliage in X and Y) - back to previous direction and reduced
+    const moveImpulseX = -impactDirection.x * forceScale * 1.0; // Back to negative (previous behavior) and reduced from 1.25 to 1.0
+    const moveImpulseY = -impactDirection.y * forceScale * 1.0; // Keep Y inverted and reduced from 1.25 to 1.0
+    this.foliageVelocityX = (this.foliageVelocityX || 0) + moveImpulseX;
+    this.foliageVelocityY = (this.foliageVelocityY || 0) + moveImpulseY;
+    
+    // Limit translation velocity - reduced slightly more
+    this.foliageVelocityX = Math.max(-2.5, Math.min(2.5, this.foliageVelocityX)); // Reduced from ±3.5 to ±2.5
+    this.foliageVelocityY = Math.max(-2.5, Math.min(2.5, this.foliageVelocityY)); // Reduced from ±3.5 to ±2.5
     
     this.lastImpactTime = Date.now();
-    
-    // Only log significant impacts
-    if (Math.abs(swingImpulse) > 0.0001) {
-      console.log(`Tree impact - force: ${(impactForce || impactSpeed).toFixed(1)}, swing impulse: ${swingImpulse.toFixed(4)}`);
-    }
   }
 
-  // Update swing animation using pendulum physics
+  // Update swing animation using simplified spring-damper physics
   update(deltaTime) {
     const dt = deltaTime / 1000; // Convert to seconds
     
@@ -510,48 +510,83 @@ export class Tree {
     const impactThreshold = 5000; // 5 seconds
     
     if (timeSinceLastImpact > impactThreshold) {
-      // No recent impact, immediately stop all motion
-      if (this.swingVelocity !== 0 || this.swingAngle !== 0) {
-        console.log(`Tree stopping motion - swingAngle: ${this.swingAngle.toFixed(3)}, swingVelocity: ${this.swingVelocity.toFixed(3)}`);
+      // No recent impact, gradually stop motion
+      this.swingVelocity *= 0.95; // Damping
+      this.swingAngle *= 0.98; // Return to center
+      
+      // Also dampen translation
+      this.foliageVelocityX = (this.foliageVelocityX || 0) * 0.95;
+      this.foliageVelocityY = (this.foliageVelocityY || 0) * 0.95;
+      this.foliageOffsetX = (this.foliageOffsetX || 0) * 0.98; // Return to center
+      this.foliageOffsetY = (this.foliageOffsetY || 0) * 0.98;
+      
+      if (Math.abs(this.swingVelocity) < 0.01 && Math.abs(this.swingAngle) < 0.001 &&
+          Math.abs(this.foliageVelocityX || 0) < 0.01 && Math.abs(this.foliageVelocityY || 0) < 0.01) {
         this.swingVelocity = 0;
         this.swingAngle = 0;
+        this.foliageVelocityX = 0;
+        this.foliageVelocityY = 0;
+        this.foliageOffsetX = 0;
+        this.foliageOffsetY = 0;
       }
       return;
     }
     
-    // Pendulum physics: ω = natural frequency, ζ = damping ratio
-    // For a damped harmonic oscillator: θ'' + 2ζωθ' + ω²θ = 0
+    // Proper pendulum physics with gravity
+    const gravity = 2.0; // Gravity constant
+    const dampingConstant = 0.3; // Air resistance
     
-    // Calculate restoring force (tries to return to center)
-    const restoringAcceleration = -this.naturalFrequency * this.naturalFrequency * this.swingAngle;
+    // Pendulum force: -gravity * sin(angle) tries to return to center
+    const pendulumForce = -gravity * Math.sin(this.swingAngle);
     
-    // Calculate damping force (opposes motion)
-    const dampingAcceleration = -2 * this.dampingRatio * this.naturalFrequency * this.swingVelocity;
+    // Damping force (air resistance)
+    const dampingForce = -dampingConstant * this.swingVelocity;
     
     // Total angular acceleration
-    const angularAcceleration = restoringAcceleration + dampingAcceleration;
+    const angularAcceleration = pendulumForce + dampingForce;
     
-    // Update velocity and position using Verlet integration for stability
+    // Update rotation velocity and position
     this.swingVelocity += angularAcceleration * dt;
     this.swingAngle += this.swingVelocity * dt;
     
-    // Stop very small oscillations to prevent infinite wobbling
-    if (Math.abs(this.swingVelocity) < 0.01 && Math.abs(this.swingAngle) < 0.001) {
-      this.swingVelocity = 0;
-      this.swingAngle = 0;
-    }
+    // Safety bounds for pendulum
+    this.swingAngle = Math.max(-1.0, Math.min(1.0, this.swingAngle)); // About 60 degrees max
     
-    // Safety bounds to prevent extreme swings
-    this.swingAngle = Math.max(-0.5, Math.min(0.5, this.swingAngle));
+    // Enhanced translation physics for foliage movement
+    const translationSpringConstant = 0.2; // Weaker spring for more dramatic movement
+    const translationDampingConstant = 0.2; // Less damping for longer movement
+    
+    // Initialize offsets if they don't exist
+    this.foliageOffsetX = this.foliageOffsetX || 0;
+    this.foliageOffsetY = this.foliageOffsetY || 0;
+    this.foliageVelocityX = this.foliageVelocityX || 0;
+    this.foliageVelocityY = this.foliageVelocityY || 0;
+    
+    // Spring force to return foliage to center
+    const springForceX = -translationSpringConstant * this.foliageOffsetX;
+    const springForceY = -translationSpringConstant * this.foliageOffsetY;
+    
+    // Damping force
+    const dampingForceX = -translationDampingConstant * this.foliageVelocityX;
+    const dampingForceY = -translationDampingConstant * this.foliageVelocityY;
+    
+    // Update translation velocity and position
+    this.foliageVelocityX += (springForceX + dampingForceX) * dt;
+    this.foliageVelocityY += (springForceY + dampingForceY) * dt;
+    this.foliageOffsetX += this.foliageVelocityX * dt;
+    this.foliageOffsetY += this.foliageVelocityY * dt;
+    
+    // Safety bounds for translation - reduced slightly more
+    this.foliageOffsetX = Math.max(-5, Math.min(5, this.foliageOffsetX)); // Reduced from ±7 to ±5
+    this.foliageOffsetY = Math.max(-5, Math.min(5, this.foliageOffsetY)); // Reduced from ±7 to ±5
   }
 
   getBoundingBox() {
-    // Use trunk circle as collision box (smaller than visual - 1/8th of tree size)
-    // The trunk circle is positioned at -tree.size/2 on Y-axis, so adjust collision box accordingly
-    const trunkRadius = this.size / 16; // 1/16th of tree size (smaller collision box)
+    // Use trunk circle as collision box - matches the visual trunk circle
+    const trunkRadius = this.size / 16; // 1/16th of tree size, even smaller collision area
     return {
       x: this.position.x - trunkRadius,
-      y: this.position.y - this.size/2 - trunkRadius, // Adjust Y position to match visual trunk circle
+      y: this.position.y - trunkRadius, // Centered collision box
       width: trunkRadius * 2,
       height: trunkRadius * 2
     };

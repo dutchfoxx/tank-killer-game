@@ -145,16 +145,16 @@
 
         .base-color-options {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 10px;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 5px;
             margin-top: 10px;
         }
 
         .base-color-option {
             width: 100%;
-            height: 40px;
-            border: 3px solid transparent;
-            border-radius: 8px;
+            aspect-ratio: 1;
+            border: 2px solid transparent;
+            border-radius: 4px;
             cursor: pointer;
             transition: border-color 0.3s ease;
             position: relative;
@@ -166,9 +166,24 @@
             text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
 
+        .base-color-option:hover {
+            transform: scale(1.1);
+            border-color: #fff;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
         .base-color-option.selected {
             border-color: #FFFFFF;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        .base-color-option.custom {
+            font-size: 18px;
+            color: #333;
+            text-shadow: none;
+            background: linear-gradient(45deg, #ccc, #999) !important;
+            border: 2px dashed #666;
         }
 
         /* Special metallic gradient for Metal color */
@@ -220,18 +235,100 @@
             position: relative;
         }
 
+        .color-wheel-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .color-wheel-container {
+            background: #333;
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .color-wheel {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, #ff0000, #ff8000, #ffff00, #80ff00, #00ff00, #00ff80, #00ffff, #0080ff, #0000ff, #8000ff, #ff00ff, #ff0080, #ff0000);
+            position: relative;
+            cursor: crosshair;
+        }
+
+        .color-wheel::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 60px;
+            height: 60px;
+            background: #333;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .color-wheel-indicator {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: white;
+            border: 2px solid #000;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .color-wheel-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #666;
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .tank-preview-container {
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        .tank-preview-canvas {
+            width: 100%;
+            height: 120px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            background: #444;
+            display: block;
+        }
+
         .camo-options {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 5px;
             margin-top: 10px;
         }
 
         .camo-option {
             width: 100%;
-            height: 40px;
-            border: 3px solid transparent;
-            border-radius: 8px;
+            aspect-ratio: 1;
+            border: 2px solid transparent;
+            border-radius: 4px;
             cursor: pointer;
             transition: border-color 0.3s ease, background-color 0.8s ease;
             position: relative;
@@ -241,6 +338,7 @@
             color: white;
             font-weight: bold;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            background-color: var(--base-color);
         }
 
         .camo-option::before {
@@ -256,18 +354,28 @@
             background-size: calc(100px * var(--texture-scale));
             opacity: var(--texture-opacity);
             background-blend-mode: var(--texture-blend-mode);
-            border-radius: 8px;
+            border-radius: 4px;
             pointer-events: none;
             transition: background-color 0.8s ease;
         }
 
         .camo-option.selected {
             border-color: #FFFFFF;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+
+        .camo-option.none {
+            background-color: var(--base-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #666;
         }
 
         .camo-name {
-            font-size: 8px;
+            font-size: 6px;
             color: white;
             text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.8);
             font-weight: bold;
@@ -1127,7 +1235,11 @@
         <div class="join-state" id="joinState" style="display: flex;">
             <div class="join-form">
 
-                
+                <!-- Tank Preview -->
+                <div class="tank-preview-container">
+                    <canvas id="tankPreview" class="tank-preview-canvas"></canvas>
+                </div>
+
                 <div class="form-group">
                     <label for="callname">Callname</label>
                     <div class="callname-container">
@@ -1148,7 +1260,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Camo: <span id="selectedCamoName" class="selection-name">Dazzle</span></label>
+                    <label>Camo: <span id="selectedCamoName" class="selection-name">None</span></label>
                     <div class="camo-options" id="camoOptions">
                         <!-- Camo options will be dynamically generated -->
                     </div>
@@ -1272,15 +1384,11 @@
     <!-- Shared Tank Colors Configuration -->
     <script src="/src/shared/tankColors.js"></script>
     <script src="/src/shared/tankCamo.js"></script>
+    <script src="/src/shared/shadows.js"></script>
     <script src="/src/shared/defaultNames.js"></script>
 
     <script>
-        // Debug: Check if external scripts loaded
-        console.log('Controller script starting...');
-        console.log('tankColors available:', typeof tankColors !== 'undefined');
-        console.log('tankCamos available:', typeof tankCamos !== 'undefined');
-        console.log('defaultNames available:', typeof defaultNames !== 'undefined');
-        console.log('ranks available:', typeof ranks !== 'undefined');
+        // Removed excessive debug logging for better performance
         
         // Game state
         let playerState = null;
@@ -1302,21 +1410,121 @@
         const joystickStick = document.getElementById('joystickStick');
         const statusMessage = document.getElementById('statusMessage');
         
-        // Debug DOM elements
-        console.log('DOM elements found:');
-        console.log('joinState:', joinState);
-        console.log('playState:', playState);
-        console.log('callnameInput:', callnameInput);
-        console.log('joinButton:', joinButton);
-        console.log('fireButton:', fireButton);
+        // Removed excessive debug logging for better performance
 
         // Socket connection
         const socket = io();
 
         // Game state variables
         let selectedBaseColor = '#1f2e23';
-        let selectedCamo = 'dazzle';
+        let selectedCamo = 'none';
         let selectedTeam = 'NATO';
+
+        // Robust random selection functions
+        function selectRandomTeam() {
+            const teams = ['NATO', 'CSTO', 'PLA'];
+            return teams[Math.floor(Math.random() * teams.length)];
+        }
+        
+        function selectRandomName(team) {
+            const randomRank = ranks[Math.floor(Math.random() * ranks.length)];
+            const teamNames = defaultNames[team] || defaultNames.NATO;
+            const randomName = teamNames[Math.floor(Math.random() * teamNames.length)];
+            return `${randomRank} ${randomName}`;
+        }
+        
+        function selectRandomColor() {
+            const colorKeys = Object.keys(tankColors).filter(key => key !== 'custom');
+            const randomKey = colorKeys[Math.floor(Math.random() * colorKeys.length)];
+            return {
+                key: randomKey,
+                color: tankColors[randomKey]
+            };
+        }
+        
+        function selectRandomCamo() {
+            const camoKeys = Object.keys(tankCamos);
+            const randomKey = camoKeys[Math.floor(Math.random() * camoKeys.length)];
+            return {
+                key: randomKey,
+                camo: tankCamos[randomKey]
+            };
+        }
+        
+        function randomizeEverything() {
+            // Removed excessive debug logging for better performance
+            
+            // 1. Randomize team first
+            selectedTeam = selectRandomTeam();
+            
+            // 2. Generate random name based on team
+            const randomCallname = selectRandomName(selectedTeam);
+            callnameInput.value = randomCallname;
+            
+            // 3. Randomize color BEFORE camo (so camo can blend properly)
+            const randomColorData = selectRandomColor();
+            selectedBaseColor = randomColorData.color.hex;
+            
+            // 4. Randomize camo AFTER color (so it can blend with the selected color)
+            const randomCamoData = selectRandomCamo();
+            selectedCamo = randomCamoData.key;
+            
+            // 5. Update UI with proper order
+            updateUIWithSelections();
+        }
+        
+        // Robust UI update function
+        function updateUIWithSelections() {
+            // Removed excessive debug logging for better performance
+            
+            // Update team selection
+            const teamOptions = document.querySelectorAll('.team-option');
+            teamOptions.forEach(option => {
+                option.classList.remove('selected');
+                if (option.dataset.team === selectedTeam) {
+                    option.classList.add('selected');
+                }
+            });
+            
+            // Update color selection
+            const colorOptions = document.querySelectorAll('.base-color-option');
+            colorOptions.forEach(option => {
+                option.classList.remove('selected');
+                if (option.dataset.color === selectedBaseColor) {
+                    option.classList.add('selected');
+                    const colorName = document.getElementById('selectedColorName');
+                    if (colorName) {
+                        colorName.textContent = option.dataset.name;
+                    }
+                }
+            });
+            
+            // Update camo selection
+            const camoOptions = document.querySelectorAll('.camo-option');
+            camoOptions.forEach(option => {
+                option.classList.remove('selected');
+                if (option.dataset.camo === selectedCamo) {
+                    option.classList.add('selected');
+                    const camoName = document.getElementById('selectedCamoName');
+                    if (camoName) {
+                        camoName.textContent = option.dataset.name;
+                    }
+                }
+            });
+            
+            // Update camo backgrounds and preview
+            updateCamoBackgrounds();
+            loadCamoImages();
+        }
+
+        // Tank preview variables
+        let tankBodyContours = null;
+        let tankBodyColorMap = null;
+        let tankTurretContours = null;
+        let tankTurretBaseColorMap = null;
+        let tankTurretGunneryColorMap = null;
+        let camoBaseImage = null;
+        let camoTurretImage = null;
 
         // Generate random name functionality
         const generateNameBtn = document.getElementById('generateName');
@@ -1352,15 +1560,16 @@
                 return;
             }
             
-            console.log('Generating base color options...');
-            console.log('tankColors object:', tankColors);
+            // Removed excessive debug logging for better performance
             
+            // Create color squares for each tank color
             Object.entries(tankColors).forEach(([key, color]) => {
                 const colorOption = document.createElement('div');
                 colorOption.className = 'base-color-option';
                 colorOption.style.backgroundColor = color.hex;
                 colorOption.dataset.color = color.hex;
                 colorOption.dataset.name = color.label;
+                colorOption.dataset.key = key;
                 
                 // Add click event
                 colorOption.addEventListener('click', () => {
@@ -1372,10 +1581,31 @@
                     document.getElementById('selectedColorName').textContent = color.label;
                     
                     updateCamoBackgrounds();
+                    updateTankPreview();
                 });
                 
                 baseColorContainer.appendChild(colorOption);
             });
+
+            // Add custom color picker square
+            const customColorOption = document.createElement('div');
+            customColorOption.className = 'base-color-option custom';
+            customColorOption.dataset.color = '#ff0000';
+            customColorOption.dataset.name = 'Custom';
+            customColorOption.dataset.key = 'custom';
+            customColorOption.innerHTML = '<span>+</span>';
+            
+            // Add click event for custom color picker
+            customColorOption.addEventListener('click', () => {
+                showColorWheel();
+            });
+            
+            baseColorContainer.appendChild(customColorOption);
+
+            // Initialize custom color in tankColors if it doesn't exist
+            if (!tankColors.custom) {
+                tankColors.custom = '#ff0000';
+            }
 
             // Generate camo options
             const camoContainer = document.getElementById('camoOptions');
@@ -1386,8 +1616,7 @@
                 return;
             }
             
-            console.log('Generating camo options...');
-            console.log('tankCamos object:', tankCamos);
+            // Removed excessive debug logging for better performance
             
             Object.entries(tankCamos).forEach(([key, config]) => {
                 const camoOption = document.createElement('div');
@@ -1398,12 +1627,19 @@
                 camoOption.dataset.opacity = config.opacity;
                 camoOption.dataset.scale = config.scale;
                 
-                // Set CSS variables for texture
-                camoOption.style.setProperty('--texture-url', `url('/assets/images/${config.texture}')`);
-                camoOption.style.setProperty('--texture-opacity', config.opacity);
-                camoOption.style.setProperty('--texture-scale', config.scale);
-                camoOption.style.setProperty('--texture-blend-mode', config.blendMode || 'normal');
-                camoOption.style.setProperty('--texture-overrides', JSON.stringify(config.overrides || {}));
+                // Handle "none" camo option
+                if (key === 'none') {
+                    camoOption.classList.add('none');
+                    camoOption.textContent = '✕';
+                    camoOption.style.setProperty('--texture-url', 'none');
+                    camoOption.style.setProperty('--texture-opacity', '0');
+                } else {
+                    // Set CSS variables for texture
+                    camoOption.style.setProperty('--texture-url', `url('/assets/images/${config.texture}')`);
+                    camoOption.style.setProperty('--texture-opacity', config.opacity);
+                    camoOption.style.setProperty('--texture-scale', config.scale);
+                    camoOption.style.setProperty('--texture-blend-mode', config.blendMode || 'auto');
+                }
                 
                 // Add click event
                 camoOption.addEventListener('click', () => {
@@ -1413,36 +1649,295 @@
                     
                     // Update camo name display
                     document.getElementById('selectedCamoName').textContent = config.name;
+                    
+                    // Load new camo images and update preview
+                    loadCamoImages();
                 });
                 
                 camoContainer.appendChild(camoOption);
             });
         }
         
+        // Load tank images
+        function loadTankImages() {
+            // Body images
+            tankBodyContours = new Image();
+            tankBodyContours.onload = () => updateTankPreview();
+            tankBodyContours.onerror = () => console.error('Failed to load tank body contours');
+            tankBodyContours.src = '/assets/images/tanks/body_contours.png';
+
+            tankBodyColorMap = new Image();
+            tankBodyColorMap.onload = () => updateTankPreview();
+            tankBodyColorMap.onerror = () => console.error('Failed to load tank body color map');
+            tankBodyColorMap.src = '/assets/images/tanks/bodyBase_colourMap.png';
+
+            // Turret images
+            tankTurretContours = new Image();
+            tankTurretContours.onload = () => updateTankPreview();
+            tankTurretContours.onerror = () => console.error('Failed to load tank turret contours');
+            tankTurretContours.src = '/assets/images/tanks/turret_contours.png';
+
+            tankTurretBaseColorMap = new Image();
+            tankTurretBaseColorMap.onload = () => updateTankPreview();
+            tankTurretBaseColorMap.onerror = () => console.error('Failed to load tank turret base color map');
+            tankTurretBaseColorMap.src = '/assets/images/tanks/turretBase_colourMap.png';
+
+            tankTurretGunneryColorMap = new Image();
+            tankTurretGunneryColorMap.onload = () => updateTankPreview();
+            tankTurretGunneryColorMap.onerror = () => console.error('Failed to load tank turret gunnery color map');
+            tankTurretGunneryColorMap.src = '/assets/images/tanks/turretGunnery_colourMap.png';
+        }
+
+        // Load camo images
+        function loadCamoImages() {
+            if (selectedCamo === 'none') {
+                camoBaseImage = null;
+                camoTurretImage = null;
+                updateTankPreview();
+                return;
+            }
+
+            camoBaseImage = new Image();
+            camoBaseImage.onload = () => updateTankPreview();
+            camoBaseImage.onerror = () => console.error('Failed to load base camo image');
+            camoBaseImage.src = `/assets/images/textures/camo/base_${selectedCamo}.png`;
+
+            camoTurretImage = new Image();
+            camoTurretImage.onload = () => updateTankPreview();
+            camoTurretImage.onerror = () => console.error('Failed to load turret camo image');
+            camoTurretImage.src = `/assets/images/textures/camo/turret_${selectedCamo}.png`;
+        }
+
+        // Tank preview settings (exact copy from tank designer)
+        const previewSettings = {
+            tankScale: 0.067,
+            zoomLevel: 6.0,
+            camoOpacity: 0.8,
+            colorBlendMode: 'hard-light-pixel',
+            camoBlendMode: 'overlay',
+            bodyShadowType: 'STRONG',
+            turretShadowType: 'DEFAULT',
+            shadowOpacity: 1.0,
+            shadowBlur: 8,
+            shadowOffsetX: 4,
+            shadowOffsetY: 4
+        };
+
+        // Update tank preview (exact copy from tank designer)
+        function updateTankPreview() {
+            const canvas = document.getElementById('tankPreview');
+            if (!canvas) return;
+
+            // Set canvas size to match container
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = 120; // Fixed height for consistency
+
+            const ctx = canvas.getContext('2d');
+            
+            // Make ctx available globally for drawing functions
+            window.ctx = ctx;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const scale = previewSettings.tankScale * previewSettings.zoomLevel;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Check if body images are loaded
+            if (!tankBodyContours || !tankBodyColorMap) return;
+
+            // Save context
+            ctx.save();
+
+            // Draw tank layers in order (back to front) - EXACT COPY FROM TANK DESIGNER
+            // 1. Body color map (furthest back)
+            drawTankLayer(tankBodyColorMap, centerX, centerY, scale, true, 'body');
+            
+            // 2. Body camo (if available) - above base, below elements
+            if (selectedCamo !== 'none' && camoBaseImage) {
+                ctx.save();
+                ctx.globalAlpha = previewSettings.camoOpacity;
+                
+                // Use fixed overlay blend mode (matching tank designer)
+                ctx.globalCompositeOperation = previewSettings.camoBlendMode;
+                drawCamoLayer(camoBaseImage, centerX, centerY, scale, 'body');
+                ctx.restore();
+            }
+            
+            // 3. Body contours
+            drawTankLayer(tankBodyContours, centerX, centerY, scale, false, 'body');
+            
+            // 4. Turret base color map (if available)
+            if (tankTurretBaseColorMap) {
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                drawTankLayer(tankTurretBaseColorMap, 0, 0, scale, true, 'turret');
+                ctx.restore();
+            }
+            
+            // 5. Turret camo (if available) - above base, below gunnery
+            if (selectedCamo !== 'none' && camoTurretImage) {
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.globalAlpha = previewSettings.camoOpacity;
+                
+                // Use fixed overlay blend mode (matching tank designer)
+                ctx.globalCompositeOperation = previewSettings.camoBlendMode;
+                drawCamoLayer(camoTurretImage, 0, 0, scale, 'turret');
+                ctx.restore();
+            }
+            
+            // 6. Turret gunnery color map (if available)
+            if (tankTurretGunneryColorMap) {
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                drawTankLayer(tankTurretGunneryColorMap, 0, 0, scale, true, 'turret');
+                ctx.restore();
+            }
+            
+            // 7. Turret contours (if available)
+            if (tankTurretContours) {
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                drawTankLayer(tankTurretContours, 0, 0, scale, false, 'turret');
+                ctx.restore();
+            }
+
+            ctx.restore();
+        }
+
+        // Draw tank layer (exact copy from tank designer)
+        function drawTankLayer(image, centerX, centerY, scale, isColorMap = false, layerType = 'body') {
+            if (!image) return;
+
+            const x = centerX - (image.width * scale) / 2;
+            const y = centerY - (image.height * scale) / 2;
+            const width = image.width * scale;
+            const height = image.height * scale;
+
+            if (isColorMap) {
+                // Apply custom shadow based on layer type and settings (only for color maps)
+                if (previewSettings.bodyShadowType !== 'NONE' || previewSettings.turretShadowType !== 'NONE') {
+                    const shadowType = layerType === 'body' ? previewSettings.bodyShadowType : previewSettings.turretShadowType;
+                    
+                    if (shadowType !== 'NONE') {
+                        // Apply custom shadow settings (exact from tank designer)
+                        window.ctx.shadowColor = 'black';
+                        window.ctx.shadowBlur = previewSettings.shadowBlur;
+                        window.ctx.shadowOffsetX = previewSettings.shadowOffsetX;
+                        window.ctx.shadowOffsetY = previewSettings.shadowOffsetY;
+                        window.ctx.globalAlpha = previewSettings.shadowOpacity;
+                        window.ctx.globalCompositeOperation = 'multiply';
+                    }
+                }
+
+                // For color maps, apply pixel-level color manipulation (exact from tank designer)
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = image.width;
+                tempCanvas.height = image.height;
+                
+                // Draw the original image
+                tempCtx.drawImage(image, 0, 0);
+                
+                // Get image data for manipulation
+                const imageData = tempCtx.getImageData(0, 0, image.width, image.height);
+                const data = imageData.data;
+                
+                // Convert hex color to RGB and HSL
+                const targetR = parseInt(selectedBaseColor.slice(1, 3), 16);
+                const targetG = parseInt(selectedBaseColor.slice(3, 5), 16);
+                const targetB = parseInt(selectedBaseColor.slice(5, 7), 16);
+                const targetHsl = rgbToHsl(targetR, targetG, targetB);
+                
+                // Apply pixel-level color manipulation (hard-light-pixel mode)
+                for (let i = 0; i < data.length; i += 4) {
+                    if (data[i + 3] > 0) { // If pixel is not transparent
+                        const pixelR = data[i];
+                        const pixelG = data[i + 1];
+                        const pixelB = data[i + 2];
+                        const pixelA = data[i + 3];
+                        
+                        // Hard-light-pixel blend mode (exact from tank designer)
+                        const newR = targetR < 128 ? (2 * pixelR * targetR) / 255 : 255 - (2 * (255 - pixelR) * (255 - targetR)) / 255;
+                        const newG = targetG < 128 ? (2 * pixelG * targetG) / 255 : 255 - (2 * (255 - pixelG) * (255 - targetG)) / 255;
+                        const newB = targetB < 128 ? (2 * pixelB * targetB) / 255 : 255 - (2 * (255 - pixelB) * (255 - targetB)) / 255;
+                        
+                        data[i] = Math.max(0, Math.min(255, Math.round(newR)));
+                        data[i + 1] = Math.max(0, Math.min(255, Math.round(newG)));
+                        data[i + 2] = Math.max(0, Math.min(255, Math.round(newB)));
+                        data[i + 3] = pixelA; // Keep original alpha
+                    }
+                }
+                
+                // Put the modified image data back
+                tempCtx.putImageData(imageData, 0, 0);
+                
+                // Draw the modified image
+                window.ctx.globalCompositeOperation = 'source-over';
+                window.ctx.drawImage(tempCanvas, x, y, width, height);
+                
+            } else {
+                // For contours, draw normally preserving transparency
+                window.ctx.globalCompositeOperation = 'source-over';
+                window.ctx.drawImage(image, x, y, width, height);
+            }
+            
+            // Reset shadow settings after drawing
+            window.ctx.shadowColor = 'transparent';
+            window.ctx.shadowBlur = 0;
+            window.ctx.shadowOffsetX = 0;
+            window.ctx.shadowOffsetY = 0;
+            window.ctx.globalAlpha = 1.0;
+            window.ctx.globalCompositeOperation = 'source-over';
+        }
+
+        // Draw camo layer (exact from tank designer)
+        function drawCamoLayer(image, centerX, centerY, scale, layerType = 'body') {
+            if (!image) return;
+
+            const x = centerX - (image.width * scale) / 2;
+            const y = centerY - (image.height * scale) / 2;
+            const width = image.width * scale;
+            const height = image.height * scale;
+
+            // For camo layers, draw normally preserving transparency and blend mode
+            window.ctx.drawImage(image, x, y, width, height);
+        }
+
         // Call initialization
         initializeUI();
+        loadTankImages();
+        
+        // Ensure UI is updated after a delay (fallback)
+        setTimeout(() => {
+            if (selectedBaseColor && selectedCamo && selectedTeam) {
+                // Removed excessive debug logging for better performance
+                updateUIWithSelections();
+            }
+        }, 2000);
 
         // Function to update camo option backgrounds based on selected base color
         function updateCamoBackgrounds() {
             const camoOptions = document.querySelectorAll('.camo-option');
+            const currentColor = selectedBaseColor;
+            const isLightColor = isColorLight(currentColor);
+            const blendMode = isLightColor ? 'multiply' : 'soft-light';
             
             // Add a slight stagger effect for smoother animation
             camoOptions.forEach((option, index) => {
                 setTimeout(() => {
-                    option.style.backgroundColor = selectedBaseColor;
-                    option.style.setProperty('--base-color', selectedBaseColor);
+                    option.style.backgroundColor = currentColor;
+                    option.style.setProperty('--base-color', currentColor);
                     
-                    // Check for blend mode overrides
-                    const overrides = JSON.parse(option.style.getPropertyValue('--texture-overrides') || '{}');
-                    const colorKey = getColorKeyFromHex(selectedBaseColor);
-                    if (colorKey && overrides[colorKey]) {
-                        option.style.setProperty('--texture-blend-mode', overrides[colorKey].blendMode);
-                    } else {
-                        // Reset to default blend mode from the camo config
-                        const camoKey = option.dataset.camo;
+                    // Handle auto blend mode for non-none camos
+                    const camoKey = option.dataset.camo;
+                    if (camoKey !== 'none') {
                         const camoConfig = tankCamos[camoKey];
-                        const defaultBlendMode = camoConfig ? camoConfig.blendMode || 'normal' : 'normal';
-                        option.style.setProperty('--texture-blend-mode', defaultBlendMode);
+                        if (camoConfig && camoConfig.blendMode === 'auto') {
+                            option.style.setProperty('--texture-blend-mode', blendMode);
+                        }
                     }
                 }, index * 80); // 80ms delay between each option
             });
@@ -1457,11 +1952,10 @@
         // Team selection
         document.querySelectorAll('.team-option').forEach(option => {
             option.addEventListener('click', () => {
-                console.log('Team option clicked:', option.dataset.team);
+                // Removed excessive debug logging for better performance
                 document.querySelectorAll('.team-option').forEach(opt => opt.classList.remove('selected'));
                 option.classList.add('selected');
                 selectedTeam = option.dataset.team;
-                console.log('Selected team:', selectedTeam);
             });
         });
 
@@ -1479,12 +1973,8 @@
 
         // Join game
         joinButton.addEventListener('click', () => {
-            console.log('Join button clicked');
+            // Removed excessive debug logging for better performance
             const callname = callnameInput.value.trim();
-            console.log('Callname:', callname);
-            console.log('Selected team:', selectedTeam);
-            console.log('Selected color:', selectedBaseColor);
-            console.log('Selected camo:', selectedCamo);
 
             if (!callname) {
                 showStatus('Please enter a callname', 'error');
@@ -1506,14 +1996,13 @@
                 showStatus('Join timeout - please try again', 'error');
             }, 10000); // 10 second timeout
 
-            console.log('Sending join event to server...');
+            // Removed excessive debug logging for better performance
             socket.emit('join', {
                 callname,
                 tankColor: selectedBaseColor,
                 tankCamo: selectedCamo,
                 teamName: selectedTeam
             });
-            console.log('Join event sent to server');
 
             // Clear timeout when joined or reconnected
             const clearJoinTimeout = () => {
@@ -1904,24 +2393,11 @@
 
         // Socket event handlers
         socket.on('connect', () => {
-            console.log('Socket connected!');
+            // Removed excessive debug logging for better performance
             isConnected = true;
         });
         
-        // Debug all socket events
-        const originalOn = socket.on;
-        socket.on = function(event, callback) {
-            console.log('Socket listening for event:', event);
-            return originalOn.call(this, event, function(...args) {
-                console.log('Socket event received:', event, args);
-                if (event === 'joined' || event === 'reconnected') {
-                    console.log('=== STATE TRANSITION EVENT ===');
-                    console.log('Event type:', event);
-                    console.log('Event data:', args);
-                }
-                return callback.apply(this, args);
-            });
-        };
+        // Removed excessive socket event debugging for better performance
 
         socket.on('disconnect', () => {
             isConnected = false;
@@ -1933,29 +2409,15 @@
         });
 
         socket.on('joined', (data) => {
-            console.log('Joined event received:', data);
-            console.log('joinState element:', joinState);
-            console.log('playState element:', playState);
-            
-            // Test DOM manipulation
-            console.log('Testing DOM manipulation...');
-            console.log('Before - joinState display:', joinState.style.display);
-            console.log('Before - playState classes:', playState.className);
+            // Removed excessive debug logging for better performance
             
             activatePlayState();
-            
-            console.log('After state change - joinState display:', joinState.style.display);
-            console.log('After state change - playState classes:', playState.className);
             
             // Force a repaint
             playState.offsetHeight;
             
-            console.log('After repaint - playState classes:', playState.className);
-            console.log('playState computed style display:', window.getComputedStyle(playState).display);
-            
             // Add visual indicator
             document.body.style.backgroundColor = '#2a2a2a';
-            console.log('Play state activated - controller should be visible!');
             
             // Store player data in localStorage
             localStorage.setItem('tankKillerPlayer', JSON.stringify({
@@ -1971,13 +2433,9 @@
         });
 
         socket.on('reconnected', (data) => {
-            console.log('Reconnected event received:', data);
-            console.log('Processing reconnected event...');
+            // Removed excessive debug logging for better performance
             showStatus('Reconnected to the game!');
             activatePlayState();
-            
-            console.log('After reconnected state change - joinState display:', joinState.style.display);
-            console.log('After reconnected state change - playState classes:', playState.className);
             
             // Reset join button
             joinButton.disabled = false;
@@ -1985,7 +2443,7 @@
         });
 
         socket.on('playerState', (state) => {
-            console.log('Player state received:', state);
+            // Removed excessive debug logging for better performance
             playerState = state;
             updateAttributes(state.attributes);
         });
@@ -2018,164 +2476,13 @@
 
         // Load saved player data
         window.addEventListener('load', () => {
-            console.log('Window loaded, initializing...');
-            console.log('User agent:', navigator.userAgent);
-            console.log('Is mobile:', /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
-            
-            // Debug DOM elements again after load
-            console.log('DOM elements after load:');
-            console.log('joinState:', joinState);
-            console.log('playState:', playState);
-            console.log('joinState display:', joinState ? joinState.style.display : 'null');
-            console.log('playState classes:', playState ? playState.className : 'null');
+            // Removed excessive debug logging for better performance
             
             // Initialize selections as fallback
             initializeSelections();
             
-            const savedPlayer = localStorage.getItem('tankKillerPlayer');
-            
-            if (savedPlayer) {
-                const playerData = JSON.parse(savedPlayer);
-                
-                // Set saved team or randomize first
-                if (playerData.team) {
-                    selectedTeam = playerData.team;
-                    document.querySelectorAll('.team-option').forEach(opt => {
-                        opt.classList.remove('selected');
-                        if (opt.dataset.team === playerData.team) {
-                            opt.classList.add('selected');
-                        }
-                    });
-                } else {
-                    // Randomize team
-                    const teams = ['NATO', 'CSTO', 'PLA'];
-                    const randomTeam = teams[Math.floor(Math.random() * teams.length)];
-                    console.log('Randomizing team:', randomTeam);
-                    selectedTeam = randomTeam;
-                    const teamOptions = document.querySelectorAll('.team-option');
-                    console.log('Found team options:', teamOptions.length);
-                    teamOptions.forEach(opt => {
-                        opt.classList.remove('selected');
-                        if (opt.dataset.team === randomTeam) {
-                            opt.classList.add('selected');
-                            console.log('Selected team option:', opt.dataset.team);
-                        }
-                    });
-                }
-                
-                // Now generate name based on selected team
-                if (playerData.callname && playerData.callname.trim()) {
-                    callnameInput.value = playerData.callname;
-                } else {
-                    // Generate random name based on selected team
-                    const randomName = generateRandomName();
-                    callnameInput.value = randomName;
-                }
-                
-                // Set saved base color or randomize
-                if (playerData.tankColor) {
-                    document.querySelectorAll('.base-color-option').forEach(opt => {
-                        opt.classList.remove('selected');
-                        if (opt.dataset.color === playerData.tankColor) {
-                            opt.classList.add('selected');
-                            selectedBaseColor = playerData.tankColor;
-                            document.getElementById('selectedColorName').textContent = opt.dataset.name;
-                        }
-                    });
-                } else {
-                    // Randomize base color
-                    const colorKeys = Object.keys(tankColors);
-                    const randomKey = colorKeys[Math.floor(Math.random() * colorKeys.length)];
-                    const randomColor = tankColors[randomKey];
-                    console.log('Randomizing color:', randomColor.label, randomColor.hex);
-                    const colorOptions = document.querySelectorAll('.base-color-option');
-                    console.log('Found color options:', colorOptions.length);
-                    colorOptions.forEach(opt => {
-                        opt.classList.remove('selected');
-                        if (opt.dataset.color === randomColor.hex) {
-                            opt.classList.add('selected');
-                            selectedBaseColor = randomColor.hex;
-                            document.getElementById('selectedColorName').textContent = randomColor.label;
-                            console.log('Selected color option:', opt.dataset.color);
-                        }
-                    });
-                }
-
-                // Set saved camo or randomize
-                if (playerData.tankCamo) {
-                    document.querySelectorAll('.camo-option').forEach(opt => {
-                        opt.classList.remove('selected');
-                        if (opt.dataset.camo === playerData.tankCamo) {
-                            opt.classList.add('selected');
-                            selectedCamo = playerData.tankCamo;
-                            document.getElementById('selectedCamoName').textContent = opt.dataset.name;
-                        }
-                    });
-                } else {
-                    // Randomize camo
-                    const camos = Object.keys(tankCamos);
-                    const randomCamo = camos[Math.floor(Math.random() * camos.length)];
-                    console.log('Randomizing camo:', randomCamo);
-                    const camoOptions = document.querySelectorAll('.camo-option');
-                    console.log('Found camo options:', camoOptions.length);
-                    camoOptions.forEach(opt => {
-                        opt.classList.remove('selected');
-                        if (opt.dataset.camo === randomCamo) {
-                            opt.classList.add('selected');
-                            selectedCamo = randomCamo;
-                            document.getElementById('selectedCamoName').textContent = opt.dataset.name;
-                            console.log('Selected camo option:', opt.dataset.camo);
-                        }
-                    });
-                }
-
-                // Update camo backgrounds
-                updateCamoBackgrounds();
-            } else {
-                // No saved data - randomize everything
-                // Randomize team first
-                const teams = ['NATO', 'CSTO', 'PLA'];
-                const randomTeam = teams[Math.floor(Math.random() * teams.length)];
-                selectedTeam = randomTeam;
-                document.querySelectorAll('.team-option').forEach(opt => {
-                    opt.classList.remove('selected');
-                    if (opt.dataset.team === randomTeam) {
-                        opt.classList.add('selected');
-                    }
-                });
-                
-                // Now generate name based on selected team
-                const randomName = generateRandomName();
-                callnameInput.value = randomName;
-                
-                // Randomize base color
-                const colorKeys = Object.keys(tankColors);
-                const randomKey = colorKeys[Math.floor(Math.random() * colorKeys.length)];
-                const randomColor = tankColors[randomKey];
-                document.querySelectorAll('.base-color-option').forEach(opt => {
-                    opt.classList.remove('selected');
-                    if (opt.dataset.color === randomColor.hex) {
-                        opt.classList.add('selected');
-                        selectedBaseColor = randomColor.hex;
-                        document.getElementById('selectedColorName').textContent = randomColor.label;
-                    }
-                });
-                
-                // Randomize camo
-                const camos = Object.keys(tankCamos);
-                const randomCamo = camos[Math.floor(Math.random() * camos.length)];
-                document.querySelectorAll('.camo-option').forEach(opt => {
-                    opt.classList.remove('selected');
-                    if (opt.dataset.camo === randomCamo) {
-                        opt.classList.add('selected');
-                        selectedCamo = randomCamo;
-                        document.getElementById('selectedCamoName').textContent = opt.dataset.name;
-                    }
-                });
-                
-                // Update camo backgrounds
-                updateCamoBackgrounds();
-            }
+            // Always randomize on page refresh, regardless of saved data
+            randomizeEverything();
         });
 
         // Function to handle play state activation
@@ -2193,6 +2500,219 @@
         }
 
 
+
+        // Helper function to determine if a color is light or dark
+        function isColorLight(hexColor) {
+            // Remove # if present
+            const hex = hexColor.replace('#', '');
+            
+            // Convert hex to RGB
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            
+            // Calculate luminance
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            
+            // Return true if light (threshold: 0.4)
+            return luminance > 0.4;
+        }
+
+        // Color wheel functionality
+        function showColorWheel() {
+            const overlay = document.createElement('div');
+            overlay.className = 'color-wheel-overlay';
+            
+            const container = document.createElement('div');
+            container.className = 'color-wheel-container';
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'color-wheel-close';
+            closeBtn.textContent = '✕';
+            closeBtn.addEventListener('click', () => {
+                document.body.removeChild(overlay);
+            });
+            
+            const wheel = document.createElement('div');
+            wheel.className = 'color-wheel';
+            
+            const indicator = document.createElement('div');
+            indicator.className = 'color-wheel-indicator';
+            
+            wheel.appendChild(indicator);
+            container.appendChild(closeBtn);
+            container.appendChild(wheel);
+            overlay.appendChild(container);
+            document.body.appendChild(overlay);
+            
+            // Handle color wheel interaction
+            let isDragging = false;
+            
+            wheel.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                updateColorFromWheel(e, wheel, indicator);
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    updateColorFromWheel(e, wheel, indicator);
+                }
+            });
+            
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+            
+            // Close on overlay click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    document.body.removeChild(overlay);
+                }
+            });
+        }
+        
+        function updateColorFromWheel(e, wheel, indicator) {
+            const rect = wheel.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            const deltaX = e.clientX - centerX;
+            const deltaY = e.clientY - centerY;
+            
+            // Calculate angle and distance
+            const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            
+            // Limit to wheel radius (100px)
+            const maxDistance = 100;
+            const clampedDistance = Math.min(distance, maxDistance);
+            
+            // Calculate saturation and hue
+            const saturation = clampedDistance / maxDistance;
+            const hue = (angle + 360) % 360;
+            
+            // Convert to RGB
+            const rgb = hslToRgb(hue / 360, saturation, 0.5);
+            const hexColor = rgbToHex(rgb[0], rgb[1], rgb[2]);
+            
+            // Update custom color
+            tankColors.custom = hexColor;
+            
+            // Update the custom color square
+            const customSquare = document.querySelector('.base-color-option.custom');
+            if (customSquare) {
+                customSquare.style.backgroundColor = hexColor;
+            }
+            
+            // Select the custom color
+            document.querySelectorAll('.base-color-option').forEach(opt => opt.classList.remove('selected'));
+            customSquare.classList.add('selected');
+            selectedBaseColor = hexColor;
+            
+            // Update color name display
+            document.getElementById('selectedColorName').textContent = 'Custom';
+            
+            // Update camo backgrounds
+            updateCamoBackgrounds();
+            updateTankPreview();
+            
+            // Update indicator position
+            const indicatorX = (clampedDistance / maxDistance) * Math.cos(angle * Math.PI / 180);
+            const indicatorY = (clampedDistance / maxDistance) * Math.sin(angle * Math.PI / 180);
+            
+            indicator.style.left = `calc(50% + ${indicatorX * 100}px)`;
+            indicator.style.top = `calc(50% + ${indicatorY * 100}px)`;
+        }
+        
+        // Color conversion utilities
+        function hslToRgb(h, s, l) {
+            let r, g, b;
+            
+            if (s === 0) {
+                r = g = b = l;
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1/6) return p + (q - p) * 6 * t;
+                    if (t < 1/2) return q;
+                    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                };
+                
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+            
+            return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+        }
+        
+        function rgbToHex(r, g, b) {
+            return '#' + [r, g, b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('');
+        }
+
+        // Color conversion functions (exact from tank designer)
+        function rgbToHsl(r, g, b) {
+            r /= 255;
+            g /= 255;
+            b /= 255;
+            
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+            
+            if (max === min) {
+                h = s = 0; // achromatic
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            
+            return [h, s, l];
+        }
+        
+        function hslToRgb(h, s, l) {
+            let r, g, b;
+            
+            if (s === 0) {
+                r = g = b = l; // achromatic
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1/6) return p + (q - p) * 6 * t;
+                    if (t < 1/2) return q;
+                    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                };
+                
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+            
+            return [
+                Math.round(r * 255),
+                Math.round(g * 255),
+                Math.round(b * 255)
+            ];
+        }
 
         // Prevent context menu on long press
         document.addEventListener('contextmenu', e => e.preventDefault());

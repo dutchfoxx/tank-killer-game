@@ -28,9 +28,18 @@ app.use('/src', express.static(path.join(__dirname, '../')));
 const gameEngine = new GameEngine();
 gameEngine.start();
 
+// Connection counters for reduced logging
+let connectionLogCounter = 0;
+let disconnectionLogCounter = 0;
+
 // Socket.io connection handling
 io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
+  // Reduced connection logging to prevent spam
+  connectionLogCounter++;
+  
+  if (connectionLogCounter % 5 === 0) { // Log every 5th connection
+    console.log(`Client connected: ${socket.id} (connection #${connectionLogCounter})`);
+  }
 
   // Handle player join
   socket.on('join', (data) => {
@@ -48,63 +57,48 @@ io.on('connection', (socket) => {
     let playerId = socket.id;
     const existingPlayer = gameEngine.gameState.players.get(playerId);
     
-    console.log(`[DEBUG] Player join - Trees before: ${gameEngine.gameState.trees.length}`);
-    console.log(`[DEBUG] Player ID: ${playerId}`);
-    console.log(`[DEBUG] Existing player: ${existingPlayer ? 'YES' : 'NO'}`);
+    
     
     if (!existingPlayer) {
       // New player
-      console.log(`[DEBUG] Adding new player: ${callname}`);
+      
       const { player, tank } = gameEngine.addPlayer(playerId, callname, tankColor, tankCamo, team);
-      console.log(`[DEBUG] Sending 'joined' event to client`);
+      
       socket.emit('joined', { playerId, player, tank });
       console.log(`Player ${callname} joined the game`);
       
       // Force immediate broadcast of updated game state to all clients
       const gameState = gameEngine.getGameState();
-      console.log(`[DEBUG] Broadcasting updated gameState with ${gameState.trees.length} trees and ${gameState.tanks.length} tanks`);
+      
       io.emit('gameState', gameState);
     } else {
       // Reconnection
-      console.log(`[DEBUG] Player reconnecting: ${existingPlayer.callname}`);
-      console.log(`[DEBUG] Sending 'reconnected' event to client`);
+      
       socket.emit('reconnected', { playerId, player: existingPlayer });
       console.log(`Player ${existingPlayer.callname} reconnected`);
     }
 
-    console.log(`[DEBUG] Player join - Trees after: ${gameEngine.gameState.trees.length}`);
-    
     // Send current game state to the joining player
     const gameState = gameEngine.getGameState();
-    console.log(`[DEBUG] Sending gameState with ${gameState.trees.length} trees`);
     socket.emit('gameState', gameState);
   });
 
   // Handle player input
   socket.on('playerInput', (data) => {
     const { movement, rotation, shoot } = data;
-    console.log(`Player ${socket.id} input:`, { movement, rotation, shoot });
+
     gameEngine.updatePlayerInput(socket.id, { movement, rotation, shoot });
   });
 
   // Handle AI toggle
   socket.on('toggleAI', (data) => {
-    console.log('[SERVER DEBUG] toggleAI event received:', data);
-    console.log('[SERVER DEBUG] Current game state before AI toggle:', {
-      trees: gameEngine.gameState.trees.length,
-      tanks: gameEngine.gameState.tanks.size,
-      shells: gameEngine.gameState.shells.length,
-      upgrades: gameEngine.gameState.upgrades.length
-    });
+
     
     const { enabled } = data;
     if (enabled) {
-      console.log('[SERVER DEBUG] Adding AI tank...');
       const aiId = gameEngine.addAITank();
       socket.emit('aiAdded', { aiId });
-      console.log('[SERVER DEBUG] AI tank added:', aiId);
     } else {
-      console.log('[SERVER DEBUG] Removing AI tank...');
       // Remove the most recent AI tank
       const aiTanks = Array.from(gameEngine.gameState.tanks.keys())
         .filter(id => id.startsWith('ai_'));
@@ -113,21 +107,15 @@ io.on('connection', (socket) => {
         const aiId = aiTanks[aiTanks.length - 1];
         gameEngine.removeAITank(aiId);
         socket.emit('aiRemoved', { aiId });
-        console.log('[SERVER DEBUG] AI tank removed:', aiId);
       }
     }
     
-    console.log('[SERVER DEBUG] Game state after AI toggle:', {
-      trees: gameEngine.gameState.trees.length,
-      tanks: gameEngine.gameState.tanks.size,
-      shells: gameEngine.gameState.shells.length,
-      upgrades: gameEngine.gameState.upgrades.length
-    });
+
   });
 
   // Handle AI settings application
   socket.on('applyAISettings', (data) => {
-    console.log('[SERVER DEBUG] applyAISettings event received:', data);
+
     const { aiCount, aiLevel } = data;
     
     // Remove all existing AI tanks first
@@ -143,10 +131,10 @@ io.on('connection', (socket) => {
     for (let i = 0; i < aiCount; i++) {
       const aiId = gameEngine.addAITank(aiLevel);
       socket.emit('aiAdded', { aiId });
-      console.log(`[SERVER DEBUG] AI tank ${i + 1}/${aiCount} added:`, aiId);
+
     }
     
-    console.log('[SERVER DEBUG] AI settings applied - AI count:', aiCount, 'Level:', aiLevel);
+
   });
 
   // Handle balance update
@@ -158,13 +146,7 @@ io.on('connection', (socket) => {
 
   // Handle apply settings (update settings without forcing reconnects)
   socket.on('applySettings', (data) => {
-    console.log('[SERVER DEBUG] applySettings event received:', data);
-    console.log('[SERVER DEBUG] Current game state before settings apply:', {
-      trees: gameEngine.gameState.trees.length,
-      tanks: gameEngine.gameState.tanks.size,
-      shells: gameEngine.gameState.shells.length,
-      upgrades: gameEngine.gameState.upgrades.length
-    });
+
     
     console.log('Applying new settings:', data);
     gameEngine.updateSettings(data);
@@ -197,23 +179,8 @@ io.on('connection', (socket) => {
 
   // Handle game reset
   socket.on('resetGame', () => {
-    console.log('[SERVER DEBUG] resetGame event received');
-    console.log('[SERVER DEBUG] Current game state before reset:', {
-      trees: gameEngine.gameState.trees.length,
-      tanks: gameEngine.gameState.tanks.size,
-      bullets: gameEngine.gameState.bullets.length,
-      upgrades: gameEngine.gameState.upgrades.length
-    });
-    
     // Reset the game engine
     gameEngine.resetGame();
-    
-    console.log('[SERVER DEBUG] Game state after reset:', {
-      trees: gameEngine.gameState.trees.length,
-      tanks: gameEngine.gameState.tanks.size,
-      bullets: gameEngine.gameState.bullets.length,
-      upgrades: gameEngine.gameState.upgrades.length
-    });
     
     // Notify all clients that the game has been reset
     io.emit('gameReset', { message: 'Game has been reset' });
@@ -230,7 +197,12 @@ io.on('connection', (socket) => {
 
   // Handle disconnect
   socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+    // Reduced disconnection logging to prevent spam
+    disconnectionLogCounter++;
+    
+    if (disconnectionLogCounter % 5 === 0) { // Log every 5th disconnection
+      console.log(`Client disconnected: ${socket.id} (disconnection #${disconnectionLogCounter})`);
+    }
     gameEngine.removePlayer(socket.id);
     
     // Notify other clients
@@ -254,60 +226,44 @@ io.on('connection', (socket) => {
 
   // Handle set player attributes
   socket.on('setPlayerAttributes', (attributes) => {
-    console.log('=== SERVER: setPlayerAttributes received ===');
-    console.log('Socket ID:', socket.id);
-    console.log('Attributes received:', attributes);
-    console.log('Game engine state before:', {
-      players: gameEngine.gameState.players.size,
-      tanks: gameEngine.gameState.tanks.size
-    });
+
+    // Reduced debug logging to prevent spam
+    console.log(`Setting attributes for player ${socket.id}`);
     
     try {
       gameEngine.setPlayerAttributes(attributes);
-      console.log('Game engine setPlayerAttributes completed');
-      socket.emit('attributesSet', { success: true });
-      console.log('attributesSet response sent to client');
+          socket.emit('attributesSet', { success: true });
     } catch (error) {
       console.error('Error in setPlayerAttributes:', error);
       socket.emit('attributesSet', { success: false, error: error.message });
     }
     
-    console.log('=== SERVER: setPlayerAttributes completed ===');
+
   });
 
   // Handle set player attribute limits (min/max balance settings)
   socket.on('setPlayerAttributeLimit', (attributeUpdate) => {
-    console.log('=== SERVER: setPlayerAttributeLimit received ===');
-    console.log('Socket ID:', socket.id);
-    console.log('Attribute update:', attributeUpdate);
+    console.log(`Setting attribute limit for player ${socket.id}`);
     
     try {
       gameEngine.setPlayerAttributeLimit(attributeUpdate.attributeName, attributeUpdate.type, attributeUpdate.value);
-      console.log('Game engine setPlayerAttributeLimit completed');
-      
       // Send updated balance settings to all clients
       const balanceSettings = gameEngine.gameSettings.attributeLimits;
       io.emit('balanceSettings', balanceSettings);
-      console.log('Balance settings broadcast to all clients');
       
       socket.emit('attributeLimitSet', { success: true });
-      console.log('attributeLimitSet response sent to client');
     } catch (error) {
       console.error('Error in setPlayerAttributeLimit:', error);
       socket.emit('attributeLimitSet', { success: false, error: error.message });
     }
     
-    console.log('=== SERVER: setPlayerAttributeLimit completed ===');
+    // Removed excessive debug logging
   });
 });
 
 // Broadcast game state to all clients every 50ms (20 FPS for network updates)
 setInterval(() => {
   const gameState = gameEngine.getGameState();
-  // Only log tree count occasionally to avoid spam
-  if (Math.random() < 0.01) { // 1% chance to log
-    console.log(`[DEBUG] Broadcasting gameState with ${gameState.trees.length} trees and ${gameState.tanks.length} tanks`);
-  }
   io.emit('gameState', gameState);
 }, 50);
 

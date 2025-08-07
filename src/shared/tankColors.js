@@ -27,6 +27,10 @@ const tankColors = {
     'arctic': {
         label: 'Arctic',
         hex: '#cfc4c4'
+    },
+    'specops': {
+        label: 'SpecOps',
+        hex: '#191A1C'
     }
 };
 
