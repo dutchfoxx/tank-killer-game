@@ -7,8 +7,21 @@ import {
   TREE_PARAMS, 
   BATTLEFIELD,
   TANK_ATTRIBUTES,
-  GAME_PARAMS
+  GAME_PARAMS,
+  DAMAGE_PARAMS
 } from '../shared/constants.js';
+
+// Tank colors for AI tanks (hardcoded to avoid import issues)
+const tankColors = {
+    'forest': { hex: '#1f2e23' },
+    'desert': { hex: '#D4A574' },
+    'marines': { hex: '#333551' },
+    'metal': { hex: '#6a6a6a' },
+    'tradition': { hex: '#813D30' },
+    'plains': { hex: '#50654D' },
+    'arctic': { hex: '#cfc4c4' },
+    'specops': { hex: '#191A1C' }
+};
 
 export class GameEngine {
   constructor() {
@@ -29,11 +42,11 @@ export class GameEngine {
         gasolineSpeedPenalty: GAME_PARAMS.GASOLINE_SPEED_PENALTY
       },
       damageParams: {
-        health: 1,
-        speed: 5,
-        rotation: 5,
-        kinetics: 10,
-        gasoline: 5
+        health: DAMAGE_PARAMS.HEALTH,
+        speed: DAMAGE_PARAMS.SPEED,
+        rotation: DAMAGE_PARAMS.ROTATION,
+        kinetics: DAMAGE_PARAMS.KINETICS,
+        gasoline: DAMAGE_PARAMS.GASOLINE
       },
       upgradeTypes: {
         speed: { count: 1 },
@@ -56,16 +69,23 @@ export class GameEngine {
         rotationRange: 30
       },
       attributeLimits: {
-        health: { min: 0, max: 100 },
-        speed: { min: 5, max: 50 },
-        gasoline: { min: 0, max: 100 },
-        rotation: { min: 5, max: 30 },
-        ammunition: { min: 0, max: 14 },
-        kinetics: { min: 50, max: 300 }
+        health: TANK_ATTRIBUTES.HEALTH,
+        speed: TANK_ATTRIBUTES.SPEED,
+        gasoline: TANK_ATTRIBUTES.GASOLINE,
+        rotation: TANK_ATTRIBUTES.ROTATION,
+        ammunition: TANK_ATTRIBUTES.AMMUNITION,
+        kinetics: TANK_ATTRIBUTES.KINETICS
       }
     };
     
     this.initializeBattlefield();
+    
+    // Helper method to get random tank color for AI tanks
+    this.getRandomTankColor = () => {
+      const colorKeys = Object.keys(tankColors);
+      const randomKey = colorKeys[Math.floor(Math.random() * colorKeys.length)];
+      return tankColors[randomKey].hex;
+    };
   }
 
   start() {
@@ -383,46 +403,7 @@ export class GameEngine {
 
   }
 
-  setPlayerAttributeLimit(attributeName, type, value) {
 
-    // Reduced debug logging to prevent spam
-    
-    // Update the balance settings for future players
-    if (!this.gameSettings.attributeLimits[attributeName]) {
-      console.error(`Unknown attribute: ${attributeName}`);
-      return;
-    }
-    
-    this.gameSettings.attributeLimits[attributeName][type] = value;
-    // Reduced debug logging to prevent spam
-    
-    // Apply appropriate changes to existing players
-    let playersUpdated = 0;
-    for (const [playerId, tank] of this.gameState.tanks) {
-      if (!tank.isAI) {
-        const currentValue = tank.attributes[attributeName];
-        let newValue = currentValue;
-        
-        if (type === 'max' && currentValue > value) {
-          // Cap players who exceed the new maximum
-          newValue = value;
-          // Reduced debug logging to prevent spam
-        } else if (type === 'min' && currentValue < value) {
-          // Boost players who are below the new minimum
-          newValue = value;
-          // Reduced debug logging to prevent spam
-        }
-        
-        if (newValue !== currentValue) {
-          tank.attributes[attributeName] = newValue;
-          playersUpdated++;
-        }
-      }
-    }
-    
-    // Reduced debug logging to prevent spam
-
-  }
 
   addAITank(aiLevel = 'intermediate') {
     const aiId = `ai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -452,7 +433,7 @@ export class GameEngine {
     const aiPlayer = {
       id: aiId,
       callname: `AI-${aiLevel.charAt(0).toUpperCase() + aiLevel.slice(1)}`,
-      tankColor: '#888888', // Gray color for AI tanks
+      tankColor: this.getRandomTankColor(), // Random color for AI tanks
       tankCamo: 'none', // No camo for AI
       team: { name: 'AI', color: '#FF6B6B' }, // Red team indicator for AI
       isAI: true,

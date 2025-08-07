@@ -52,7 +52,15 @@ function getColorKeyFromHex(hex) {
     return entry ? entry[0] : null;
 }
 
-// Export for Node.js (server-side)
+// Export for CommonJS (Node.js and browser compatibility)
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { tankColors, getColorNameFromHex, getHexFromColorName, getColorKeyFromHex };
+}
+
+// Export for browser globals (for script tag loading)
+if (typeof window !== 'undefined') {
+    window.tankColors = tankColors;
+    window.getColorNameFromHex = getColorNameFromHex;
+    window.getHexFromColorName = getHexFromColorName;
+    window.getColorKeyFromHex = getColorKeyFromHex;
 } 

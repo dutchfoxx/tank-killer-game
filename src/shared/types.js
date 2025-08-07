@@ -1,4 +1,4 @@
-import { GAME_PARAMS } from './constants.js';
+import { GAME_PARAMS, DAMAGE_PARAMS } from './constants.js';
 
 // Game State Types
 export class Vector2 {
@@ -122,7 +122,7 @@ export class Tank {
       ? this.attributes.speed * gasolineSpeedPenalty 
       : this.attributes.speed;
 
-    // Calculate target angle based on movement direction
+    // Calculate movement based on tank's current facing direction (realistic tank movement)
     const targetMagnitude = this.targetVelocity.magnitude();
     
     if (targetMagnitude > 0.01) {
@@ -132,18 +132,19 @@ export class Tank {
       // Apply smooth rotation based on rotation speed attribute
       this.rotateTowards(targetAngle, deltaTime);
       
-      // Calculate movement direction based on CURRENT tank angle (not target angle)
-      // This ensures the tank only moves in the direction it's currently facing
-      const movementDirection = new Vector2(
-        Math.cos(this.angle),
-        Math.sin(this.angle)
-      );
+      // ALL tanks (both AI and player) should move only in their current facing direction
+      // This prevents the weird strafing effect when rotating
+      const currentDirection = new Vector2(Math.cos(this.angle), Math.sin(this.angle));
+      const desiredDirection = this.targetVelocity.normalize();
+      const dotProduct = currentDirection.dot(desiredDirection);
       
-      // Apply speed in the direction the tank is currently facing
-      const targetVelocity = movementDirection.multiply(effectiveSpeed);
+      // Only move forward or backward, not sideways
+      const forwardSpeed = dotProduct * effectiveSpeed;
+      const movementDirection = currentDirection.multiply(Math.sign(forwardSpeed));
+      const targetVelocity = movementDirection.multiply(Math.abs(forwardSpeed));
       
-      // Smooth velocity interpolation towards the direction the tank is facing
-      const lerpFactor = 0.15; // Smoothing factor
+      // Smooth velocity interpolation
+      const lerpFactor = 0.15;
       this.velocity = this.velocity.lerp(targetVelocity, lerpFactor);
     } else {
       // Tank should stop - apply strong friction to reach zero quickly
@@ -348,11 +349,11 @@ export class Tank {
     }
 
     console.log(`Tank ${this.id} taking damage. Health before: ${this.attributes.health}`);
-    this.attributes.health -= 1;
-    this.attributes.speed = Math.max(5, this.attributes.speed - 5);
-    this.attributes.rotation = Math.max(5, this.attributes.rotation - 5);
-    this.attributes.kinetics = Math.max(50, this.attributes.kinetics - 10);
-    this.attributes.gasoline = Math.max(0, this.attributes.gasoline - 5);
+    this.attributes.health -= DAMAGE_PARAMS.HEALTH;
+    this.attributes.speed = Math.max(5, this.attributes.speed - DAMAGE_PARAMS.SPEED);
+    this.attributes.rotation = Math.max(5, this.attributes.rotation - DAMAGE_PARAMS.ROTATION);
+    this.attributes.kinetics = Math.max(50, this.attributes.kinetics - DAMAGE_PARAMS.KINETICS);
+    this.attributes.gasoline = Math.max(0, this.attributes.gasoline - DAMAGE_PARAMS.GASOLINE);
     
     // Only log critical damage events for human players
     if (!this.isAI && this.attributes.health <= 10) {

@@ -5,6 +5,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GameEngine } from './gameEngine.js';
+import { DAMAGE_PARAMS } from '../shared/constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -144,38 +145,7 @@ io.on('connection', (socket) => {
     socket.emit('settingsUpdated', { success: true });
   });
 
-  // Handle apply settings (update settings without forcing reconnects)
-  socket.on('applySettings', (data) => {
 
-    
-    console.log('Applying new settings:', data);
-    gameEngine.updateSettings(data);
-    
-    // Only reset if specifically requested or if it's a major structural change
-    const needsReset = data.forceReset || 
-                      (data.treeParams && (data.treeParams.minTrees !== undefined || 
-                                          data.treeParams.maxTrees !== undefined ||
-                                          data.treeParams.clustering !== undefined));
-    
-    if (needsReset) {
-      console.log('Resetting game due to structural changes');
-      gameEngine.resetGame();
-      
-      // Only emit settings updated, no forced reconnection
-      io.emit('settingsApplied', { message: 'Game settings updated and reset' });
-    } else {
-      // Just update settings without reset
-      console.log('Settings updated without reset');
-      io.emit('settingsApplied', { message: 'Game settings updated' });
-    }
-    
-    console.log('[SERVER DEBUG] Game state after settings apply:', {
-      trees: gameEngine.gameState.trees.length,
-      tanks: gameEngine.gameState.tanks.size,
-      bullets: gameEngine.gameState.bullets.length,
-      upgrades: gameEngine.gameState.upgrades.length
-    });
-  });
 
   // Handle game reset
   socket.on('resetGame', () => {
@@ -186,8 +156,7 @@ io.on('connection', (socket) => {
     io.emit('gameReset', { message: 'Game has been reset' });
   });
 
-  // Send balance settings to new client
-  socket.emit('balanceSettings', gameEngine.gameSettings.attributeLimits);
+
 
   // Handle damage feedback
   socket.on('damageTaken', () => {
@@ -212,8 +181,6 @@ io.on('connection', (socket) => {
   // Handle battlefield page requests
   socket.on('requestGameState', () => {
     socket.emit('gameState', gameEngine.getGameState());
-    // Also send balance settings to battlefield
-    socket.emit('balanceSettings', gameEngine.gameSettings.attributeLimits);
   });
 
   // Handle controller page requests
@@ -310,46 +277,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Balance endpoint
-app.get('/settings', (req, res) => {
-  res.json({
-    gameParams: {
-      respawnTime: 5000,
-      reloadTime: 1000,
-      acceleration: 0.1,
-      shellLifetime: 1000,
-      damageFeedbackDuration: 300,
-      gasolineSpeedPenalty: 0.5
-    },
-    damageParams: {
-      health: 1,
-      speed: 5,
-      rotation: 5,
-      kinetics: 10,
-      gasoline: 5
-    },
-    upgradeTypes: {
-      speed: { value: 20, count: 1 },
-      gasoline: { value: 80, count: 1 },
-      rotation: { value: 20, count: 1 },
-      ammunition: { value: 7, count: 2 },
-      kinetics: { value: 30, count: 1 },
-      health: { value: 10, count: 0 }
-    },
-    treeParams: {
-  minTrees: 10,
-  maxTrees: 25,
-  treeSize: 36, // Increased by 20% from 30
-  treeSizeVariance: 18, // Increased by 20% from 15
-  clusterGroups: 1, // Number of cluster groups
-  clustering: 0 // 0 = random, 100 = highly clustered
-},
-    upgradeParams: {
-  size: 22.5,
-  rotationRange: 30
-}
-  });
-});
+
 
 const PORT = process.env.PORT || 3000;
 

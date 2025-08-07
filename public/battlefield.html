@@ -20,58 +20,33 @@
             overflow: hidden;
         }
 
-        .header {
+        .reset-button {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 50px;
-            background-color: #1b1b1b;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 20px;
-            z-index: 1000;
-        }
-
-        .header h1 {
-            color: #b83400;
-            font-size: 1.5rem;
-        }
-
-        .header-controls {
-            display: flex;
-            gap: 10px;
-        }
-
-        .control-button {
+            top: 0px;
+            right: 0px;
             background: none;
             border: none;
             color: #FFFFFF;
             cursor: pointer;
-            padding: 8px;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
+            padding: 8px 12px;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             gap: 5px;
+            z-index: 1000;
         }
 
-        .control-button:hover {
-            background-color: #555555;
+        .reset-button:hover {
+            opacity: 0.8;
         }
 
-        .control-button.active {
-            background-color: #b83400;
-        }
-
-        .control-button .material-icons {
-            font-size: 20px;
+        .reset-button .material-icons {
+            font-size: 18px;
         }
 
         .game-container {
             position: fixed;
-            top: 50px;
+            top: 0;
             left: 0;
             right: 0;
             bottom: 0;
@@ -89,16 +64,7 @@
             /* Width and height will be set by JavaScript for zoom */
         }
 
-        .settings-panel {
-            position: fixed;
-            top: 70px;
-            right: 20px;
-            background-color: #1b1b1b;
-            border-radius: 10px;
-            padding: 20px;
-            max-width: 400px;
-            display: none;
-        }
+
 
         /* FPS Counter */
         .fps-counter {
@@ -260,204 +226,91 @@
             color: #fff;
         }
 
-        .settings-panel.show {
-            display: block;
-        }
 
-        .settings-header {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
 
-        .settings-header h3 {
-            color: #b83400;
-        }
-
-        .copy-button {
-            background-color: #b83400;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-
-        .copy-button:hover {
-            background-color: #a03000;
-        }
-
-        .settings-section {
-            margin-bottom: 20px;
-        }
-
-        .settings-section h4 {
-            color: #CCCCCC;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #555555;
-            padding-bottom: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .set-button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-
-        .set-button:hover {
-            background-color: #45a049;
-        }
-
-        .setting-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-            gap: 10px;
-        }
-
-        .setting-item label {
-            min-width: 120px;
-            flex-shrink: 0;
-        }
-
-        .setting-item .set-button {
-            flex-shrink: 0;
-            width: 40px;
-        }
-
-        .setting-item input {
-            width: 80px;
-            background-color: #555555;
-            border: 1px solid #777777;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 3px;
-            text-align: left;
-        }
-
-        /* Position input boxes to the right side of the popup */
-        .setting-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-            gap: 10px;
-            justify-content: space-between;
-        }
-
-        /* AI Panel Styles */
-        .ai-popup {
+        /* AI Control Panel Styles */
+        .ai-control-panel {
             position: fixed;
-            top: 70px;
-            right: 20px;
-            background-color: #1b1b1b;
-            border-radius: 10px;
-            padding: 20px;
-            max-width: 400px;
-            max-height: 80vh;
-            overflow-y: auto;
-            display: none;
+            top: 0px;
+            left: 0px;
+            padding: 12px;
+            min-width: 180px;
             z-index: 1001;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
 
-        .ai-popup.show {
-            display: block;
-        }
-
-        .ai-popup-header {
+        .ai-control-header {
             display: flex;
-            justify-content: center;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 6px;
+            margin-bottom: 12px;
+            color: #FFFFFF;
+            font-weight: bold;
+            font-size: 13px;
         }
 
-        .ai-popup-header h3 {
-            color: #b83400;
+        .ai-control-header .material-icons {
+            font-size: 16px;
+            color: #FFFFFF;
         }
 
-        .ai-popup-close {
-            background: none;
-            border: none;
+        .ai-control-buttons {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .ai-control-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
             color: #FFFFFF;
             cursor: pointer;
-            padding: 4px;
-            border-radius: 3px;
-            transition: background-color 0.3s ease;
-        }
-
-        .ai-popup-close:hover {
-            background-color: #555555;
-        }
-
-        .ai-popup-close .material-icons {
-            font-size: 18px;
-        }
-
-        .ai-popup-content {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .ai-attribute {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
-        }
-
-        .ai-attribute-label {
-            min-width: 120px;
-            color: #CCCCCC;
-            font-size: 0.9rem;
-            flex-shrink: 0;
-        }
-
-        .ai-attribute-bar {
-            flex: 1;
-            height: 8px;
-            background-color: #555555;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .ai-attribute-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #4CAF50, #8BC34A);
-            border-radius: 4px;
-            transition: width 0.3s ease, background 0.3s ease;
-        }
-
-        .ai-attribute-fill.low {
-            background: linear-gradient(90deg, #f44336, #ff5722);
-        }
-
-        .ai-attribute-fill.medium {
-            background: linear-gradient(90deg, #ff9800, #ffc107);
-        }
-
-        .ai-attribute-fill.high {
-            background: linear-gradient(90deg, #4CAF50, #8BC34A);
-        }
-
-        .ai-attribute-value {
-            min-width: 40px;
-            color: #FFFFFF;
-            font-size: 0.9rem;
+            justify-content: center;
+            font-size: 16px;
             font-weight: bold;
-            text-align: right;
+            transition: all 0.2s ease;
+        }
+
+        .ai-control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .ai-control-btn:active {
+            transform: scale(0.95);
+        }
+
+        .ai-list {
+            max-height: 250px;
+            overflow-y: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 8px;
+        }
+
+        .ai-entry {
+            margin-bottom: 8px;
+            padding: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            border-left: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .ai-entry-name {
+            color: #FFFFFF;
+            font-weight: bold;
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+
+        .ai-attribute-line {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 10px;
+            margin: 1px 0;
         }
 
         /* Battlefield AI Status Panels */
@@ -568,24 +421,10 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Battlefield</h1>
-        <div class="header-controls">
-            
-            <button class="control-button" id="aiButton">
-                <span class="material-icons">smart_toy</span>
-                AI
-            </button>
-            <button class="control-button" id="settingsButton">
-                <span class="material-icons">balance</span>
-                Balance
-            </button>
-            <button class="control-button" id="resetButton">
-                <span class="material-icons">update</span>
-                Reset
-            </button>
-        </div>
-    </div>
+    <button class="reset-button" id="resetButton">
+        <span class="material-icons">update</span>
+        Reset
+    </button>
 
     <div class="game-container">
         <canvas id="gameCanvas"></canvas>
@@ -594,189 +433,24 @@
     <!-- AI Status Panels Container -->
     <div id="aiStatusContainer"></div>
 
-    <!-- AI Panel -->
-    <div class="ai-popup" id="aiPopup">
-        <div class="ai-popup-header">
-            <h3>AI Configuration</h3>
+    <!-- AI Control Panel -->
+    <div class="ai-control-panel" id="aiControlPanel">
+        <div class="ai-control-header">
+            <span class="material-icons">smart_toy</span>
+            AI
         </div>
-        <div class="ai-popup-content">
-            <div class="terrain-layer">
-                <div class="terrain-layer-header">
-                    <h4 class="terrain-layer-title">AI Settings</h4>
-                </div>
-                <div class="terrain-control">
-                    <label>Number of AI:</label>
-                    <input type="number" id="aiCount" value="0" min="0" max="10">
-                </div>
-                <div class="terrain-control">
-                    <label>AI Level:</label>
-                    <select id="aiLevel">
-                        <option value="easy">Easy</option>
-                        <option value="intermediate" selected>Intermediate</option>
-                        <option value="hard">Hard</option>
-                        <option value="insane">Insane</option>
-                    </select>
-                </div>
-            </div>
-
-
+        <div class="ai-control-buttons">
+            <button class="ai-control-btn" id="aiMinusBtn">-</button>
+            <button class="ai-control-btn" id="aiPlusBtn">+</button>
+        </div>
+        <div class="ai-list" id="aiList">
+            <!-- AI entries will be dynamically generated here -->
         </div>
     </div>
 
 
 
-    <div class="settings-panel" id="settingsPanel">
-        <div class="settings-header">
-            <button class="copy-button" id="copySettings">Copy</button>
-            <button class="copy-button" id="applySettings">Apply</button>
-        </div>
-        
-        <div class="settings-section">
-            <h4>Game Parameters</h4>
-            <div class="setting-item">
-                <label>Respawn Time (ms):</label>
-                <input type="number" id="respawnTime" value="5000">
-            </div>
-            <div class="setting-item">
-                <label>Reload Time (ms):</label>
-                <input type="number" id="reloadTime" value="1000">
-            </div>
-            <div class="setting-item">
-                <label>Acceleration:</label>
-                <input type="number" id="acceleration" value="0.1" step="0.01">
-            </div>
-            <div class="setting-item">
-                        <label>Shell Lifetime (ms):</label>
-        <input type="number" id="shellLifetime" value="1000">
-            </div>
-            <div class="setting-item">
-                <label>Gasoline Per Unit:</label>
-                <input type="number" id="gasolinePerUnit" value="0.01" step="0.01">
-            </div>
-            <div class="setting-item">
-                <label>Gasoline Speed Penalty:</label>
-                <input type="number" id="gasolineSpeedPenalty" value="0.5" step="0.1">
-            </div>
-        </div>
 
-        <div class="settings-section">
-            <h4>Damage Parameters</h4>
-            <div class="setting-item">
-                <label>Health Damage:</label>
-                <input type="number" id="healthDamage" value="1">
-            </div>
-            <div class="setting-item">
-                <label>Speed Damage:</label>
-                <input type="number" id="speedDamage" value="5">
-            </div>
-            <div class="setting-item">
-                <label>Rotation Damage:</label>
-                <input type="number" id="rotationDamage" value="5">
-            </div>
-            <div class="setting-item">
-                <label>Kinetics Damage:</label>
-                <input type="number" id="kineticsDamage" value="10">
-            </div>
-            <div class="setting-item">
-                <label>Gasoline Damage:</label>
-                <input type="number" id="gasolineDamage" value="5">
-            </div>
-        </div>
-
-        <div class="settings-section">
-            <h4>Upgrade Counts</h4>
-            <div class="setting-item">
-                <label>Speed Upgrades:</label>
-                <input type="number" id="speedUpgrades" value="1">
-            </div>
-            <div class="setting-item">
-                <label>Gasoline Upgrades:</label>
-                <input type="number" id="gasolineUpgrades" value="1">
-            </div>
-            <div class="setting-item">
-                <label>Rotation Upgrades:</label>
-                <input type="number" id="rotationUpgrades" value="1">
-            </div>
-            <div class="setting-item">
-                <label>Ammunition Upgrades:</label>
-                <input type="number" id="ammunitionUpgrades" value="2">
-            </div>
-            <div class="setting-item">
-                <label>Kinetics Upgrades:</label>
-                <input type="number" id="kineticsUpgrades" value="1">
-            </div>
-            <div class="setting-item">
-                <label>Health Upgrades:</label>
-                <input type="number" id="healthUpgrades" value="0">
-            </div>
-        </div>
-
-
-
-        <div class="settings-section">
-            <h4>Player Attribute Limits</h4>
-            <div class="setting-item">
-                <label>Min Health:</label>
-                <button class="set-button" onclick="setAttribute('health', 'min', event)">Set</button>
-                <input type="number" id="minHealth" value="0">
-            </div>
-            <div class="setting-item">
-                <label>Max Health:</label>
-                <button class="set-button" onclick="setAttribute('health', 'max', event)">Set</button>
-                <input type="number" id="maxHealth" value="100">
-            </div>
-            <div class="setting-item">
-                <label>Min Speed:</label>
-                <button class="set-button" onclick="setAttribute('speed', 'min', event)">Set</button>
-                <input type="number" id="minSpeed" value="5">
-            </div>
-            <div class="setting-item">
-                <label>Max Speed:</label>
-                <button class="set-button" onclick="setAttribute('speed', 'max', event)">Set</button>
-                <input type="number" id="maxSpeed" value="50">
-            </div>
-            <div class="setting-item">
-                <label>Min Gasoline:</label>
-                <button class="set-button" onclick="setAttribute('gasoline', 'min', event)">Set</button>
-                <input type="number" id="minGasoline" value="0">
-            </div>
-            <div class="setting-item">
-                <label>Max Gasoline:</label>
-                <button class="set-button" onclick="setAttribute('gasoline', 'max', event)">Set</button>
-                <input type="number" id="maxGasoline" value="100">
-            </div>
-            <div class="setting-item">
-                <label>Min Rotation:</label>
-                <button class="set-button" onclick="setAttribute('rotation', 'min', event)">Set</button>
-                <input type="number" id="minRotation" value="5">
-            </div>
-            <div class="setting-item">
-                <label>Max Rotation:</label>
-                <button class="set-button" onclick="setAttribute('rotation', 'max', event)">Set</button>
-                <input type="number" id="maxRotation" value="5">
-            </div>
-            <div class="setting-item">
-                <label>Min Ammunition:</label>
-                <button class="set-button" onclick="setAttribute('ammunition', 'min', event)">Set</button>
-                <input type="number" id="minAmmunition" value="0">
-            </div>
-            <div class="setting-item">
-                <label>Max Ammunition:</label>
-                <button class="set-button" onclick="setAttribute('ammunition', 'max', event)">Set</button>
-                <input type="number" id="maxAmmunition" value="14">
-            </div>
-            <div class="setting-item">
-                <label>Min Kinetics:</label>
-                <button class="set-button" onclick="setAttribute('kinetics', 'min', event)">Set</button>
-                <input type="number" id="minKinetics" value="50">
-            </div>
-            <div class="setting-item">
-                <label>Max Kinetics:</label>
-                <button class="set-button" onclick="setAttribute('kinetics', 'max', event)">Set</button>
-                <input type="number" id="maxKinetics" value="300">
-            </div>
-        </div>
-    </div>
 
     <!-- Shared Tank Colors Configuration -->
     <script src="/src/shared/tankColors.js"></script>
@@ -784,76 +458,9 @@
     <script src="/src/shared/shadows.js"></script>
 
     <script>
-        // Update balance popup with current server settings
-        function updateBalancePopup() {
-            if (balanceSettings) {
-                document.getElementById('minHealth').value = balanceSettings.health?.min || 0;
-                document.getElementById('maxHealth').value = balanceSettings.health?.max || 100;
-                document.getElementById('minSpeed').value = balanceSettings.speed?.min || 15;
-                document.getElementById('maxSpeed').value = balanceSettings.speed?.max || 50;
-                document.getElementById('minGasoline').value = balanceSettings.gasoline?.min || 0;
-                document.getElementById('maxGasoline').value = balanceSettings.gasoline?.max || 100;
-                document.getElementById('minRotation').value = balanceSettings.rotation?.min || 5;
-                document.getElementById('maxRotation').value = balanceSettings.rotation?.max || 5;
-                document.getElementById('minAmmunition').value = balanceSettings.ammunition?.min || 0;
-                document.getElementById('maxAmmunition').value = balanceSettings.ammunition?.max || 14;
-                document.getElementById('minKinetics').value = balanceSettings.kinetics?.min || 50;
-                document.getElementById('maxKinetics').value = balanceSettings.kinetics?.max || 300;
-                console.log('Balance popup updated with server settings');
-            }
-        }
 
-        // Restore applied settings from localStorage if they exist
-        function restoreAppliedSettings() {
-            const savedSettings = localStorage.getItem('tankKillerAppliedSettings');
-            if (savedSettings) {
-                try {
-                    const settings = JSON.parse(savedSettings);
-                    
-                    // Restore game parameters
-                    if (settings.gameParams) {
-                        document.getElementById('respawnTime').value = settings.gameParams.respawnTime || 5000;
-                        document.getElementById('reloadTime').value = settings.gameParams.reloadTime || 1000;
-                        document.getElementById('acceleration').value = settings.gameParams.acceleration || 0.1;
-                        document.getElementById('shellLifetime').value = settings.gameParams.shellLifetime || 1000;
-                        document.getElementById('gasolinePerUnit').value = settings.gameParams.gasolinePerUnit || 2.0;
-                        document.getElementById('gasolineSpeedPenalty').value = settings.gameParams.gasolineSpeedPenalty || 0.5;
-                    }
-                    
-                    // Restore damage parameters
-                    if (settings.damageParams) {
-                        document.getElementById('healthDamage').value = settings.damageParams.health || 1;
-                        document.getElementById('speedDamage').value = settings.damageParams.speed || 5;
-                        document.getElementById('rotationDamage').value = settings.damageParams.rotation || 5;
-                        document.getElementById('kineticsDamage').value = settings.damageParams.kinetics || 10;
-                        document.getElementById('gasolineDamage').value = settings.damageParams.gasoline || 5;
-                    }
-                    
-                    // Restore upgrade counts
-                    if (settings.upgradeTypes) {
-                        document.getElementById('speedUpgrades').value = settings.upgradeTypes.speed?.count || 1;
-                        document.getElementById('gasolineUpgrades').value = settings.upgradeTypes.gasoline?.count || 1;
-                        document.getElementById('rotationUpgrades').value = settings.upgradeTypes.rotation?.count || 1;
-                        document.getElementById('ammunitionUpgrades').value = settings.upgradeTypes.ammunition?.count || 2;
-                        document.getElementById('kineticsUpgrades').value = settings.upgradeTypes.kinetics?.count || 1;
-                        document.getElementById('healthUpgrades').value = settings.upgradeTypes.health?.count || 0;
-                    }
-                    
 
-                    
 
-                    
-                    // Note: Balance settings are now handled by updateBalancePopup() from server
-                    
-                    console.log('Applied settings restored from localStorage');
-                } catch (error) {
-                    console.error('Error restoring settings:', error);
-                }
-            }
-        }
-        
-        // Call restoration function on page load
-        restoreAppliedSettings();
         
         // Game state
         let gameState = {
@@ -932,18 +539,13 @@
         });
 
         // UI elements
-        const settingsButton = document.getElementById('settingsButton');
-        const settingsPanel = document.getElementById('settingsPanel');
-        const aiButton = document.getElementById('aiButton');
+        const aiControlPanel = document.getElementById('aiControlPanel');
+        const aiList = document.getElementById('aiList');
+        const aiPlusBtn = document.getElementById('aiPlusBtn');
+        const aiMinusBtn = document.getElementById('aiMinusBtn');
 
-        const copySettingsButton = document.getElementById('copySettings');
-        const applySettingsButton = document.getElementById('applySettings');
-        const aiPopup = document.getElementById('aiPopup');
-        const aiPopupClose = document.getElementById('aiPopupClose');
-
-
-        let aiEnabled = false;
-        let aiTankId = null;
+        let aiCount = 0;
+        let aiLevel = 'intermediate';
 
         // Simple terrain defaults (no editing)
         const terrainDefaults = {
@@ -1021,46 +623,67 @@
 
 
 
-        // Balance button toggle
-        settingsButton.addEventListener('click', () => {
-            // Close other popups first
-            aiPopup.classList.remove('show');
-            
-            settingsPanel.classList.toggle('show');
-        });
 
-        // AI button toggle
-        aiButton.addEventListener('click', (e) => {
+
+        // AI control panel functionality
+        aiPlusBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             
-            // Close other popups first
-            settingsPanel.classList.remove('show');
-            
-            // Toggle AI panel
-            aiPopup.classList.toggle('show');
-        });
-
-
-
-
-
-        // AI settings change handlers (auto-apply)
-        document.getElementById('aiCount').addEventListener('input', () => {
-            const aiCount = parseInt(document.getElementById('aiCount').value) || 0;
-            const aiLevel = document.getElementById('aiLevel').value;
-            
-            console.log('AI settings changed:', { aiCount, aiLevel });
+            aiCount++;
+            updateAIList();
             socket.emit('applyAISettings', { aiCount, aiLevel });
         });
 
-        document.getElementById('aiLevel').addEventListener('change', () => {
-            const aiCount = parseInt(document.getElementById('aiCount').value) || 0;
-            const aiLevel = document.getElementById('aiLevel').value;
+        aiMinusBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             
-            console.log('AI settings changed:', { aiCount, aiLevel });
-            socket.emit('applyAISettings', { aiCount, aiLevel });
+            if (aiCount > 0) {
+                aiCount--;
+                updateAIList();
+                socket.emit('applyAISettings', { aiCount, aiLevel });
+            }
         });
+
+        function updateAIList() {
+            aiList.innerHTML = '';
+            
+            if (!gameState.tanks || !gameState.players) return;
+            
+            const aiTanks = gameState.tanks.filter(tank => tank.id.startsWith('ai_'));
+            
+            aiTanks.forEach((tank, index) => {
+                const player = gameState.players.find(p => p.id === tank.id);
+                const aiEntry = document.createElement('div');
+                aiEntry.className = 'ai-entry';
+                
+                // Calculate percentages
+                const healthPercent = Math.max(0, Math.min(100, tank.attributes.health));
+                const speedPercent = Math.max(0, Math.min(100, (tank.attributes.speed / 50) * 100));
+                const gasolinePercent = Math.max(0, Math.min(100, tank.attributes.gasoline));
+                const rotationPercent = Math.max(0, Math.min(100, (tank.attributes.rotation / 30) * 100));
+                const kineticsPercent = Math.max(0, Math.min(100, (tank.attributes.kinetics / 300) * 100));
+                
+                aiEntry.innerHTML = `
+                    <div class="ai-entry-name">${player ? player.callname : `AI-${aiLevel.charAt(0).toUpperCase() + aiLevel.slice(1)} ${index + 1}`}</div>
+                    <div class="ai-attribute-line">Health: ${Math.round(healthPercent)}%</div>
+                    <div class="ai-attribute-line">Speed: ${Math.round(speedPercent)}%</div>
+                    <div class="ai-attribute-line">Gasoline: ${Math.round(gasolinePercent)}%</div>
+                    <div class="ai-attribute-line">Rotation: ${Math.round(rotationPercent)}%</div>
+                    <div class="ai-attribute-line">Kinetics: ${Math.round(kineticsPercent)}%</div>
+                    <div class="ai-attribute-line">Ammo: ${Math.round(tank.attributes.ammunition)}</div>
+                `;
+                aiList.appendChild(aiEntry);
+            });
+        }
+
+
+
+
+
+        // Initialize AI list
+        updateAIList();
 
         // AI Status Panel Management
         const aiStatusPanels = new Map();
@@ -1115,6 +738,13 @@
             const panel = aiStatusPanels.get(aiId);
             if (!panel) return;
             
+            // Calculate percentages based on default attribute ranges
+            const healthPercent = Math.max(0, Math.min(100, tank.attributes.health));
+            const speedPercent = Math.max(0, Math.min(100, (tank.attributes.speed / 50) * 100));
+            const gasolinePercent = Math.max(0, Math.min(100, tank.attributes.gasoline));
+            const rotationPercent = Math.max(0, Math.min(100, (tank.attributes.rotation / 30) * 100));
+            const kineticsPercent = Math.max(0, Math.min(100, (tank.attributes.kinetics / 300) * 100));
+            
             // Update values
             const healthEl = panel.querySelector(`#ai-${aiId}-health`);
             const rotationEl = panel.querySelector(`#ai-${aiId}-rotation`);
@@ -1123,11 +753,11 @@
             const gasolineEl = panel.querySelector(`#ai-${aiId}-gasoline`);
             const ammoEl = panel.querySelector(`#ai-${aiId}-ammo`);
             
-            if (healthEl) healthEl.textContent = Math.round(tank.attributes.health) + '%';
-            if (rotationEl) rotationEl.textContent = Math.round(tank.attributes.rotation) + '%';
-            if (speedEl) speedEl.textContent = Math.round(tank.attributes.speed) + '%';
-            if (kineticsEl) kineticsEl.textContent = Math.round(tank.attributes.kinetics) + '%';
-            if (gasolineEl) gasolineEl.textContent = Math.round(tank.attributes.gasoline) + '%';
+            if (healthEl) healthEl.textContent = Math.round(healthPercent) + '%';
+            if (rotationEl) rotationEl.textContent = Math.round(rotationPercent) + '%';
+            if (speedEl) speedEl.textContent = Math.round(speedPercent) + '%';
+            if (kineticsEl) kineticsEl.textContent = Math.round(kineticsPercent) + '%';
+            if (gasolineEl) gasolineEl.textContent = Math.round(gasolinePercent) + '%';
             if (ammoEl) ammoEl.textContent = Math.round(tank.attributes.ammunition);
         }
 
@@ -1179,12 +809,10 @@
         function createAIStatusPanelsForExistingTanks() {
             if (!gameState.tanks || !gameState.players) return;
             
-            // Count existing AI tanks and update the input
+            // Count existing AI tanks and sync with control panel
             const aiTanks = gameState.tanks.filter(tank => tank.id.startsWith('ai_'));
-            const aiCountInput = document.getElementById('aiCount');
-            if (aiCountInput && aiTanks.length > 0) {
-                aiCountInput.value = aiTanks.length.toString();
-            }
+            aiCount = aiTanks.length;
+            updateAIList();
             
             gameState.tanks.forEach(tank => {
                 if (tank.id.startsWith('ai_') && !aiStatusPanels.has(tank.id)) {
@@ -1206,13 +834,8 @@
             socket.emit('resetGame');
             
             // Reset local state
-            aiEnabled = false;
-            aiTankId = null;
-            aiButton.classList.remove('active');
-            aiPopup.classList.remove('show');
-            
-            // Reset AI count to 0
-            document.getElementById('aiCount').value = '0';
+            aiCount = 0;
+            updateAIList();
             
             // Clear all AI status panels
             aiStatusPanels.forEach((panel, aiId) => {
@@ -1220,172 +843,13 @@
             });
         });
 
-        // Copy balance parameters
-        copySettingsButton.addEventListener('click', () => {
-            const settings = {
-                gameParams: {
-                    respawnTime: parseInt(document.getElementById('respawnTime').value),
-                    reloadTime: parseInt(document.getElementById('reloadTime').value),
-                    acceleration: parseFloat(document.getElementById('acceleration').value),
-                    shellLifetime: parseInt(document.getElementById('shellLifetime').value),
-                    gasolinePerUnit: parseFloat(document.getElementById('gasolinePerUnit').value),
-                    gasolineSpeedPenalty: parseFloat(document.getElementById('gasolineSpeedPenalty').value)
-                },
-                damageParams: {
-                    health: parseInt(document.getElementById('healthDamage').value),
-                    speed: parseInt(document.getElementById('speedDamage').value),
-                    rotation: parseInt(document.getElementById('rotationDamage').value),
-                    kinetics: parseInt(document.getElementById('kineticsDamage').value),
-                    gasoline: parseInt(document.getElementById('gasolineDamage').value)
-                },
-                upgradeTypes: {
-                    speed: { count: parseInt(document.getElementById('speedUpgrades').value) },
-                    gasoline: { count: parseInt(document.getElementById('gasolineUpgrades').value) },
-                    rotation: { count: parseInt(document.getElementById('rotationUpgrades').value) },
-                    ammunition: { count: parseInt(document.getElementById('ammunitionUpgrades').value) },
-                    kinetics: { count: parseInt(document.getElementById('kineticsUpgrades').value) },
-                    health: { count: parseInt(document.getElementById('healthUpgrades').value) }
-                },
-                attributeLimits: {
-                    health: {
-                        min: parseInt(document.getElementById('minHealth').value),
-                        max: parseInt(document.getElementById('maxHealth').value)
-                    },
-                    speed: {
-                        min: parseInt(document.getElementById('minSpeed').value),
-                        max: parseInt(document.getElementById('maxSpeed').value)
-                    },
-                    gasoline: {
-                        min: parseInt(document.getElementById('minGasoline').value),
-                        max: parseInt(document.getElementById('maxGasoline').value)
-                    },
-                    rotation: {
-                        min: parseInt(document.getElementById('minRotation').value),
-                        max: parseInt(document.getElementById('maxRotation').value)
-                    },
-                    ammunition: {
-                        min: parseInt(document.getElementById('minAmmunition').value),
-                        max: parseInt(document.getElementById('maxAmmunition').value)
-                    },
-                    kinetics: {
-                        min: parseInt(document.getElementById('minKinetics').value),
-                        max: parseInt(document.getElementById('maxKinetics').value)
-                    }
-                }
-            };
-
-            navigator.clipboard.writeText(JSON.stringify(settings, null, 2)).then(() => {
-                copySettingsButton.textContent = 'Copied!';
-                setTimeout(() => {
-                    copySettingsButton.textContent = 'Copy';
-                }, 2000);
-            });
-        });
 
 
 
-        // Individual attribute setter function
-        function setAttribute(attributeName, type, event) {
-            try {
-                // Construct the correct element ID
-                const elementId = type + attributeName.charAt(0).toUpperCase() + attributeName.slice(1);
-                const element = document.getElementById(elementId);
-                
-                if (!element) {
-                    console.error('Element not found:', elementId);
-                    return;
-                }
-                
-                const value = parseInt(element.value);
-                
-                const attributeUpdate = {
-                    attributeName: attributeName,
-                    value: value,
-                    type: type  // 'min' or 'max'
-                };
-                
-                socket.emit('setPlayerAttributeLimit', attributeUpdate);
-                
-                // Visual feedback on the clicked button
-                if (event && event.target) {
-                    const button = event.target;
-                    const originalText = button.textContent;
-                    button.textContent = 'Set!';
-                    setTimeout(() => {
-                        button.textContent = originalText;
-                    }, 2000);
-                }
-            } catch (error) {
-                console.error('Error in setAttribute function:', error);
-            }
-        }
 
-        // Apply balance parameters
-        applySettingsButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('[LOG] Apply settings button clicked');
-            const settings = {
-                gameParams: {
-                    respawnTime: parseInt(document.getElementById('respawnTime').value),
-                    reloadTime: parseInt(document.getElementById('reloadTime').value),
-                    acceleration: parseFloat(document.getElementById('acceleration').value),
-                    shellLifetime: parseInt(document.getElementById('shellLifetime').value),
-                    gasolinePerUnit: parseFloat(document.getElementById('gasolinePerUnit').value),
-                    gasolineSpeedPenalty: parseFloat(document.getElementById('gasolineSpeedPenalty').value)
-                },
-                damageParams: {
-                    health: parseInt(document.getElementById('healthDamage').value),
-                    speed: parseInt(document.getElementById('speedDamage').value),
-                    rotation: parseInt(document.getElementById('rotationDamage').value),
-                    kinetics: parseInt(document.getElementById('kineticsDamage').value),
-                    gasoline: parseInt(document.getElementById('gasolineDamage').value)
-                },
-                upgradeTypes: {
-                    speed: { count: parseInt(document.getElementById('speedUpgrades').value) },
-                    gasoline: { count: parseInt(document.getElementById('gasolineUpgrades').value) },
-                    rotation: { count: parseInt(document.getElementById('rotationUpgrades').value) },
-                    ammunition: { count: parseInt(document.getElementById('ammunitionUpgrades').value) },
-                    kinetics: { count: parseInt(document.getElementById('kineticsUpgrades').value) },
-                    health: { count: parseInt(document.getElementById('healthUpgrades').value) }
-                },
-                attributeLimits: {
-                    health: {
-                        min: parseInt(document.getElementById('minHealth').value),
-                        max: parseInt(document.getElementById('maxHealth').value)
-                    },
-                    speed: {
-                        min: parseInt(document.getElementById('minSpeed').value),
-                        max: parseInt(document.getElementById('maxSpeed').value)
-                    },
-                    gasoline: {
-                        min: parseInt(document.getElementById('minGasoline').value),
-                        max: parseInt(document.getElementById('maxGasoline').value)
-                    },
-                    rotation: {
-                        min: parseInt(document.getElementById('minRotation').value),
-                        max: parseInt(document.getElementById('maxRotation').value)
-                    },
-                    ammunition: {
-                        min: parseInt(document.getElementById('minAmmunition').value),
-                        max: parseInt(document.getElementById('maxAmmunition').value)
-                    },
-                    kinetics: {
-                        min: parseInt(document.getElementById('minKinetics').value),
-                        max: parseInt(document.getElementById('maxKinetics').value)
-                    }
-                }
-            };
 
-            // Send settings to server to apply (without forced reset unless needed)
-            socket.emit('applySettings', settings);
-            
-            // Visual feedback
-            applySettingsButton.textContent = 'Applied!';
-            setTimeout(() => {
-                applySettingsButton.textContent = 'Apply';
-            }, 2000);
-        });
+
+
 
 
 
@@ -1395,21 +859,35 @@
             socket.emit('requestGameState');
         });
 
-        // Store balance settings received from server
-        let balanceSettings = {
-            health: { min: 0, max: 100 },
-            speed: { min: 15, max: 50 },
-            gasoline: { min: 0, max: 100 },
-            rotation: { min: 5, max: 5 },
-            ammunition: { min: 0, max: 14 },
-            kinetics: { min: 50, max: 300 }
-        };
+
 
             socket.on('gameState', (data) => {
             gameState = data;
             
+            // Debug: Log AI tank positions and distances
+            if (data.tanks) {
+                const aiTanks = data.tanks.filter(tank => tank.id.startsWith('ai_'));
+                if (aiTanks.length >= 2) {
+                    const tank1 = aiTanks[0];
+                    const tank2 = aiTanks[1];
+                    const distance = Math.sqrt(
+                        Math.pow(tank1.position.x - tank2.position.x, 2) + 
+                        Math.pow(tank1.position.y - tank2.position.y, 2)
+                    );
+                    console.log(`AI Distance Debug: ${tank1.id} to ${tank2.id} = ${Math.round(distance)}px`);
+                    
+                    // Log if tanks are too close
+                    if (distance < 200) {
+                        console.log(`⚠️ TANKS TOO CLOSE! Distance: ${Math.round(distance)}px (should be > 200px)`);
+                    }
+                }
+            }
+            
             // Create AI status panels for existing AI tanks
             createAIStatusPanelsForExistingTanks();
+            
+            // Update AI list with real-time data
+            updateAIList();
             
             // Update AI status panels
             if (data.tanks) {
@@ -1422,11 +900,7 @@
             }
         });
 
-        socket.on('balanceSettings', (settings) => {
-            console.log('Balance settings received:', settings);
-            balanceSettings = settings;
-            updateBalancePopup();
-        });
+
 
         socket.on('aiAdded', (data) => {
             console.log('[DEBUG] aiAdded event received:', data);
@@ -1493,122 +967,9 @@
             // This event should now be rare and only used for critical updates
         });
 
-        socket.on('attributesSet', (data) => {
-            if (data.success) {
-                console.log('Player attributes set successfully');
-                // Show a brief notification
-                const notification = document.createElement('div');
-                notification.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: #4CAF50;
-                    color: white;
-                    padding: 10px 15px;
-                    border-radius: 5px;
-                    z-index: 1000;
-                    font-family: Arial, sans-serif;
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-                `;
-                notification.textContent = 'Player attributes set!';
-                document.body.appendChild(notification);
-                
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 2000);
-            }
-        });
 
-        socket.on('forceReconnect', (data) => {
-            console.log('Force reconnection requested:', data.message);
-            
-            // Store current settings in localStorage before reloading
-            const currentSettings = {
-                gameParams: {
-                    respawnTime: parseInt(document.getElementById('respawnTime').value),
-                    reloadTime: parseInt(document.getElementById('reloadTime').value),
-                    acceleration: parseFloat(document.getElementById('acceleration').value),
-                    shellLifetime: parseInt(document.getElementById('shellLifetime').value),
-                    gasolinePerUnit: parseFloat(document.getElementById('gasolinePerUnit').value),
-                    gasolineSpeedPenalty: parseFloat(document.getElementById('gasolineSpeedPenalty').value)
-                },
-                damageParams: {
-                    health: parseInt(document.getElementById('healthDamage').value),
-                    speed: parseInt(document.getElementById('speedDamage').value),
-                    rotation: parseInt(document.getElementById('rotationDamage').value),
-                    kinetics: parseInt(document.getElementById('kineticsDamage').value),
-                    gasoline: parseInt(document.getElementById('gasolineDamage').value)
-                },
-                upgradeTypes: {
-                    speed: { count: parseInt(document.getElementById('speedUpgrades').value) },
-                    gasoline: { count: parseInt(document.getElementById('gasolineUpgrades').value) },
-                    rotation: { count: parseInt(document.getElementById('rotationUpgrades').value) },
-                    ammunition: { count: parseInt(document.getElementById('ammunitionUpgrades').value) },
-                    kinetics: { count: parseInt(document.getElementById('kineticsUpgrades').value) },
-                    health: { count: parseInt(document.getElementById('healthUpgrades').value) }
-                },
-                attributeLimits: {
-                    health: {
-                        min: parseInt(document.getElementById('minHealth').value),
-                        max: parseInt(document.getElementById('maxHealth').value)
-                    },
-                    speed: {
-                        min: parseInt(document.getElementById('minSpeed').value),
-                        max: parseInt(document.getElementById('maxSpeed').value)
-                    },
-                    gasoline: {
-                        min: parseInt(document.getElementById('minGasoline').value),
-                        max: parseInt(document.getElementById('maxGasoline').value)
-                    },
-                    rotation: {
-                        min: parseInt(document.getElementById('minRotation').value),
-                        max: parseInt(document.getElementById('maxRotation').value)
-                    },
-                    ammunition: {
-                        min: parseInt(document.getElementById('minAmmunition').value),
-                        max: parseInt(document.getElementById('maxAmmunition').value)
-                    },
-                    kinetics: {
-                        min: parseInt(document.getElementById('minKinetics').value),
-                        max: parseInt(document.getElementById('maxKinetics').value)
-                    }
-                }
-            };
-            
-            // Store settings in localStorage
-            localStorage.setItem('tankKillerAppliedSettings', JSON.stringify(currentSettings));
-            
-            // Show notification to user
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: #4CAF50;
-                color: white;
-                padding: 15px 20px;
-                border-radius: 5px;
-                z-index: 1000;
-                font-family: Arial, sans-serif;
-                box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            `;
-            notification.textContent = data.message;
-            document.body.appendChild(notification);
-            
-            // Remove notification after 3 seconds
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 3000);
-            
-            // Reload the page after a short delay to reconnect with new settings
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        });
+
+
 
 
 
@@ -1835,7 +1196,7 @@
             const width = image.width * scale;
             const height = image.height * scale;
 
-            if (isColorMap && player) {
+            if (isColorMap) {
                 // For color maps, apply pixel-level color manipulation
                 const tempCanvas = document.createElement('canvas');
                 const tempCtx = tempCanvas.getContext('2d');
@@ -1850,7 +1211,7 @@
                 const data = imageData.data;
                 
                 // Convert hex color to RGB and HSL
-                const hexColor = player.tankColor || '#888888';
+                const hexColor = player ? player.tankColor : '#888888';
                 const targetR = parseInt(hexColor.slice(1, 3), 16);
                 const targetG = parseInt(hexColor.slice(3, 5), 16);
                 const targetB = parseInt(hexColor.slice(5, 7), 16);
@@ -1881,17 +1242,17 @@
                 tempCtx.putImageData(imageData, 0, 0);
                 
                 // Apply dual shadows using the new shadow system (FOR COLOR MAPS)
-                if (typeof applyContourAndAmbientShadows !== 'undefined') {
+                if (typeof applyContourAndAmbientShadows !== 'undefined' && typeof OBJECT_HEIGHTS !== 'undefined') {
                     // Apply contour shadow and draw shadow version
-                    applyContourAndAmbientShadows(ctx);
+                    applyContourAndAmbientShadows(ctx, OBJECT_HEIGHTS.TANK);
                     ctx.drawImage(tempCanvas, x, y, width, height);
                     
                     // Apply ambient shadow and draw shadow version
-                    applyAmbientShadowAfterContour(ctx);
+                    applyAmbientShadowAfterContour(ctx, OBJECT_HEIGHTS.TANK);
                     ctx.drawImage(tempCanvas, x, y, width, height);
-                } else {
+                } else if (typeof applyShadow !== 'undefined') {
                     // Fallback to legacy shadow if new system not available
-                    applyShadow(ctx, 'DEFAULT');
+                    applyShadow(ctx, 'DEFAULT', OBJECT_HEIGHTS ? OBJECT_HEIGHTS.TANK : 1);
                     ctx.drawImage(tempCanvas, x, y, width, height);
                 }
                 
@@ -1917,6 +1278,9 @@
                 ctx.globalAlpha = 1.0;
                 ctx.globalCompositeOperation = 'source-over';
             }
+            
+            // Ensure we're back to source-over for the next layer
+            ctx.globalCompositeOperation = 'source-over';
         }
 
         // Helper functions for color conversion (exact copy from tank.html)
@@ -2279,14 +1643,14 @@
                 ctx.save();
                 if (typeof applyContourAndAmbientShadows !== 'undefined') {
                     // Apply contour shadow and draw shadow version
-                    applyContourAndAmbientShadows(ctx);
+                    applyContourAndAmbientShadows(ctx, OBJECT_HEIGHTS.UPGRADE);
                     ctx.drawImage(upgradeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
                     
                     // Apply ambient shadow and draw shadow version
-                    applyAmbientShadowAfterContour(ctx);
+                    applyAmbientShadowAfterContour(ctx, OBJECT_HEIGHTS.UPGRADE);
                     ctx.drawImage(upgradeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
                 } else if (typeof SHADOW_CONFIG !== 'undefined') {
-                    applyShadow(ctx, 'DEFAULT'); // Fallback to legacy shadow
+                    applyShadow(ctx, 'DEFAULT', OBJECT_HEIGHTS.UPGRADE);
                     ctx.drawImage(upgradeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
                 } else {
                     // Fallback if shadow config not loaded
@@ -2308,16 +1672,16 @@
                 ctx.save();
                 if (typeof applyContourAndAmbientShadows !== 'undefined') {
                     // Apply contour shadow and draw shadow version
-                    applyContourAndAmbientShadows(ctx);
+                    applyContourAndAmbientShadows(ctx, OBJECT_HEIGHTS.UPGRADE);
                     ctx.fillStyle = '#4CAF50';
                     ctx.fillRect(-size/2, -size/2, size, size);
                     
                     // Apply ambient shadow and draw shadow version
-                    applyAmbientShadowAfterContour(ctx);
+                    applyAmbientShadowAfterContour(ctx, OBJECT_HEIGHTS.UPGRADE);
                     ctx.fillStyle = '#4CAF50';
                     ctx.fillRect(-size/2, -size/2, size, size);
                 } else if (typeof SHADOW_CONFIG !== 'undefined') {
-                    applyShadow(ctx, 'DEFAULT'); // Fallback to legacy shadow
+                    applyShadow(ctx, 'DEFAULT', OBJECT_HEIGHTS.UPGRADE);
                     ctx.fillStyle = '#4CAF50';
                     ctx.fillRect(-size/2, -size/2, size, size);
                 } else {
@@ -2381,14 +1745,14 @@
                 ctx.save();
                 if (typeof applyContourAndAmbientShadows !== 'undefined') {
                     // Apply contour shadow and draw shadow version
-                    applyContourAndAmbientShadows(ctx);
+                    applyContourAndAmbientShadows(ctx, OBJECT_HEIGHTS.TREE);
                     ctx.drawImage(treeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
                     
                     // Apply ambient shadow and draw shadow version
-                    applyAmbientShadowAfterContour(ctx);
+                    applyAmbientShadowAfterContour(ctx, OBJECT_HEIGHTS.TREE);
                     ctx.drawImage(treeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
                 } else if (typeof SHADOW_CONFIG !== 'undefined') {
-                    applyShadow(ctx, 'DEFAULT'); // Fallback to legacy shadow
+                    applyShadow(ctx, 'DEFAULT', OBJECT_HEIGHTS.TREE);
                     ctx.drawImage(treeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
                 } else {
                     // Fallback if shadow config not loaded
@@ -2410,20 +1774,20 @@
                 ctx.save();
                 if (typeof applyContourAndAmbientShadows !== 'undefined') {
                     // Apply contour shadow and draw shadow version
-                    applyContourAndAmbientShadows(ctx);
+                    applyContourAndAmbientShadows(ctx, OBJECT_HEIGHTS.TREE);
                     ctx.fillStyle = '#5e6936';
                     ctx.beginPath();
                     ctx.arc(0, 0, tree.size/2, 0, Math.PI * 2);
                     ctx.fill();
                     
                     // Apply ambient shadow and draw shadow version
-                    applyAmbientShadowAfterContour(ctx);
+                    applyAmbientShadowAfterContour(ctx, OBJECT_HEIGHTS.TREE);
                     ctx.fillStyle = '#5e6936';
                     ctx.beginPath();
                     ctx.arc(0, 0, tree.size/2, 0, Math.PI * 2);
                     ctx.fill();
                 } else if (typeof SHADOW_CONFIG !== 'undefined') {
-                    applyShadow(ctx, 'DEFAULT'); // Fallback to legacy shadow
+                    applyShadow(ctx, 'DEFAULT', OBJECT_HEIGHTS.TREE);
                     ctx.fillStyle = '#5e6936';
                     ctx.beginPath();
                     ctx.arc(0, 0, tree.size/2, 0, Math.PI * 2);

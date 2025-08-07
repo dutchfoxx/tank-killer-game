@@ -1475,23 +1475,30 @@
         
         // Robust UI update function
         function updateUIWithSelections() {
-            // Removed excessive debug logging for better performance
+            console.log('🔄 updateUIWithSelections() called');
+            console.log('selectedTeam:', selectedTeam);
+            console.log('selectedBaseColor:', selectedBaseColor);
+            console.log('selectedCamo:', selectedCamo);
             
             // Update team selection
             const teamOptions = document.querySelectorAll('.team-option');
+            console.log('Found team options:', teamOptions.length);
             teamOptions.forEach(option => {
                 option.classList.remove('selected');
                 if (option.dataset.team === selectedTeam) {
                     option.classList.add('selected');
+                    console.log('✅ Selected team:', option.dataset.team);
                 }
             });
             
             // Update color selection
             const colorOptions = document.querySelectorAll('.base-color-option');
+            console.log('Found color options:', colorOptions.length);
             colorOptions.forEach(option => {
                 option.classList.remove('selected');
                 if (option.dataset.color === selectedBaseColor) {
                     option.classList.add('selected');
+                    console.log('✅ Selected color:', option.dataset.color, option.dataset.name);
                     const colorName = document.getElementById('selectedColorName');
                     if (colorName) {
                         colorName.textContent = option.dataset.name;
@@ -1551,19 +1558,24 @@
 
         // Initialize UI elements
         function initializeUI() {
+            console.log('🎨 Starting initializeUI()...');
+            
             // Generate base color options
             const baseColorContainer = document.getElementById('baseColorOptions');
+            console.log('baseColorContainer:', baseColorContainer);
             
             // Check if tankColors is available
             if (typeof tankColors === 'undefined') {
-                console.error('tankColors is not defined! Check if tankColors.js is loading correctly.');
+                console.error('❌ tankColors is not defined! Check if tankColors.js is loading correctly.');
                 return;
             }
             
             // Removed excessive debug logging for better performance
             
             // Create color squares for each tank color
+            console.log('🎨 Creating color squares for:', Object.keys(tankColors));
             Object.entries(tankColors).forEach(([key, color]) => {
+                console.log('🎨 Creating color square for:', key, color);
                 const colorOption = document.createElement('div');
                 colorOption.className = 'base-color-option';
                 colorOption.style.backgroundColor = color.hex;
@@ -1585,6 +1597,7 @@
                 });
                 
                 baseColorContainer.appendChild(colorOption);
+                console.log('✅ Added color square to container:', colorOption);
             });
 
             // Add custom color picker square
@@ -1906,8 +1919,7 @@
             window.ctx.drawImage(image, x, y, width, height);
         }
 
-        // Call initialization
-        initializeUI();
+        // Call initialization - will be called after dependencies are loaded
         loadTankImages();
         
         // Ensure UI is updated after a delay (fallback)
@@ -2252,9 +2264,9 @@
         // Store balance settings received from server
         let balanceSettings = {
             health: { min: 0, max: 100 },
-            speed: { min: 15, max: 50 },
+            speed: { min: 10, max: 50 },
             gasoline: { min: 0, max: 100 },
-            rotation: { min: 5, max: 50 },
+            rotation: { min: 5, max: 30 },
             ammunition: { min: 0, max: 14 },
             kinetics: { min: 50, max: 300 }
         };
@@ -2478,11 +2490,45 @@
         window.addEventListener('load', () => {
             // Removed excessive debug logging for better performance
             
-            // Initialize selections as fallback
-            initializeSelections();
+            // Wait for tankColors and tankCamos to be available
+            function waitForDependencies() {
+                console.log('🔍 Checking dependencies...');
+                console.log('tankColors:', typeof tankColors, tankColors);
+                console.log('tankCamos:', typeof tankCamos, tankCamos);
+                console.log('window.tankColors:', typeof window.tankColors, window.tankColors);
+                console.log('window.tankCamos:', typeof window.tankCamos, window.tankCamos);
+                
+                // Check if variables are available directly or in window object
+                const colorsAvailable = typeof tankColors !== 'undefined' || typeof window.tankColors !== 'undefined';
+                const camosAvailable = typeof tankCamos !== 'undefined' || typeof window.tankCamos !== 'undefined';
+                
+                if (colorsAvailable && camosAvailable) {
+                    console.log('✅ Dependencies loaded! Initializing UI...');
+                    
+                    // Make sure we have the variables available
+                    if (typeof tankColors === 'undefined' && typeof window.tankColors !== 'undefined') {
+                        window.tankColors = window.tankColors;
+                    }
+                    if (typeof tankCamos === 'undefined' && typeof window.tankCamos !== 'undefined') {
+                        window.tankCamos = window.tankCamos;
+                    }
+                    
+                    // Initialize UI first
+                    initializeUI();
+                    
+                    // Initialize selections as fallback
+                    initializeSelections();
+                    
+                    // Always randomize on page refresh, regardless of saved data
+                    randomizeEverything();
+                } else {
+                    console.log('⏳ Dependencies not ready yet, waiting...');
+                    // Wait a bit more and try again
+                    setTimeout(waitForDependencies, 50);
+                }
+            }
             
-            // Always randomize on page refresh, regardless of saved data
-            randomizeEverything();
+            waitForDependencies();
         });
 
         // Function to handle play state activation

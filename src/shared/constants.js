@@ -19,12 +19,12 @@ export const TEAMS = {
   PLA: { name: 'PLA', color: '#DE2910' }
 };
 
-// Tank Attributes (max, min)
+// Tank Attributes (max, min) - CENTRALIZED VALUES
 export const TANK_ATTRIBUTES = {
   HEALTH: { max: 100, min: 0 },
-  SPEED: { max: 50, min: 15 },
+  SPEED: { max: 50, min: 25 }, // Increased min speed for better game balance
   GASOLINE: { max: 100, min: 0 },
-  ROTATION: { max: 50, min: 5 },
+  ROTATION: { max: 30, min: 5 }, // Fixed: max should be 30, not 50
   AMMUNITION: { max: 14, min: 0 },
   KINETICS: { max: 300, min: 50 }
 };
@@ -43,9 +43,9 @@ export const GAME_PARAMS = {
 // Damage Parameters
 export const DAMAGE_PARAMS = {
   HEALTH: 1,
-  SPEED: 3,
-  ROTATION: 3,
-  KINETICS: 10,
+  SPEED: 2,
+  ROTATION: 4,
+  KINETICS: 15,
   GASOLINE: 5
 };
 
