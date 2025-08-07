@@ -48,7 +48,5 @@ const ranks = [
     'Maj'
 ];
 
-// Export for Node.js (server-side)
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { defaultNames, ranks };
-} 
+// Export for ES modules
+export { defaultNames, ranks }; 

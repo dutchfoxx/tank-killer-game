@@ -665,10 +665,7 @@
                 const kineticsPercent = Math.max(0, Math.min(100, (tank.attributes.kinetics / 300) * 100));
                 
                 aiEntry.innerHTML = `
-                    <div class="ai-entry-name">
-                        <span class="material-icons" style="font-size: 12px; margin-right: 4px; color: #FF6B6B;">smart_toy</span>
-                        ${player ? player.callname : `AI-${aiLevel.charAt(0).toUpperCase() + aiLevel.slice(1)} ${index + 1}`}
-                    </div>
+                    <div class="ai-entry-name">${player ? player.callname : `AI-${aiLevel.charAt(0).toUpperCase() + aiLevel.slice(1)} ${index + 1}`}</div>
                     <div class="ai-attribute-line">Health: ${Math.round(healthPercent)}%</div>
                     <div class="ai-attribute-line">Speed: ${Math.round(speedPercent)}%</div>
                     <div class="ai-attribute-line">Gasoline: ${Math.round(gasolinePercent)}%</div>
@@ -1500,11 +1497,17 @@
                 ctx.fillStyle = healthPercent > 50 ? '#4CAF50' : healthPercent > 25 ? '#FFC107' : '#F44336';
                 ctx.fillRect(-20, 5, (healthPercent / 100) * 40, 6);
             } else if (tank.isAI) {
-                // AI tank - show "AI" label and health bar
+                // AI tank - show robot icon and name
                 ctx.fillStyle = '#FF6B6B';
-                ctx.font = '10px Arial';
+                ctx.font = '12px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText('AI', 0, -5);
+                
+                // Find the player data for this AI tank
+                const aiPlayer = gameState.players ? gameState.players.find(p => p.id === tank.id) : null;
+                const displayName = aiPlayer ? aiPlayer.callname : 'AI';
+                
+                // Draw robot icon (🤖) and name
+                ctx.fillText('🤖 ' + displayName, 0, -5);
 
                 // Health bar background (underneath)
                 ctx.fillStyle = '#1b1b1b';
