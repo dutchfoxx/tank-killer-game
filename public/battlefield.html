@@ -287,7 +287,6 @@
 
         .ai-list {
             max-height: 250px;
-            overflow-y: auto;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             padding-top: 8px;
         }
@@ -666,7 +665,10 @@
                 const kineticsPercent = Math.max(0, Math.min(100, (tank.attributes.kinetics / 300) * 100));
                 
                 aiEntry.innerHTML = `
-                    <div class="ai-entry-name">${player ? player.callname : `AI-${aiLevel.charAt(0).toUpperCase() + aiLevel.slice(1)} ${index + 1}`}</div>
+                    <div class="ai-entry-name">
+                        <span class="material-icons" style="font-size: 12px; margin-right: 4px; color: #FF6B6B;">smart_toy</span>
+                        ${player ? player.callname : `AI-${aiLevel.charAt(0).toUpperCase() + aiLevel.slice(1)} ${index + 1}`}
+                    </div>
                     <div class="ai-attribute-line">Health: ${Math.round(healthPercent)}%</div>
                     <div class="ai-attribute-line">Speed: ${Math.round(speedPercent)}%</div>
                     <div class="ai-attribute-line">Gasoline: ${Math.round(gasolinePercent)}%</div>
@@ -697,7 +699,10 @@
             
             panel.innerHTML = `
                 <div class="ai-status-header">
-                    <span class="ai-status-name">${player.callname}</span>
+                    <span class="ai-status-name">
+                        <span class="material-icons" style="font-size: 14px; margin-right: 4px; color: #FF6B6B;">smart_toy</span>
+                        ${player.callname}
+                    </span>
                     <span class="ai-status-level">${level} - ${player.strategy || 'Unknown'}</span>
                 </div>
                 <div class="ai-status-grid">

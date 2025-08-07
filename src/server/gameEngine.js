@@ -10,6 +10,7 @@ import {
   GAME_PARAMS,
   DAMAGE_PARAMS
 } from '../shared/constants.js';
+import { defaultNames, ranks } from '../shared/defaultNames.js';
 
 // Tank colors for AI tanks (hardcoded to avoid import issues)
 const tankColors = {
@@ -429,13 +430,21 @@ export class GameEngine {
     // Add tank to game state
     this.gameState.tanks.set(aiId, tank);
 
+    // Assign random team and name
+    const teamNames = ['NATO', 'CSTO', 'PLA'];
+    const randomTeam = teamNames[Math.floor(Math.random() * teamNames.length)];
+    const randomRank = ranks[Math.floor(Math.random() * ranks.length)];
+    const teamNamesList = defaultNames[randomTeam];
+    const randomName = teamNamesList[Math.floor(Math.random() * teamNamesList.length)];
+    const fullName = `${randomRank} ${randomName}`;
+
     // Create AI player data for proper rendering
     const aiPlayer = {
       id: aiId,
-      callname: `AI-${aiLevel.charAt(0).toUpperCase() + aiLevel.slice(1)}`,
+      callname: fullName,
       tankColor: this.getRandomTankColor(), // Random color for AI tanks
       tankCamo: 'none', // No camo for AI
-      team: { name: 'AI', color: '#FF6B6B' }, // Red team indicator for AI
+      team: { name: randomTeam, color: '#FF6B6B' }, // Random team for AI
       isAI: true,
       aiLevel: aiLevel
     };
