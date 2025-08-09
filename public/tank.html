@@ -704,14 +704,14 @@
             bulletStartX: 0,
             bulletStartY: 0,
             // Recoil animation settings
-            bodyRecoilDistance: 3,
+            bodyRecoilDistance: 15,
             bodyRecoilSpeed: 0.8,
             bodyReturnSpeed: 0.3,
-            turretRecoilDistance: 8,
-                            turretRecoilSpeed: 1.2,
-                turretReturnSpeed: 0.4,
-                turretPendulumRange: 2,
-                turretPendulumSpeed: 0.5,
+            turretRecoilDistance: 25,
+            turretRecoilSpeed: 1.2,
+            turretReturnSpeed: 0.4,
+            turretPendulumRange: 8,
+            turretPendulumSpeed: 0.5,
                 // Shadow settings
                 bodyShadowType: 'STRONG',
                 turretShadowType: 'DEFAULT',
@@ -757,6 +757,16 @@
             document.getElementById('shadowOffsetX').value = settings.shadowOffsetX;
             document.getElementById('shadowOffsetY').value = settings.shadowOffsetY;
 
+            // Recoil animation controls
+            document.getElementById('bodyRecoilDistance').value = settings.bodyRecoilDistance;
+            document.getElementById('bodyRecoilSpeed').value = settings.bodyRecoilSpeed;
+            document.getElementById('bodyReturnSpeed').value = settings.bodyReturnSpeed;
+            document.getElementById('turretRecoilDistance').value = settings.turretRecoilDistance;
+            document.getElementById('turretRecoilSpeed').value = settings.turretRecoilSpeed;
+            document.getElementById('turretReturnSpeed').value = settings.turretReturnSpeed;
+            document.getElementById('turretPendulumRange').value = settings.turretPendulumRange;
+            document.getElementById('turretPendulumSpeed').value = settings.turretPendulumSpeed;
+
             // Update value displays
             document.getElementById('camoOpacityValue').textContent = settings.camoOpacity.toFixed(1);
             document.getElementById('tankPosXValue').textContent = settings.tankPosX;
@@ -772,6 +782,16 @@
             document.getElementById('shadowBlurValue').textContent = settings.shadowBlur;
             document.getElementById('shadowOffsetXValue').textContent = settings.shadowOffsetX;
             document.getElementById('shadowOffsetYValue').textContent = settings.shadowOffsetY;
+
+            // Recoil animation value displays
+            document.getElementById('bodyRecoilDistanceValue').textContent = settings.bodyRecoilDistance;
+            document.getElementById('bodyRecoilSpeedValue').textContent = settings.bodyRecoilSpeed;
+            document.getElementById('bodyReturnSpeedValue').textContent = settings.bodyReturnSpeed;
+            document.getElementById('turretRecoilDistanceValue').textContent = settings.turretRecoilDistance;
+            document.getElementById('turretRecoilSpeedValue').textContent = settings.turretRecoilSpeed;
+            document.getElementById('turretReturnSpeedValue').textContent = settings.turretReturnSpeed;
+            document.getElementById('turretPendulumRangeValue').textContent = settings.turretPendulumRange;
+            document.getElementById('turretPendulumSpeedValue').textContent = settings.turretPendulumSpeed;
 
             // Update color preview
             const colorPreview = document.getElementById('colorPreview');
@@ -1059,6 +1079,11 @@
             const currentTime = Date.now();
             const timeSinceFire = currentTime - lastFireTime;
             
+            // Debug recoil animation
+            if (isFiring) {
+                console.log('🎯 Recoil active:', { timeSinceFire, bodyOffset: bodyRecoilOffset.x.toFixed(1), turretOffset: turretRecoilOffset.x.toFixed(1), pendulumAngle: turretPendulumAngle.toFixed(1) });
+            }
+            
             if (isFiring && timeSinceFire < 1000) { // 1 second animation
                 const progress = timeSinceFire / 1000;
                 
@@ -1088,9 +1113,9 @@
                     turretRecoilOffset.x = -returnAmount;
                 }
                 
-                                    // Turret pendulum rotation (continuous during animation)
-                    const pendulumProgress = progress * settings.turretPendulumSpeed;
-                    turretPendulumAngle = Math.sin(pendulumProgress * Math.PI * 2) * Math.abs(settings.turretPendulumRange);
+                // Turret pendulum rotation (continuous during animation)
+                const pendulumProgress = progress * settings.turretPendulumSpeed;
+                turretPendulumAngle = Math.sin(pendulumProgress * Math.PI * 2) * Math.abs(settings.turretPendulumRange);
                 
             } else {
                 // Reset to normal position
@@ -1104,16 +1129,10 @@
         }
         
         function updateTank() {
-            console.log('updateTank called - Images loaded:', {
-                bodyContours: !!tankBodyContours,
-                bodyColorMap: !!tankBodyColorMap,
-                turretContours: !!tankTurretContours,
-                turretBaseColorMap: !!tankTurretBaseColorMap,
-                turretGunneryColorMap: !!tankTurretGunneryColorMap
-            });
+            // Removed logging to clean up console
             
             if (!tankBodyContours || !tankBodyColorMap) {
-                console.log('Missing required body images, skipping render');
+                // Missing required body images, skipping render
                 return;
             }
 
@@ -1537,48 +1556,56 @@
         document.getElementById('bodyRecoilDistance').addEventListener('input', (e) => {
             settings.bodyRecoilDistance = parseFloat(e.target.value);
             document.getElementById('bodyRecoilDistanceValue').textContent = e.target.value;
+            updateTank();
             updateSettingsOutput();
         });
 
         document.getElementById('bodyRecoilSpeed').addEventListener('input', (e) => {
             settings.bodyRecoilSpeed = parseFloat(e.target.value);
             document.getElementById('bodyRecoilSpeedValue').textContent = e.target.value;
+            updateTank();
             updateSettingsOutput();
         });
 
         document.getElementById('bodyReturnSpeed').addEventListener('input', (e) => {
             settings.bodyReturnSpeed = parseFloat(e.target.value);
             document.getElementById('bodyReturnSpeedValue').textContent = e.target.value;
+            updateTank();
             updateSettingsOutput();
         });
 
         document.getElementById('turretRecoilDistance').addEventListener('input', (e) => {
             settings.turretRecoilDistance = parseFloat(e.target.value);
             document.getElementById('turretRecoilDistanceValue').textContent = e.target.value;
+            updateTank();
             updateSettingsOutput();
         });
 
         document.getElementById('turretRecoilSpeed').addEventListener('input', (e) => {
             settings.turretRecoilSpeed = parseFloat(e.target.value);
             document.getElementById('turretRecoilSpeedValue').textContent = e.target.value;
+            updateTank();
             updateSettingsOutput();
         });
 
         document.getElementById('turretReturnSpeed').addEventListener('input', (e) => {
             settings.turretReturnSpeed = parseFloat(e.target.value);
             document.getElementById('turretReturnSpeedValue').textContent = e.target.value;
+            updateTank();
             updateSettingsOutput();
         });
 
         document.getElementById('turretPendulumRange').addEventListener('input', (e) => {
             settings.turretPendulumRange = parseFloat(e.target.value);
             document.getElementById('turretPendulumRangeValue').textContent = e.target.value;
+            updateTank();
             updateSettingsOutput();
         });
 
         document.getElementById('turretPendulumSpeed').addEventListener('input', (e) => {
             settings.turretPendulumSpeed = parseFloat(e.target.value);
             document.getElementById('turretPendulumSpeedValue').textContent = e.target.value;
+            updateTank();
             updateSettingsOutput();
         });
 
@@ -1642,16 +1669,13 @@
         });
 
         document.getElementById('fireButton').addEventListener('click', () => {
-            console.log('Fire button clicked!');
+            console.log('🔥 FIRE BUTTON CLICKED! 🔥');
             isFiring = true;
             fireAnimation = 0;
             lastFireTime = Date.now();
-            console.log('Fire animation started:', { isFiring, fireAnimation, lastFireTime });
-            setTimeout(() => {
-                isFiring = false;
-                fireAnimation = 0;
-                console.log('Fire animation ended');
-            }, 200);
+            console.log('🚀 Fire animation started:', { isFiring, fireAnimation, lastFireTime });
+            // Don't manually set isFiring to false - let the recoil animation handle it
+            // The recoil animation will automatically reset isFiring after 1000ms
         });
 
         // Initialize
@@ -1664,6 +1688,8 @@
             updateTank();
             requestAnimationFrame(animateTank);
         }
+        
+        console.log('Starting animation loop...');
         animateTank();
     </script>
 </body>

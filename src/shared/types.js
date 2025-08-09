@@ -100,6 +100,23 @@ export class Tank {
     this.firingImmunity = 0; // Timestamp until which tank is immune to shell damage
     this.isAI = false;
     this.lastShotShell = null; // For AI tanks to store shells before they're added to game state
+    
+    // Shooting animation state (matching tank designer)
+    this.isFiring = false;
+    this.fireAnimation = 0;
+    this.lastFireTime = 0;
+    
+    // Recoil animation state (matching tank designer)
+    this.bodyRecoilOffset = { x: 0, y: 0 };
+    this.turretRecoilOffset = { x: 0, y: 0 };
+    this.turretPendulumAngle = 0;
+    
+    // Animation settings (matching tank designer defaults)
+    this.bodyRecoilDistance = 3;
+    this.turretRecoilDistance = 8;
+    this.turretPendulumRange = 0.1; // Reduced from 0.3 to 0.1 for very subtle rotation
+    this.turretPendulumSpeed = 0.5;
+    this.pendulumDirection = 1; // Random direction for pendulum swing
   }
 
   update(deltaTime, gasolinePerUnit = GAME_PARAMS.GASOLINE_PER_UNIT, gasolineSpeedPenalty = GAME_PARAMS.GASOLINE_SPEED_PENALTY, trees = []) {
@@ -162,7 +179,7 @@ export class Tank {
     
     // Check collision with trees using simplified circle-to-circle physics
     if (trees && trees.length > 0) {
-      const tankRadius = 20; // Tank collision radius (simplified circular collision)
+      const tankRadius = 22; // Tank collision radius (increased by 10% from 20 to 22)
       
       for (const tree of trees) {
         const trunkRadius = tree.size / 16; // Tree trunk collision radius (even smaller)
@@ -209,11 +226,12 @@ export class Tank {
             // Trigger tree animation
             const impactForce = velocityTowardTree * 0.3;
             tree.impact(new Vector2(-this.velocity.x, -this.velocity.y), impactForce);
-            
-            // Log significant collisions
-            if (velocityTowardTree > 20) {
-              console.log(`Tank ${this.id} collision: speed=${velocityTowardTree.toFixed(1)}`);
+            // Make trees swing quicker (not further) for a short time on tank collision
+            if (typeof tree.boostSwingFrequency === 'function') {
+              tree.boostSwingFrequency(1200, 1.8);
             }
+            
+            // Significant collision detected but not logged for performance
           }
         }
       }
@@ -229,6 +247,59 @@ export class Tank {
     // Keep tank within bounds
     this.position.x = Math.max(10, Math.min(1490, this.position.x));
     this.position.y = Math.max(10, Math.min(890, this.position.y));
+    
+    // Update recoil animation (matching tank designer)
+    const currentTime = Date.now();
+    const timeSinceFire = currentTime - this.lastFireTime;
+    
+    if (this.isFiring && timeSinceFire < 1000) { // 1 second animation
+      const progress = timeSinceFire / 1000;
+      
+      // Body recoil: instant backward, smooth return
+      if (progress < 0.1) {
+        // Instant recoil phase (first 10% of animation)
+        this.bodyRecoilOffset.x = -this.bodyRecoilDistance;
+      } else {
+        // Smooth return phase (remaining 90%)
+        const returnProgress = (progress - 0.1) / 0.9;
+        // Use easeOutCubic for smooth return
+        const easedProgress = 1 - Math.pow(1 - returnProgress, 3);
+        const returnAmount = this.bodyRecoilDistance * (1 - easedProgress);
+        this.bodyRecoilOffset.x = -returnAmount;
+      }
+      
+      // Turret recoil: instant backward, smooth return
+      if (progress < 0.1) {
+        // Instant recoil phase (first 10% of animation)
+        this.turretRecoilOffset.x = -this.turretRecoilDistance;
+      } else {
+        // Smooth return phase (remaining 90%)
+        const returnProgress = (progress - 0.1) / 0.9;
+        // Use easeOutCubic for smooth return
+        const easedProgress = 1 - Math.pow(1 - returnProgress, 3);
+        const returnAmount = this.turretRecoilDistance * (1 - easedProgress);
+        this.turretRecoilOffset.x = -returnAmount;
+      }
+      
+      // Turret pendulum rotation (continuous during animation) with random direction
+      const pendulumProgress = progress * this.turretPendulumSpeed;
+      this.turretPendulumAngle = Math.sin(pendulumProgress * Math.PI * 2) * Math.abs(this.turretPendulumRange) * this.pendulumDirection;
+      
+      // Update fire animation (matching tank designer)
+      if (this.fireAnimation < 10) {
+        this.fireAnimation++;
+      }
+      
+    } else {
+      // Reset to normal position
+      this.bodyRecoilOffset.x = 0;
+      this.bodyRecoilOffset.y = 0;
+      this.turretRecoilOffset.x = 0;
+      this.turretRecoilOffset.y = 0;
+      this.turretPendulumAngle = 0;
+      this.isFiring = false;
+      this.fireAnimation = 0;
+    }
   }
 
   rotateTowards(targetAngle, deltaTime) {
@@ -240,19 +311,13 @@ export class Tank {
 
     // Calculate rotation speed based on tank's rotation attribute
     // Higher rotation = faster turning, lower rotation = sluggish turning
-    // Use a much larger multiplier for more responsive rotation
     const rotationSpeed = this.attributes.rotation * 0.1; // Increased from 0.02 to 0.1
     const maxRotationThisFrame = rotationSpeed * (deltaTime / 1000);
     
-    // For very high rotation values, allow instant rotation
-    if (this.attributes.rotation > 1000) {
-      this.angle = targetAngle;
-    } else {
-      // Use smooth rotation - don't overshoot
-      if (Math.abs(angleDiff) > 0.01) { // Reduced threshold from 0.05 to 0.01
-        const rotateAmount = Math.min(Math.abs(angleDiff), maxRotationThisFrame) * Math.sign(angleDiff);
-        this.angle += rotateAmount;
-      }
+    // Fixed: Remove instant rotation - always use smooth rotation based on tank's rotation attribute
+    if (Math.abs(angleDiff) > 0.01) { // Reduced threshold from 0.05 to 0.01
+      const rotateAmount = Math.min(Math.abs(angleDiff), maxRotationThisFrame) * Math.sign(angleDiff);
+      this.angle += rotateAmount;
     }
     
     // Normalize tank angle to [0, 2π]
@@ -273,7 +338,6 @@ export class Tank {
     this.respawnTime = 0;
     this.reloadTime = 0;
     this.firingImmunity = 0; // Reset firing immunity on respawn
-    console.log(`Tank ${this.id} respawned at position:`, this.position);
   }
 
   canShoot() {
@@ -281,11 +345,7 @@ export class Tank {
            this.attributes.ammunition > 0 && 
            this.reloadTime <= 0;
     
-    // Removed excessive logging - only log critical failures
-    if (!this.isAI && !canShoot && this.attributes.ammunition <= 0) {
-      // Only log when out of ammo to help with debugging
-      console.log(`Tank ${this.id} cannot shoot - out of ammunition`);
-    }
+    // Removed excessive logging for better performance
     
     return canShoot;
   }
@@ -303,6 +363,14 @@ export class Tank {
     this.reloadTime = 1000; // 1 second reload time
     this.lastShot = Date.now();
 
+    // Trigger shooting animation (matching tank designer)
+    this.isFiring = true;
+    this.fireAnimation = 0;
+    this.lastFireTime = Date.now();
+    
+    // Set random pendulum direction for varied animation
+    this.pendulumDirection = Math.random() < 0.5 ? 1 : -1;
+
     const shellSpeed = this.attributes.kinetics;
     const direction = new Vector2(
       Math.cos(this.angle),
@@ -310,8 +378,8 @@ export class Tank {
     );
     const shellVelocity = direction.multiply(shellSpeed);
 
-    // Position shell well ahead of tank to avoid any collision
-    const shellOffset = 40; // Increased distance ahead of tank
+    // Position shell closer to tank barrel (approximately 15-20 pixels from tank center)
+    const shellOffset = 20; // Reduced distance to be closer to tank barrel
     const shellPosition = this.position.add(direction.multiply(shellOffset));
     
     const shell = new Shell(
@@ -338,32 +406,20 @@ export class Tank {
     // Check if tank has firing immunity
     const currentTime = Date.now();
     if (this.firingImmunity > currentTime) {
-      console.log(`Tank ${this.id} is immune to damage (firing immunity until ${this.firingImmunity})`);
       return false;
     }
 
     // Check if shell has immunity for this tank
     if (fromShell && fromShell.shooterImmunity > currentTime && fromShell.shooterId === this.id) {
-      console.log(`Tank ${this.id} is immune to its own shell damage`);
       return false;
     }
-
-    console.log(`Tank ${this.id} taking damage. Health before: ${this.attributes.health}`);
     this.attributes.health -= DAMAGE_PARAMS.HEALTH;
     this.attributes.speed = Math.max(5, this.attributes.speed - DAMAGE_PARAMS.SPEED);
     this.attributes.rotation = Math.max(5, this.attributes.rotation - DAMAGE_PARAMS.ROTATION);
     this.attributes.kinetics = Math.max(50, this.attributes.kinetics - DAMAGE_PARAMS.KINETICS);
     this.attributes.gasoline = Math.max(0, this.attributes.gasoline - DAMAGE_PARAMS.GASOLINE);
     
-    // Only log critical damage events for human players
-    if (!this.isAI && this.attributes.health <= 10) {
-      console.log(`Tank ${this.id} critical damage - health: ${this.attributes.health}`);
-    }
-
     if (this.attributes.health <= 0) {
-      if (!this.isAI) {
-        console.log(`Tank ${this.id} died from damage`);
-      }
       this.die();
     }
     
@@ -371,21 +427,19 @@ export class Tank {
   }
 
   die() {
-    // Only log death for human players
-    if (!this.isAI) {
-      console.log(`Tank ${this.id} died`);
-    }
     this.isAlive = false;
     this.respawnTime = 5000; // 5 seconds
   }
 
   getBoundingBox() {
-    const size = 30; // Increased from 20 to 30 for better collision detection
+    // Rectangular collision box to match tank shape (longer than wide)
+    const width = 40;  // Tank length (front to back)
+    const height = 25; // Tank width (side to side) - narrower for better side collision
     return {
-      x: this.position.x - size / 2,
-      y: this.position.y - size / 2,
-      width: size,
-      height: size
+      x: this.position.x - width / 2,
+      y: this.position.y - height / 2,
+      width: width,
+      height: height
     };
   }
 
@@ -423,7 +477,7 @@ export class Shell {
   }
 
   getBoundingBox() {
-    const size = 4;
+    const size = 5; // Increased by 15% from 4 to 5
     return {
       x: this.position.x - size / 2,
       y: this.position.y - size / 2,
@@ -462,6 +516,10 @@ export class Tree {
     this.naturalFrequency = 2.0; // Natural frequency of pendulum (rad/s)
     this.dampingRatio = 0.1; // Damping ratio (0 = no damping, 1 = critical damping)
     this.lastImpactTime = Date.now() - 10000; // Initialize to 10 seconds ago (no recent impact)
+    
+    // Temporary frequency boost state when hit by a tank
+    this.frequencyBoostUntil = 0; // timestamp in ms
+    this.frequencyBoostFactor = 1; // multiplier applied to gravity constant
     
     // Visual properties for consistent rendering
     const treeTypes = ['tree1', 'tree2', 'tree3'];
@@ -502,6 +560,13 @@ export class Tree {
     this.lastImpactTime = Date.now();
   }
 
+  // Temporarily increase swing frequency (oscillation speed) without increasing amplitude
+  boostSwingFrequency(durationMs = 1000, factor = 1.5) {
+    const now = Date.now();
+    this.frequencyBoostUntil = Math.max(this.frequencyBoostUntil, now + durationMs);
+    this.frequencyBoostFactor = Math.max(1, Math.min(3, factor));
+  }
+
   // Update swing animation using simplified spring-damper physics
   update(deltaTime) {
     const dt = deltaTime / 1000; // Convert to seconds
@@ -534,7 +599,11 @@ export class Tree {
     }
     
     // Proper pendulum physics with gravity
-    const gravity = 2.0; // Gravity constant
+    const baseGravity = 2.0; // Base gravity constant controls oscillation speed
+    // Apply temporary frequency boost if active
+    const nowTs = Date.now();
+    const gravityBoost = nowTs < this.frequencyBoostUntil ? this.frequencyBoostFactor : 1;
+    const gravity = baseGravity * gravityBoost;
     const dampingConstant = 0.3; // Air resistance
     
     // Pendulum force: -gravity * sin(angle) tries to return to center
@@ -584,12 +653,30 @@ export class Tree {
 
   getBoundingBox() {
     // Use trunk circle as collision box - matches the visual trunk circle
-    const trunkRadius = this.size / 16; // 1/16th of tree size, even smaller collision area
+    const trunkRadius = this.size / 12; // Changed to 1/12th of tree size for medium collision area
     return {
       x: this.position.x - trunkRadius,
       y: this.position.y - trunkRadius, // Centered collision box
       width: trunkRadius * 2,
       height: trunkRadius * 2
+    };
+  }
+}
+
+export class Patch {
+  constructor(position, size, type, rotation = 0) {
+    this.position = position;
+    this.size = size;
+    this.type = type; // patch1, patch2, etc.
+    this.rotation = rotation; // Random rotation in radians
+  }
+
+  getBoundingBox() {
+    return {
+      x: this.position.x - this.size / 2,
+      y: this.position.y - this.size / 2,
+      width: this.size,
+      height: this.size
     };
   }
 }
@@ -614,6 +701,7 @@ export class GameState {
     this.shells = [];
     this.upgrades = [];
     this.trees = [];
+    this.patches = [];
 
     this.gameTime = 0;
     this.lastUpdate = Date.now();

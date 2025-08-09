@@ -548,7 +548,11 @@
             background: linear-gradient(90deg, #ffe066, #ffcc33);
             border-right: 2px solid #f5e087;
             box-shadow: inset 0 0 4px #000, 0 0 6px #ffcc33;
-            transition: width 0.3s ease;
+            transition: 
+                width 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                background 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                border-right-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .attribute-fill.health { 
@@ -589,6 +593,9 @@
             min-width: 50px;
             max-width: 50px;
             margin-top: 3px;
+            transition: 
+                color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                text-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         /* Alarm Lights */
@@ -1483,17 +1490,27 @@
             // Update team selection
             const teamOptions = document.querySelectorAll('.team-option');
             console.log('Found team options:', teamOptions.length);
+            let teamSelected = false;
             teamOptions.forEach(option => {
                 option.classList.remove('selected');
                 if (option.dataset.team === selectedTeam) {
                     option.classList.add('selected');
                     console.log('✅ Selected team:', option.dataset.team);
+                    teamSelected = true;
                 }
             });
+            
+            // Fallback: select first team if none selected
+            if (!teamSelected && teamOptions.length > 0) {
+                teamOptions[0].classList.add('selected');
+                selectedTeam = teamOptions[0].dataset.team;
+                console.log('🔄 Fallback: selected first team:', selectedTeam);
+            }
             
             // Update color selection
             const colorOptions = document.querySelectorAll('.base-color-option');
             console.log('Found color options:', colorOptions.length);
+            let colorSelected = false;
             colorOptions.forEach(option => {
                 option.classList.remove('selected');
                 if (option.dataset.color === selectedBaseColor) {
@@ -1503,11 +1520,24 @@
                     if (colorName) {
                         colorName.textContent = option.dataset.name;
                     }
+                    colorSelected = true;
                 }
             });
             
+            // Fallback: select first color if none selected
+            if (!colorSelected && colorOptions.length > 0) {
+                colorOptions[0].classList.add('selected');
+                selectedBaseColor = colorOptions[0].dataset.color;
+                const colorName = document.getElementById('selectedColorName');
+                if (colorName && colorOptions[0].dataset.name) {
+                    colorName.textContent = colorOptions[0].dataset.name;
+                }
+                console.log('🔄 Fallback: selected first color:', selectedBaseColor);
+            }
+            
             // Update camo selection
             const camoOptions = document.querySelectorAll('.camo-option');
+            let camoSelected = false;
             camoOptions.forEach(option => {
                 option.classList.remove('selected');
                 if (option.dataset.camo === selectedCamo) {
@@ -1516,8 +1546,20 @@
                     if (camoName) {
                         camoName.textContent = option.dataset.name;
                     }
+                    camoSelected = true;
                 }
             });
+            
+            // Fallback: select first camo if none selected
+            if (!camoSelected && camoOptions.length > 0) {
+                camoOptions[0].classList.add('selected');
+                selectedCamo = camoOptions[0].dataset.camo;
+                const camoName = document.getElementById('selectedCamoName');
+                if (camoName && camoOptions[0].dataset.name) {
+                    camoName.textContent = camoOptions[0].dataset.name;
+                }
+                console.log('🔄 Fallback: selected first camo:', selectedCamo);
+            }
             
             // Update camo backgrounds and preview
             updateCamoBackgrounds();
@@ -1544,6 +1586,7 @@
         }
 
         generateNameBtn.addEventListener('click', () => {
+            console.log('🎲 Random name button clicked');
             const randomName = generateRandomName();
             callnameInput.value = randomName;
             
@@ -1971,26 +2014,67 @@
             });
         });
 
+        // Load saved player data from localStorage
+        function loadSavedData() {
+            try {
+                const savedData = localStorage.getItem('tankKillerPlayer');
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    console.log('📦 Loading saved data:', data);
+                    
+                    // Load saved callname
+                    if (data.callname) {
+                        callnameInput.value = data.callname;
+                    }
+                    
+                    // Load saved tank color
+                    if (data.tankColor) {
+                        selectedBaseColor = data.tankColor;
+                    }
+                    
+                    // Load saved camo
+                    if (data.tankCamo) {
+                        selectedCamo = data.tankCamo;
+                    }
+                    
+                    // Load saved team
+                    if (data.team) {
+                        selectedTeam = data.team;
+                    }
+                    
+                    return true;
+                }
+            } catch (error) {
+                console.error('❌ Error loading saved data:', error);
+            }
+            return false;
+        }
+
         // Initialize selections (will be overridden by load logic)
         function initializeSelections() {
-            // Select first color, camo, and team by default (fallback)
-            const firstColor = document.querySelector('.base-color-option');
-            const firstCamo = document.querySelector('.camo-option');
-            const firstTeam = document.querySelector('.team-option');
+            // Try to load saved data first
+            const hasSavedData = loadSavedData();
             
-            if (firstColor) firstColor.classList.add('selected');
-            if (firstCamo) firstCamo.classList.add('selected');
-            if (firstTeam) firstTeam.classList.add('selected');
+            // If no saved data or no callname, generate a random one
+            if (!hasSavedData || !callnameInput.value.trim()) {
+                const randomName = generateRandomName();
+                callnameInput.value = randomName;
+            }
+            
+            // Don't select default elements here - let updateUIWithSelections handle it
+            // This prevents overriding the loaded data
         }
 
         // Join game
         joinButton.addEventListener('click', () => {
             // Removed excessive debug logging for better performance
-            const callname = callnameInput.value.trim();
+            let callname = callnameInput.value.trim();
 
+            // If callname is empty, generate a random one
             if (!callname) {
-                showStatus('Please enter a callname', 'error');
-                return;
+                callname = generateRandomName();
+                callnameInput.value = callname;
+                console.log('🎲 Generated random callname:', callname);
             }
 
             if (!isConnected) {
@@ -2292,7 +2376,12 @@
             healthBar.style.background = `linear-gradient(90deg, ${healthColors.start}, ${healthColors.end})`;
             healthBar.style.borderRight = `2px solid ${healthColors.border}`;
             healthBar.style.boxShadow = `inset 0 0 4px #000, 0 0 6px ${healthColors.glow}`;
-            document.getElementById('healthValue').textContent = `${Math.round(healthPercent)}%`;
+            
+            // Update health value with color transition
+            const healthValue = document.getElementById('healthValue');
+            healthValue.textContent = `${Math.round(healthPercent)}%`;
+            healthValue.style.color = healthColors.glow;
+            healthValue.style.textShadow = `0 0 2px ${healthColors.glow}, 0 0 4px ${healthColors.glow}`;
 
             // Speed
             const speedPercent = Math.max(0, Math.min(100, ((attributes.speed - balanceSettings.speed.min) / (balanceSettings.speed.max - balanceSettings.speed.min)) * 100));
@@ -2302,7 +2391,12 @@
             speedBar.style.background = `linear-gradient(90deg, ${speedColors.start}, ${speedColors.end})`;
             speedBar.style.borderRight = `2px solid ${speedColors.border}`;
             speedBar.style.boxShadow = `inset 0 0 4px #000, 0 0 6px ${speedColors.glow}`;
-            document.getElementById('speedValue').textContent = `${Math.round(speedPercent)}%`;
+            
+            // Update speed value with color transition
+            const speedValue = document.getElementById('speedValue');
+            speedValue.textContent = `${Math.round(speedPercent)}%`;
+            speedValue.style.color = speedColors.glow;
+            speedValue.style.textShadow = `0 0 2px ${speedColors.glow}, 0 0 4px ${speedColors.glow}`;
 
             // Update Gasoline HUD
             const gasFill = document.getElementById('gasFill');
@@ -2337,7 +2431,12 @@
             rotationBar.style.background = `linear-gradient(90deg, ${rotationColors.start}, ${rotationColors.end})`;
             rotationBar.style.borderRight = `2px solid ${rotationColors.border}`;
             rotationBar.style.boxShadow = `inset 0 0 4px #000, 0 0 6px ${rotationColors.glow}`;
-            document.getElementById('rotationValue').textContent = `${Math.round(rotationPercent)}%`;
+            
+            // Update rotation value with color transition
+            const rotationValue = document.getElementById('rotationValue');
+            rotationValue.textContent = `${Math.round(rotationPercent)}%`;
+            rotationValue.style.color = rotationColors.glow;
+            rotationValue.style.textShadow = `0 0 2px ${rotationColors.glow}, 0 0 4px ${rotationColors.glow}`;
 
             // Kinetics
             const kineticsPercent = Math.max(0, Math.min(100, ((attributes.kinetics - balanceSettings.kinetics.min) / (balanceSettings.kinetics.max - balanceSettings.kinetics.min)) * 100));
@@ -2347,7 +2446,12 @@
             kineticsBar.style.background = `linear-gradient(90deg, ${kineticsColors.start}, ${kineticsColors.end})`;
             kineticsBar.style.borderRight = `2px solid ${kineticsColors.border}`;
             kineticsBar.style.boxShadow = `inset 0 0 4px #000, 0 0 6px ${kineticsColors.glow}`;
-            document.getElementById('kineticsValue').textContent = `${Math.round(kineticsPercent)}%`;
+            
+            // Update kinetics value with color transition
+            const kineticsValue = document.getElementById('kineticsValue');
+            kineticsValue.textContent = `${Math.round(kineticsPercent)}%`;
+            kineticsValue.style.color = kineticsColors.glow;
+            kineticsValue.style.textShadow = `0 0 2px ${kineticsColors.glow}, 0 0 4px ${kineticsColors.glow}`;
 
             // Ammunition (absolute value)
             document.getElementById('ammunitionDisplay').textContent = attributes.ammunition;
@@ -2516,11 +2620,11 @@
                     // Initialize UI first
                     initializeUI();
                     
-                    // Initialize selections as fallback
+                    // Initialize selections and load saved data
                     initializeSelections();
                     
-                    // Always randomize on page refresh, regardless of saved data
-                    randomizeEverything();
+                    // Update UI with loaded selections
+                    updateUIWithSelections();
                 } else {
                     console.log('⏳ Dependencies not ready yet, waiting...');
                     // Wait a bit more and try again

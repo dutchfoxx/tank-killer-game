@@ -51,11 +51,11 @@ export const DAMAGE_PARAMS = {
 
 // Upgrade Types
 export const UPGRADE_TYPES = {
-  SPEED: { symbol: 'S', value: 20, count: 1 },
-  GASOLINE: { symbol: 'G', value: 80, count: 1 },
-  ROTATION: { symbol: 'R', value: 20, count: 1 },
+  SPEED: { symbol: 'S', value: 20, count: 2 },
+  GASOLINE: { symbol: 'G', value: 80, count: 2 },
+  ROTATION: { symbol: 'R', value: 20, count: 2 },
   AMMUNITION: { symbol: 'A', value: 7, count: 2 },
-  KINETICS: { symbol: 'K', value: 30, count: 1 },
+  KINETICS: { symbol: 'K', value: 30, count: 2 },
   HEALTH: { symbol: 'H', value: 10, count: 0 }
 };
 
@@ -73,8 +73,8 @@ export const COLORS = {
 export const BATTLEFIELD = {
   WIDTH: 1500,
   HEIGHT: 900,
-  TANK_SIZE: 20,
-  BULLET_SIZE: 4,
+  TANK_SIZE: 22, // Increased by 10% from 20 to 22
+  BULLET_SIZE: 5, // Increased by 15% from 4 to 5
   UPGRADE_SIZE: 22.5 // Increased by 25% from 18 (18 * 1.25 = 22.5)
 };
 

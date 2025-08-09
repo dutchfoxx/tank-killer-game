@@ -1,4 +1,4 @@
-import { GameState, Tank, Shell, Upgrade, Tree, Vector2 } from '../shared/types.js';
+import { GameState, Tank, Shell, Upgrade, Tree, Patch, Vector2 } from '../shared/types.js';
 import { AIController } from '../shared/ai.js';
 import { checkAABBCollision, getRandomPositionAvoidingObstacles } from '../shared/collision.js';
 import { 
@@ -11,6 +11,7 @@ import {
   DAMAGE_PARAMS
 } from '../shared/constants.js';
 import { defaultNames, ranks } from '../shared/defaultNames.js';
+import { getTerrainMap } from '../shared/terrainMaps.js';
 
 // Tank colors for AI tanks (hardcoded to avoid import issues)
 const tankColors = {
@@ -32,8 +33,14 @@ export class GameEngine {
     this.gameLoop = null;
     this.isRunning = false;
     
-    // Initialize default settings
-    this.gameSettings = {
+    // Network optimization: track last sent state for delta compression
+    this.lastSentState = null;
+    this.lastSentTime = 0;
+    this.networkUpdateInterval = 100; // Reduced from 50ms to 100ms (10 FPS)
+    
+        // Initialize default settings with Mudlands terrain map
+        const mudlandsMap = getTerrainMap('mudlands');
+        this.gameSettings = {
       gameParams: {
         respawnTime: 5000,
         reloadTime: 1000,
@@ -57,14 +64,9 @@ export class GameEngine {
         kinetics: { count: 1 },
         health: { count: 0 }
       },
-                    treeParams: {
-        minTrees: 10,
-        maxTrees: 25,
-        treeSize: 36, // Increased by 20% from 30
-        treeSizeVariance: 18, // Increased by 20% from 15
-        clusterGroups: 1, // Number of cluster groups
-        clustering: 0 // 0 = random, 100 = highly clustered
-      },
+      treeParams: mudlandsMap.treeParams,
+      patchParams: mudlandsMap.patchParams,
+      groundParams: mudlandsMap.groundParams,
       upgradeParams: {
         size: 22.5,
         rotationRange: 30
@@ -175,18 +177,34 @@ export class GameEngine {
 
         const tankBox = tank.getBoundingBox();
         if (checkAABBCollision(shellBox, tankBox)) {
-          console.log(`Shell from ${shell.shooterId} collided with tank ${tankId}`);
-          
           // Use robust damage system that handles immunity
           const damageApplied = tank.takeDamage(shell);
           
           if (damageApplied) {
-            console.log(`Damage applied to tank ${tankId}`);
             this.gameState.shells.splice(i, 1);
             shellHit = true;
             break;
-          } else {
-            console.log(`Damage blocked for tank ${tankId} (immunity)`);
+          }
+        } else {
+          // Additional check for high-velocity shells that might pass through
+          const shellSpeed = shell.velocity.magnitude();
+          if (shellSpeed > 10) { // Only check for fast shells
+            const shellRadius = 2.5; // Half of shell size
+            const tankCenter = { x: tank.position.x, y: tank.position.y };
+            const distance = Math.sqrt(
+              Math.pow(shell.position.x - tankCenter.x, 2) + 
+              Math.pow(shell.position.y - tankCenter.y, 2)
+            );
+            
+            // If shell is very close to tank center, consider it a hit
+            if (distance < 20) { // Tank radius approximation
+              const damageApplied = tank.takeDamage(shell);
+              if (damageApplied) {
+                this.gameState.shells.splice(i, 1);
+                shellHit = true;
+                break;
+              }
+            }
           }
         }
       }
@@ -196,7 +214,6 @@ export class GameEngine {
         for (const tree of this.gameState.trees) {
           const treeBox = tree.getBoundingBox();
           if (checkAABBCollision(shellBox, treeBox)) {
-            console.log(`Shell hit tree at position:`, tree.position);
             // Trigger tree swing animation based on shell velocity and speed
             const shellSpeed = shell.velocity.magnitude();
             tree.impact(shell.velocity, shellSpeed);
@@ -441,7 +458,7 @@ export class GameEngine {
     // Create AI player data for proper rendering
     const aiPlayer = {
       id: aiId,
-      callname: fullName,
+      callname: `${fullName} (AI)`,
       tankColor: this.getRandomTankColor(), // Random color for AI tanks
       tankCamo: 'none', // No camo for AI
       team: { name: randomTeam, color: '#FF6B6B' }, // Random team for AI
@@ -457,7 +474,7 @@ export class GameEngine {
     // Add strategy to player data for display
     aiPlayer.strategy = aiController.strategy;
 
-    console.log(`AI tank ${aiId} added with player data (Level: ${aiLevel}, Strategy: ${aiController.strategy})`);
+    // AI tank added successfully
     return aiId;
   }
 
@@ -471,8 +488,7 @@ export class GameEngine {
     tank.attributes.ammunition = this.gameSettings.attributeLimits.ammunition.max;
     tank.attributes.kinetics = this.gameSettings.attributeLimits.kinetics.max;
     
-    console.log(`AI tank ${tank.id} initialized with same stats as regular player:`, tank.attributes);
-    console.log(`AI Level: ${aiLevel} - affects behavior, not starting stats`);
+    // AI tank initialized with player stats
   }
 
   removeAITank(aiId) {
@@ -480,7 +496,7 @@ export class GameEngine {
     this.gameState.tanks.delete(aiId);
     this.gameState.players.delete(aiId);
     this.aiControllers.delete(aiId);
-    console.log(`AI tank ${aiId} removed with cleanup`);
+    // AI tank removed successfully
   }
 
   updatePlayerInput(playerId, input) {
@@ -493,7 +509,7 @@ export class GameEngine {
         this.loggedMissingTanks = new Set();
       }
       if (!this.loggedMissingTanks.has(playerId)) {
-        console.log(`No tank found for player ${playerId} (logging once per session)`);
+        // No tank found for player
         this.loggedMissingTanks.add(playerId);
       }
       return;
@@ -505,7 +521,7 @@ export class GameEngine {
         this.loggedDeadTanks = new Set();
       }
       if (!this.loggedDeadTanks.has(playerId)) {
-        console.log(`Tank ${playerId} is not alive (logging once per session)`);
+        // Tank is not alive
         this.loggedDeadTanks.add(playerId);
       }
       return;
@@ -536,13 +552,13 @@ export class GameEngine {
       this.shootLogCounter++;
       
       if (this.shootLogCounter % 10 === 0) { // Log every 10th attempt
-        console.log(`Tank ${playerId} attempting to shoot (attempt #${this.shootLogCounter})`);
+        // Tank attempting to shoot
       }
       
       const shell = tank.shoot();
       if (shell) {
         if (this.shootLogCounter % 10 === 0) { // Log every 10th successful shot
-          console.log(`Tank ${playerId} shot shell successfully`);
+          // Tank shot shell successfully
         }
         this.gameState.shells.push(shell);
       } else {
@@ -624,20 +640,169 @@ export class GameEngine {
       this.gameState.trees.push(new Tree(new Vector2(position.x, position.y), size));
     }
 
+    // Generate patches using dynamic parameters
+    const patchParams = this.gameSettings.patchParams || { patchTypes: {} };
+    
+    Object.keys(patchParams.patchTypes).forEach(patchType => {
+        const patchConfig = patchParams.patchTypes[patchType];
+        
+        if (patchConfig.enabled) {
+            for (let i = 0; i < patchConfig.quantity; i++) {
+                const size = patchConfig.size + 
+                    (Math.random() - 0.5) * patchConfig.sizeVariance;
+                
+                const position = getRandomPositionAvoidingObstacles([
+                    ...this.gameState.trees,
+                    ...this.gameState.upgrades,
+                    ...this.gameState.patches
+                ], 60, 50, 50, 1450, 850);
+
+                this.gameState.patches.push(new Patch(
+                    new Vector2(position.x, position.y), 
+                    size, 
+                    patchType, 
+                    Math.random() * 2 * Math.PI // 360 degrees of rotation
+                ));
+            }
+        }
+    });
+
     // Spawn initial upgrades
     this.spawnUpgrades();
   }
 
   getGameState() {
-    return {
+    const gameState = {
       players: Array.from(this.gameState.players.values()),
       tanks: Array.from(this.gameState.tanks.values()),
       shells: this.gameState.shells,
       upgrades: this.gameState.upgrades,
       trees: this.gameState.trees,
-
+      patches: this.gameState.patches,
+      patchConfigs: this.gameSettings.patchParams.patchTypes,
+      treeParams: this.gameSettings.treeParams,
       gameTime: this.gameState.gameTime
     };
+    
+    return gameState;
+  }
+
+  getOptimizedGameState() {
+    // Create optimized game state with reduced data size
+    const optimizedTanks = Array.from(this.gameState.tanks.values()).map(tank => ({
+      id: tank.id,
+      position: { x: Math.round(tank.position.x * 10) / 10, y: Math.round(tank.position.y * 10) / 10 },
+      angle: Math.round(tank.angle * 100) / 100,
+      velocity: { x: Math.round(tank.velocity.x * 10) / 10, y: Math.round(tank.velocity.y * 10) / 10 },
+      attributes: {
+        health: Math.round(tank.attributes.health),
+        ammunition: tank.attributes.ammunition,
+        gasoline: Math.round(tank.attributes.gasoline * 10) / 10,
+        speed: Math.round(tank.attributes.speed),
+        rotation: Math.round(tank.attributes.rotation),
+        kinetics: Math.round(tank.attributes.kinetics)
+      },
+      isAlive: tank.isAlive,
+      isAI: tank.isAI,
+      respawnTime: tank.respawnTime,
+      reloadTime: tank.reloadTime
+    }));
+
+    const optimizedShells = this.gameState.shells.map(shell => ({
+      id: shell.id,
+      position: { x: Math.round(shell.position.x * 10) / 10, y: Math.round(shell.position.y * 10) / 10 },
+      velocity: { x: Math.round(shell.velocity.x * 10) / 10, y: Math.round(shell.velocity.y * 10) / 10 },
+      shooterId: shell.shooterId,
+      timestamp: shell.timestamp
+    }));
+
+    return {
+      players: Array.from(this.gameState.players.values()),
+      tanks: optimizedTanks,
+      shells: optimizedShells,
+      upgrades: this.gameState.upgrades,
+      trees: this.gameState.trees,
+      patches: this.gameState.patches,
+      patchConfigs: this.gameSettings.patchParams.patchTypes,
+      treeParams: this.gameSettings.treeParams,
+      gameTime: this.gameState.gameTime
+    };
+  }
+
+  getDeltaGameState() {
+    const currentTime = Date.now();
+    const currentState = this.getOptimizedGameState();
+    
+    // If this is the first time or enough time has passed, send full state
+    if (!this.lastSentState || (currentTime - this.lastSentTime) > this.networkUpdateInterval) {
+      this.lastSentState = currentState;
+      this.lastSentTime = currentTime;
+      return { type: 'full', data: currentState };
+    }
+    
+    // Calculate delta (only changed entities)
+    const delta = {
+      type: 'delta',
+      timestamp: currentTime,
+      tanks: [],
+      shells: [],
+      upgrades: [],
+      players: [],
+      patches: currentState.patches,
+      patchConfigs: currentState.patchConfigs,
+      treeParams: currentState.treeParams
+    };
+    
+    // Check for changed tanks
+    for (const tank of currentState.tanks) {
+      const lastTank = this.lastSentState.tanks.find(t => t.id === tank.id);
+      if (!lastTank || this.hasTankChanged(tank, lastTank)) {
+        delta.tanks.push(tank);
+      }
+    }
+    
+    // Check for changed shells - send all shells since they're always moving
+    if (currentState.shells.length > 0) {
+      delta.shells = currentState.shells;
+    }
+    
+    // Check for changed upgrades
+    for (const upgrade of currentState.upgrades) {
+      const lastUpgrade = this.lastSentState.upgrades.find(u => 
+        u.position.x === upgrade.position.x && u.position.y === upgrade.position.y);
+      if (!lastUpgrade || lastUpgrade.collected !== upgrade.collected) {
+        delta.upgrades.push(upgrade);
+      }
+    }
+    
+    // Check for changed players
+    for (const player of currentState.players) {
+      const lastPlayer = this.lastSentState.players.find(p => p.id === player.id);
+      if (!lastPlayer || JSON.stringify(player) !== JSON.stringify(lastPlayer)) {
+        delta.players.push(player);
+      }
+    }
+    
+    // Only send delta if there are changes
+    if (delta.tanks.length > 0 || delta.shells.length > 0 || 
+        delta.upgrades.length > 0 || delta.players.length > 0) {
+      this.lastSentState = currentState;
+      this.lastSentTime = currentTime;
+      return delta;
+    }
+    
+    return null; // No changes
+  }
+
+  hasTankChanged(currentTank, lastTank) {
+    // Check if tank position, health, or other critical attributes changed
+    return currentTank.position.x !== lastTank.position.x ||
+           currentTank.position.y !== lastTank.position.y ||
+           currentTank.angle !== lastTank.angle ||
+           currentTank.attributes.health !== lastTank.attributes.health ||
+           currentTank.attributes.ammunition !== lastTank.attributes.ammunition ||
+           currentTank.attributes.gasoline !== lastTank.attributes.gasoline ||
+           currentTank.isAlive !== lastTank.isAlive;
   }
 
   getPlayerGameState(playerId) {
@@ -653,7 +818,7 @@ export class GameEngine {
   }
 
   resetGame() {
-    console.log('Resetting game state...');
+    // Resetting game state...
     
     // Clear all game entities
     this.gameState.tanks.clear();
@@ -661,6 +826,7 @@ export class GameEngine {
     this.gameState.shells = [];
     this.gameState.upgrades = [];
     this.gameState.trees = [];
+    this.gameState.patches = [];
 
     this.aiControllers.clear();
     
@@ -668,14 +834,18 @@ export class GameEngine {
     this.gameState.gameTime = 0;
     this.lastUpdate = Date.now();
     
+    // Reset network optimization state
+    this.lastSentState = null;
+    this.lastSentTime = 0;
+    
     // Reinitialize battlefield with current settings
     this.initializeBattlefield();
     
-    console.log('Game state reset complete');
+    // Game state reset complete
   }
 
   updateSettings(newSettings) {
-    console.log('Applying settings to game engine:', newSettings);
+    // Applying settings to game engine
     
     // Update game parameters
     if (newSettings.gameParams) {
@@ -713,6 +883,14 @@ export class GameEngine {
       };
     }
 
+    // Update patch parameters (affects future patch generation)
+    if (newSettings.patchParams) {
+      this.gameSettings = {
+        ...this.gameSettings,
+        patchParams: { ...newSettings.patchParams }
+      };
+    }
+
     // Update upgrade parameters
     if (newSettings.upgradeParams) {
       this.gameSettings = {
@@ -729,6 +907,35 @@ export class GameEngine {
       };
     }
 
-    console.log('Settings applied successfully');
+    // Settings applied successfully
+  }
+
+  // Change terrain map
+  changeTerrainMap(mapName) {
+    const terrainMap = getTerrainMap(mapName);
+    if (!terrainMap) {
+      console.error(`Terrain map '${mapName}' not found`);
+      return false;
+    }
+
+    // Update terrain settings
+    this.gameSettings.treeParams = terrainMap.treeParams;
+    this.gameSettings.patchParams = terrainMap.patchParams;
+    this.gameSettings.groundParams = terrainMap.groundParams;
+
+    // Reinitialize battlefield with new terrain
+    this.gameState.trees = [];
+    this.gameState.patches = [];
+    this.initializeBattlefield();
+
+    console.log(`✅ Terrain map changed to: ${terrainMap.name}`);
+    return true;
+  }
+
+  // Get current terrain map name
+  getCurrentTerrainMap() {
+    // This is a simple implementation - you might want to store the current map name
+    // For now, we'll return 'mudlands' as default since that's what we're using
+    return 'mudlands';
   }
 } 

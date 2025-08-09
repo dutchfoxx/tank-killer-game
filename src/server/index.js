@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { GameEngine } from './gameEngine.js';
 import { DAMAGE_PARAMS } from '../shared/constants.js';
+import { getAllTerrainMaps, getTerrainMap } from '../shared/terrainMaps.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -91,6 +92,18 @@ io.on('connection', (socket) => {
     gameEngine.updatePlayerInput(socket.id, { movement, rotation, shoot });
   });
 
+  // Handle terrain map change
+  socket.on('changeTerrainMap', (data) => {
+    const { mapName } = data;
+    const success = gameEngine.changeTerrainMap(mapName);
+    if (success) {
+      // Broadcast updated game state to all clients
+      const gameState = gameEngine.getGameState();
+      io.emit('gameState', gameState);
+      io.emit('terrainMapChanged', { mapName });
+    }
+  });
+
   // Handle AI toggle
   socket.on('toggleAI', (data) => {
 
@@ -154,6 +167,17 @@ io.on('connection', (socket) => {
     
     // Notify all clients that the game has been reset
     io.emit('gameReset', { message: 'Game has been reset' });
+  });
+
+  // Handle game reset with new AI level
+  socket.on('resetGameWithAILevel', (data) => {
+    const { aiLevel } = data;
+    
+    // Reset the game engine
+    gameEngine.resetGame();
+    
+    // Notify all clients that the game has been reset
+    io.emit('gameReset', { message: 'Game has been reset with new AI level', aiLevel });
   });
 
 
@@ -228,11 +252,13 @@ io.on('connection', (socket) => {
   });
 });
 
-// Broadcast game state to all clients every 50ms (20 FPS for network updates)
+// Broadcast game state to all clients every 100ms (10 FPS for network updates) with delta compression
 setInterval(() => {
-  const gameState = gameEngine.getGameState();
-  io.emit('gameState', gameState);
-}, 50);
+  const deltaState = gameEngine.getDeltaGameState();
+  if (deltaState) {
+    io.emit('gameState', deltaState);
+  }
+}, 100);
 
 // Broadcast player states to controllers every 100ms
 setInterval(() => {
@@ -265,6 +291,27 @@ app.get('/tank', (req, res) => {
   res.sendFile(path.join(__dirname, '../../public/tank.html'));
 });
 
+app.get('/terrain-builder', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../public/terrain-builder.html'));
+});
+
+// Terrain maps API endpoint
+app.get('/api/terrain-maps', (req, res) => {
+  const terrainMaps = getAllTerrainMaps();
+  res.json(terrainMaps);
+});
+
+// Individual terrain map API endpoint
+app.get('/api/terrain-maps/:mapId', (req, res) => {
+  const mapId = req.params.mapId;
+  const terrainMap = getTerrainMap(mapId);
+  if (terrainMap) {
+    res.json(terrainMap);
+  } else {
+    res.status(404).json({ error: 'Terrain map not found' });
+  }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
@@ -287,4 +334,5 @@ server.listen(PORT, () => {
   console.log(`Controller: http://localhost:${PORT}/controller`);
   console.log(`Shell Designer: http://localhost:${PORT}/shell`);
   console.log(`Tank Designer: http://localhost:${PORT}/tank`);
+  console.log(`Terrain Builder: http://localhost:${PORT}/terrain-builder`);
 }); 

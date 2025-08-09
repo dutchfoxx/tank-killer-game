@@ -49,4 +49,10 @@ const ranks = [
 ];
 
 // Export for ES modules
-export { defaultNames, ranks }; 
+export { defaultNames, ranks };
+
+// Also make available globally for script tags
+if (typeof window !== 'undefined') {
+    window.defaultNames = defaultNames;
+    window.ranks = ranks;
+} 

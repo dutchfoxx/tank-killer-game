@@ -1,0 +1,1851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terrain Builder</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px; /* reduced side padding */
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        .container {
+            display: flex;
+            gap: 30px;
+            max-width: 1800px; /* wider to reduce left/right margins */
+            margin: 0 auto;
+            padding: 8px; /* slightly tighter inner padding */
+        }
+
+        .terrain-display {
+            flex: 2;
+            background: #2a2a2a;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .canvas-container {
+            background: #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        #terrainCanvas {
+            border: 2px solid #555;
+            background: #444;
+            border-radius: 5px;
+        }
+
+        .controls {
+            flex: 1;
+            background: #2a2a2a;
+            border-radius: 10px;
+            padding: 20px;
+            /* Let the right panel grow with its content; no inner scrollbar */
+            max-height: none;
+            overflow: visible;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #333;
+            border-radius: 8px;
+        }
+
+        .control-group h3 {
+            margin: 0 0 15px 0;
+            color: #4CAF50;
+            font-size: 16px;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+
+        .control-row label {
+            min-width: 120px;
+            font-size: 14px;
+        }
+
+        .control-row input[type="range"] {
+            flex: 1;
+        }
+
+        .control-row input[type="color"] {
+            width: 50px;
+            height: 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .control-row input[type="number"] {
+            width: 80px;
+            padding: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #444;
+            color: #fff;
+        }
+
+        .control-row select {
+            padding: 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #444;
+            color: #fff;
+            flex: 1;
+        }
+
+        .value-display {
+            min-width: 60px;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .copy-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #333;
+            border-radius: 8px;
+        }
+
+        .copy-section textarea {
+            width: 100%;
+            height: 100px;
+            background: #444;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #fff;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            resize: vertical;
+        }
+
+        .copy-section button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .copy-section button:hover {
+            background: #45a049;
+        }
+
+        .action-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .action-button:hover {
+            background: #45a049;
+        }
+
+        .action-button.secondary {
+            background: #2196F3;
+        }
+
+        .action-button.secondary:hover {
+            background: #1976D2;
+        }
+
+        .info {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+            margin-bottom: 30px;
+        }
+
+        .color-preview {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #555;
+            border-radius: 4px;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            min-width: auto;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin: 0;
+        }
+
+        /* Blend mode grid */
+        .blend-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 28px);
+            gap: 6px;
+            align-items: center;
+        }
+        .blend-option {
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            background: #333;
+            color: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+            border: 1px solid #555;
+            user-select: none;
+        }
+        .blend-option.active {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+
+    
+    <div class="container">
+        <div class="terrain-display">
+            <div class="canvas-container">
+                <canvas id="terrainCanvas" width="1000" height="600"></canvas>
+            </div>
+            <div class="action-buttons">
+                <button class="action-button" id="refreshButton">Refresh Terrain</button>
+            </div>
+            <div class="copy-section">
+                <h3>Export Settings</h3>
+                <textarea id="settingsOutput" placeholder="Settings will appear here..."></textarea>
+                <button onclick="copySettings()">Copy Settings</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <h3>Terrain Map</h3>
+                <div class="control-row">
+                    <label>Map Preset:</label>
+                    <select id="terrainMapSelect">
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Tree</h3>
+                <div class="control-row">
+                    <label>Min Trees:</label>
+                    <input type="range" id="minTrees" min="0" max="50" value="10" step="1">
+                    <span class="value-display" id="minTreesValue">10</span>
+                </div>
+                <div class="control-row">
+                    <label>Max Trees:</label>
+                    <input type="range" id="maxTrees" min="0" max="100" value="25" step="1">
+                    <span class="value-display" id="maxTreesValue">25</span>
+                </div>
+                <div class="control-row">
+                    <label>Tree Size:</label>
+                    <input type="range" id="treeSize" min="10" max="80" value="36" step="1">
+                    <span class="value-display" id="treeSizeValue">36</span>
+                </div>
+                <div class="control-row">
+                    <label>Tree Size Variance:</label>
+                    <input type="range" id="treeSizeVariance" min="0" max="40" value="18" step="1">
+                    <span class="value-display" id="treeSizeVarianceValue">18</span>
+                </div>
+                <div class="control-row">
+                    <label>Tree Type:</label>
+                    <select id="treeType">
+                        <option value="forest-trees">Forest Trees</option>
+                        <option value="forest-snow-trees">Forest Snow Trees</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label>Cluster Groups:</label>
+                    <input type="range" id="clusterGroups" min="1" max="10" value="1" step="1">
+                    <span class="value-display" id="clusterGroupsValue">1</span>
+                </div>
+                <div class="control-row">
+                    <label>Clustering:</label>
+                    <input type="range" id="clustering" min="0" max="100" value="0" step="1">
+                    <span class="value-display" id="clusteringValue">0</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Ground</h3>
+                <div class="control-row">
+                    <label>Ground Color:</label>
+                    <input type="color" id="groundColor" value="#55492f">
+                    <span class="color-preview" id="groundColorPreview"></span>
+                </div>
+                <div class="control-row">
+                    <label>Texture Type:</label>
+                    <select id="groundTextureType">
+                        <option value="none">None</option>
+                        <option value="texture-1">Texture 1</option>
+                        <option value="texture-2">Texture 2</option>
+                        <option value="texture-3">Texture 3</option>
+                        <option value="texture-4">Texture 4</option>
+                        <option value="fresh-snow">Fresh Snow</option>
+                        <option value="nice-snow">Nice Snow</option>
+                        <option value="snow">Snow</option>
+                        <option value="wet-snow">Wet Snow</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label>Blending Mode:</label>
+                    <div class="blend-grid" id="blendGrid">
+                        <div class="blend-option" data-blend="multiply">M</div>
+                        <div class="blend-option" data-blend="overlay">O</div>
+                        <div class="blend-option" data-blend="soft-light">SL</div>
+                        <div class="blend-option" data-blend="hard-light">HL</div>
+                        <div class="blend-option" data-blend="color-burn">CB</div>
+                        <div class="blend-option" data-blend="color-dodge">CD</div>
+                        <div class="blend-option" data-blend="darken">D</div>
+                        <div class="blend-option" data-blend="lighten">L</div>
+                        <div class="blend-option" data-blend="screen">S</div>
+                        <div class="blend-option" data-blend="source-over">N</div>
+                    </div>
+                </div>
+                <div class="control-row">
+                    <label>Texture Opacity:</label>
+                    <input type="range" id="groundTextureOpacity" min="0" max="1" value="0.5" step="0.1">
+                    <span class="value-display" id="groundTextureOpacityValue">0.5</span>
+                </div>
+                <div class="control-row">
+                    <label>Texture Scale:</label>
+                    <input type="range" id="groundTextureScale" min="0.5" max="2" value="1" step="0.1">
+                    <span class="value-display" id="groundTextureScaleValue">1.0</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Road</h3>
+                <div class="control-row">
+                    <label>Road Type:</label>
+                    <select id="roadType">
+                        <option value="none">None</option>
+                        <option value="asphalt">Asphalt</option>
+                        <option value="dirt">Dirt</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label>Curviness:</label>
+                    <input type="range" id="roadCurviness" min="0" max="100" value="50" step="1">
+                    <span class="value-display" id="roadCurvinessValue">50</span>
+                </div>
+                <div class="control-row">
+                    <label>Road Width:</label>
+                    <input type="range" id="roadWidth" min="4" max="60" value="20" step="1">
+                    <span class="value-display" id="roadWidthValue">20</span>
+                </div>
+                <div class="control-row">
+                    <label>Road Opacity:</label>
+                    <input type="range" id="roadBaseOpacity" min="0" max="1" value="1" step="0.1">
+                    <span class="value-display" id="roadBaseOpacityValue">1.0</span>
+                </div>
+                <div class="control-row">
+                    <label>Colour:</label>
+                    <input type="color" id="roadColor" value="#444444">
+                </div>
+                <div class="control-row">
+                    <label>Texture Type:</label>
+                    <select id="roadTextureType">
+                        <option value="none">None</option>
+                        <option value="asfalt-dark">Asfalt Dark</option>
+                        <option value="asfalt-light">Asfalt Light</option>
+                        <option value="subtle-grunge">Subtle Grunge</option>
+                        <option value="subtle-white-feathers">Subtle White Feathers</option>
+                        <option value="cardboard">Cardboard</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label>Texture Blending:</label>
+                    <div class="blend-grid" id="roadBlendGrid">
+                        <div class="blend-option" data-blend="multiply">M</div>
+                        <div class="blend-option" data-blend="overlay">O</div>
+                        <div class="blend-option" data-blend="soft-light">SL</div>
+                        <div class="blend-option" data-blend="hard-light">HL</div>
+                        <div class="blend-option" data-blend="color-burn">CB</div>
+                        <div class="blend-option" data-blend="color-dodge">CD</div>
+                        <div class="blend-option" data-blend="darken">D</div>
+                        <div class="blend-option" data-blend="lighten">L</div>
+                        <div class="blend-option" data-blend="screen">S</div>
+                        <div class="blend-option" data-blend="source-over">N</div>
+                    </div>
+                </div>
+                <div class="control-row">
+                    <label>Texture Opacity:</label>
+                    <input type="range" id="roadTextureOpacity" min="0" max="1" value="0.6" step="0.1">
+                    <span class="value-display" id="roadTextureOpacityValue">0.6</span>
+                </div>
+                <div id="roadLinesControls" style="display: none; margin-top: 10px; padding: 10px; background: #444; border-radius: 6px;">
+                    <div class="control-row">
+                        <label>Enable Road Lines:</label>
+                        <input type="checkbox" id="roadLinesEnabled">
+                    </div>
+                    <div class="control-row">
+                        <label>Line Colour:</label>
+                        <input type="color" id="roadLineColor" value="#ffffff">
+                    </div>
+                    <div class="control-row">
+                        <label>Side Line Distance:</label>
+                        <input type="range" id="roadSideLineDistance" min="0" max="40" value="4" step="1">
+                        <span class="value-display" id="roadSideLineDistanceValue">4</span>
+                    </div>
+                    <div class="control-row">
+                        <label>Dotted Line Length:</label>
+                        <input type="range" id="roadDottedLength" min="2" max="120" value="12" step="2">
+                        <span class="value-display" id="roadDottedLengthValue">12</span>
+                    </div>
+                    <div class="control-row">
+                        <label>Line Width:</label>
+                        <input type="range" id="roadLineWidth" min="1" max="10" value="3" step="1">
+                        <span class="value-display" id="roadLineWidthValue">3</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Patches</h3>
+                <div class="control-row">
+                    <label>Patch Types:</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" id="patch1"> Patch 1</label>
+                        <label><input type="checkbox" id="patch2"> Patch 2</label>
+                        <label><input type="checkbox" id="patch3"> Patch 3</label>
+                        <label><input type="checkbox" id="patch4"> Patch 4</label>
+                        <label><input type="checkbox" id="patch5"> Patch 5</label>
+                        <label><input type="checkbox" id="patch6"> Patch 6</label>
+                        <label><input type="checkbox" id="patch7"> Patch 7</label>
+                    </div>
+                </div>
+                <div id="patchControls" style="display: none;">
+                    <!-- Individual patch controls will be generated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('terrainCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Tree images
+        const treeImages = {
+            tree1: null,
+            tree2: null,
+            tree3: null
+        };
+
+        // Ground texture
+        let groundTexture = null;
+        let groundPattern = null;
+
+        // Patch images
+        let patchImages = {
+            patch1: null,
+            patch2: null,
+            patch3: null,
+            patch4: null,
+            patch5: null,
+            patch6: null,
+            patch7: null
+        };
+
+        // Road texture image cache
+        const roadTextureImages = {};
+        function ensureRoadTexture(type, onReady) {
+            if (!type || type === 'none') { onReady && onReady(null); return; }
+            const texMap = {
+                'asfalt-dark': '/assets/images/textures/road/asfalt-dark.png',
+                'asfalt-light': '/assets/images/textures/road/asfalt-light.png',
+                'subtle-grunge': '/assets/images/textures/road/subtle-grunge.png',
+                'subtle-white-feathers': '/assets/images/textures/road/subtle-white-feathers.png',
+                'cardboard': '/assets/images/textures/road/cardboard.png'
+            };
+            const src = texMap[type];
+            if (!src) { onReady && onReady(null); return; }
+            if (roadTextureImages[type] && roadTextureImages[type].complete) {
+                onReady && onReady(roadTextureImages[type]);
+                return;
+            }
+            const img = new Image();
+            img.onload = function() { roadTextureImages[type] = img; onReady && onReady(img); };
+            img.onerror = function() { onReady && onReady(null); };
+            img.src = src;
+            roadTextureImages[type] = img;
+        }
+
+        function createScaledPattern(img, scale, repeat = 'repeat') {
+            const s = Math.max(0.25, scale || 1.0);
+            const c = document.createElement('canvas');
+            c.width = Math.max(1, Math.round(img.width * s));
+            c.height = Math.max(1, Math.round(img.height * s));
+            const pctx = c.getContext('2d');
+            pctx.imageSmoothingEnabled = true;
+            pctx.drawImage(img, 0, 0, c.width, c.height);
+            return ctx.createPattern(c, repeat);
+        }
+
+        // Load tree images
+        function loadTreeImages() {
+            const treeType = settings.treeType || 'forest-trees';
+            const baseName = treeType === 'forest-snow-trees' ? 'forest-snow-tree' : 'forest-tree';
+            const folder = `/assets/images/terrain/trees/${treeType}`;
+            const treePaths = {
+                tree1: `${folder}/${baseName}-1.png`,
+                tree2: `${folder}/${baseName}-2.png`,
+                tree3: `${folder}/${baseName}-3.png`
+            };
+
+            console.log('Starting to load tree images...');
+            let loadedCount = 0;
+            const totalImages = Object.keys(treePaths).length;
+
+            Object.entries(treePaths).forEach(([key, path]) => {
+                console.log('Loading tree image:', key, 'from path:', path);
+                const img = new Image();
+                img.onload = function() {
+                    treeImages[key] = img;
+                    loadedCount++;
+                    console.log('Successfully loaded tree image:', key, 'Size:', img.width, 'x', img.height);
+                    
+                    // Update terrain when all images are loaded
+                    if (loadedCount === totalImages) {
+                        console.log('All tree images loaded, updating terrain');
+                        updateTerrain();
+                    }
+                };
+                img.onerror = function() {
+                    console.error('Failed to load tree image:', key, 'from path:', path);
+                    loadedCount++;
+                    
+                    // Update terrain even if some images failed to load
+                    if (loadedCount === totalImages) {
+                        console.log('All tree images processed, updating terrain');
+                        updateTerrain();
+                    }
+                };
+                img.src = path;
+            });
+        }
+
+        // Load patch images
+        function loadPatchImages() {
+            const patchPaths = {
+                patch1: '/assets/images/terrain/patches/patch-1.png',
+                patch2: '/assets/images/terrain/patches/patch-2.png',
+                patch3: '/assets/images/terrain/patches/patch-3.png',
+                patch4: '/assets/images/terrain/patches/patch-4.png',
+                patch5: '/assets/images/terrain/patches/patch-5.png',
+                patch6: '/assets/images/terrain/patches/patch-6.png',
+                patch7: '/assets/images/terrain/patches/patch-7.png'
+            };
+
+            Object.entries(patchPaths).forEach(([key, path]) => {
+                const img = new Image();
+                img.onload = function() {
+                    patchImages[key] = img;
+                    console.log('Loaded patch image:', key, 'Size:', img.width, 'x', img.height);
+                };
+                img.onerror = function() {
+                    console.error('Failed to load patch image:', key, 'from path:', path);
+                };
+                img.src = path;
+            });
+        }
+
+        // Load terrain maps and populate dropdown
+        async function loadTerrainMaps() {
+            console.log('🔄 loadTerrainMaps function called');
+            try {
+                console.log('🔄 Loading terrain maps...');
+                const response = await fetch('/api/terrain-maps');
+                console.log('📡 Response status:', response.status);
+                const terrainMaps = await response.json();
+                console.log('📋 Received terrain maps:', terrainMaps);
+                
+                const select = document.getElementById('terrainMapSelect');
+                console.log('🎯 Found select element:', select);
+                
+                if (!select) {
+                    console.error('❌ Select element not found!');
+                    return;
+                }
+                
+                // Clear existing options except "Custom"
+                console.log('🧹 Clearing existing options...');
+                while (select.children.length > 1) {
+                    select.removeChild(select.lastChild);
+                }
+                console.log('🧹 Cleared options, remaining:', select.children.length);
+                
+                // Add terrain map options
+                console.log('➕ Adding terrain map options...');
+                terrainMaps.forEach((map, index) => {
+                    const option = document.createElement('option');
+                    option.value = map.id;
+                    option.textContent = map.name;
+                    select.appendChild(option);
+                    console.log(`➕ Added option ${index}: ${map.name} with value: ${map.id}`);
+                });
+                
+                console.log('✅ Loaded terrain maps:', terrainMaps.length);
+                console.log('📊 Final select options count:', select.children.length);
+            } catch (error) {
+                console.error('❌ Failed to load terrain maps:', error);
+            }
+        }
+
+        // Apply terrain map settings
+        function applyTerrainMap(mapId) {
+            console.log('🎯 applyTerrainMap called with mapId:', mapId);
+            if (mapId === 'custom') {
+                console.log('🔄 Custom selected, keeping current settings');
+                return; // Don't change settings for custom
+            }
+            
+            console.log('🔄 Fetching terrain map data for:', mapId);
+            fetch(`/api/terrain-maps/${mapId}`)
+                .then(response => {
+                    console.log('📡 Response status:', response.status);
+                    return response.json();
+                })
+                .then(mapData => {
+                    console.log('📋 Received map data:', mapData.name);
+                    
+                    // Apply tree settings
+                    if (mapData.treeParams) {
+                        console.log('🌳 Applying tree settings:', mapData.treeParams);
+                        document.getElementById('minTrees').value = mapData.treeParams.minTrees;
+                        document.getElementById('maxTrees').value = mapData.treeParams.maxTrees;
+                        document.getElementById('treeSize').value = mapData.treeParams.treeSize;
+                        document.getElementById('treeSizeVariance').value = mapData.treeParams.treeSizeVariance;
+                        document.getElementById('clusterGroups').value = mapData.treeParams.clusterGroups;
+                        document.getElementById('clustering').value = mapData.treeParams.clustering;
+                        if (mapData.treeParams.treeType) {
+                            const treeTypeSelect = document.getElementById('treeType');
+                            if (treeTypeSelect) treeTypeSelect.value = mapData.treeParams.treeType;
+                        }
+                        
+                        // Update settings object
+                        settings.minTrees = mapData.treeParams.minTrees;
+                        settings.maxTrees = mapData.treeParams.maxTrees;
+                        settings.treeSize = mapData.treeParams.treeSize;
+                        settings.treeSizeVariance = mapData.treeParams.treeSizeVariance;
+                        settings.clusterGroups = mapData.treeParams.clusterGroups;
+                        settings.clustering = mapData.treeParams.clustering;
+                        if (mapData.treeParams.treeType) {
+                            settings.treeType = mapData.treeParams.treeType;
+                            loadTreeImages();
+                        }
+                        
+                        // Update value displays
+                        document.getElementById('minTreesValue').textContent = mapData.treeParams.minTrees;
+                        document.getElementById('maxTreesValue').textContent = mapData.treeParams.maxTrees;
+                        document.getElementById('treeSizeValue').textContent = mapData.treeParams.treeSize;
+                        document.getElementById('treeSizeVarianceValue').textContent = mapData.treeParams.treeSizeVariance;
+                        document.getElementById('clusterGroupsValue').textContent = mapData.treeParams.clusterGroups;
+                        document.getElementById('clusteringValue').textContent = mapData.treeParams.clustering;
+                    }
+                    
+                    // Apply ground settings
+                    if (mapData.groundParams) {
+                        console.log('🌍 Applying ground settings:', mapData.groundParams);
+                        document.getElementById('groundColor').value = mapData.groundParams.color;
+                        document.getElementById('groundTextureType').value = mapData.groundParams.textureType || 'none';
+                        // Blend select removed; sync is handled via blend grid below
+                        document.getElementById('groundTextureOpacity').value = mapData.groundParams.textureOpacity || 0.5;
+                        document.getElementById('groundTextureScale').value = mapData.groundParams.textureScale || 1.0;
+                        
+                        // Update settings object
+                        settings.groundColor = mapData.groundParams.color;
+                        settings.groundTextureType = mapData.groundParams.textureType || 'none';
+                        settings.groundTextureBlend = mapData.groundParams.textureBlend || 'multiply';
+                        settings.groundTextureOpacity = mapData.groundParams.textureOpacity || 0.5;
+                        settings.groundTextureScale = mapData.groundParams.textureScale || 1.0;
+                        
+                        // Update value displays
+                        document.getElementById('groundTextureOpacityValue').textContent = mapData.groundParams.textureOpacity || 0.5;
+                        document.getElementById('groundTextureScaleValue').textContent = mapData.groundParams.textureScale || 1.0;
+                        // Sync blend grid active option
+                        const grid = document.getElementById('blendGrid');
+                        if (grid) {
+                            grid.querySelectorAll('.blend-option').forEach(opt => {
+                                opt.classList.toggle('active', opt.getAttribute('data-blend') === settings.groundTextureBlend);
+                            });
+                        }
+                        updateColorPreview();
+                    }
+
+                    // Apply road settings
+                    if (mapData.roadParams) {
+                        const rp = mapData.roadParams;
+                        settings.road.enabled = !!rp.enabled;
+                        settings.road.type = rp.enabled ? 'asphalt' : 'none';
+                        settings.road.curviness = rp.curviness ?? settings.road.curviness;
+                        settings.road.color = rp.color ?? settings.road.color;
+                        settings.road.textureType = rp.textureType ?? settings.road.textureType;
+                        settings.road.textureBlend = rp.textureBlend ?? settings.road.textureBlend;
+                        settings.road.width = rp.width ?? settings.road.width;
+                        settings.road.textureOpacity = rp.textureOpacity ?? settings.road.textureOpacity;
+                        if (rp.lines) {
+                            settings.road.lines.enabled = !!rp.lines.enabled;
+                            settings.road.lines.color = rp.lines.color ?? settings.road.lines.color;
+                            settings.road.lines.sideDistance = rp.lines.sideDistance ?? settings.road.lines.sideDistance;
+                            settings.road.lines.dottedLength = rp.lines.dottedLength ?? settings.road.lines.dottedLength;
+                            settings.road.lines.width = rp.lines.width ?? settings.road.lines.width;
+                        }
+
+                        // Sync controls
+                        document.getElementById('roadType').value = settings.road.type;
+                        document.getElementById('roadCurviness').value = settings.road.curviness;
+                        document.getElementById('roadCurvinessValue').textContent = settings.road.curviness;
+                        document.getElementById('roadColor').value = settings.road.color;
+                        document.getElementById('roadTextureType').value = settings.road.textureType;
+                        document.getElementById('roadWidth').value = settings.road.width;
+                        document.getElementById('roadWidthValue').textContent = settings.road.width;
+                        document.getElementById('roadTextureOpacity').value = settings.road.textureOpacity;
+                        document.getElementById('roadTextureOpacityValue').textContent = settings.road.textureOpacity;
+                        const roadBlendGrid = document.getElementById('roadBlendGrid');
+                        if (roadBlendGrid) {
+                            roadBlendGrid.querySelectorAll('.blend-option').forEach(opt => {
+                                opt.classList.toggle('active', opt.getAttribute('data-blend') === settings.road.textureBlend);
+                            });
+                        }
+                        document.getElementById('roadLinesEnabled').checked = settings.road.lines.enabled;
+                        document.getElementById('roadLinesControls').style.display = (settings.road.type === 'asphalt') ? 'block' : 'none';
+                        document.getElementById('roadLineColor').value = settings.road.lines.color;
+                        document.getElementById('roadSideLineDistance').value = settings.road.lines.sideDistance;
+                        document.getElementById('roadSideLineDistanceValue').textContent = settings.road.lines.sideDistance;
+                        document.getElementById('roadDottedLength').value = settings.road.lines.dottedLength;
+                        document.getElementById('roadDottedLengthValue').textContent = settings.road.lines.dottedLength;
+                        document.getElementById('roadLineWidth').value = settings.road.lines.width;
+                        document.getElementById('roadLineWidthValue').textContent = settings.road.lines.width;
+                    }
+                    
+                    // Apply patch settings
+                    if (mapData.patchParams && mapData.patchParams.patchTypes) {
+                        console.log('🎨 Applying patch settings:', mapData.patchParams.patchTypes);
+                        Object.keys(mapData.patchParams.patchTypes).forEach(patchType => {
+                            const patchConfig = mapData.patchParams.patchTypes[patchType];
+                            const checkbox = document.getElementById(patchType);
+
+                            if (checkbox) {
+                                checkbox.checked = patchConfig.enabled;
+                            }
+
+                            // Update settings object
+                            if (settings.patchTypes[patchType] == null) {
+                                settings.patchTypes[patchType] = { enabled: false, quantity: 0, size: 50, sizeVariance: 20, opacity: 0.7, blend: 'multiply' };
+                            }
+                            settings.patchTypes[patchType].enabled = !!patchConfig.enabled;
+                            settings.patchTypes[patchType].quantity = patchConfig.quantity;
+                            settings.patchTypes[patchType].size = patchConfig.size;
+                            settings.patchTypes[patchType].sizeVariance = patchConfig.sizeVariance;
+                            settings.patchTypes[patchType].opacity = patchConfig.opacity;
+                            settings.patchTypes[patchType].blend = patchConfig.blend;
+                        });
+
+                        // Regenerate individual patch controls from settings
+                        updatePatchControls();
+                        updatePatchControlsVisibility();
+                        generateTerrain();
+                        updateTerrain();
+                        updateSettingsOutput();
+                    }
+                    
+                    // Update terrain with new settings and sync all controls
+                    console.log('🔄 Updating terrain with new settings...');
+                    updateControls();
+                    updateTerrain();
+                    console.log('✅ Terrain map applied successfully!');
+                })
+                .catch(error => {
+                    console.error('❌ Failed to apply terrain map:', error);
+                });
+        }
+
+        // Update color preview
+        function updateColorPreview() {
+            const groundColor = document.getElementById('groundColor').value;
+            const preview = document.getElementById('groundColorPreview');
+            if (preview) {
+                preview.style.backgroundColor = groundColor;
+            }
+        }
+
+        // Update patch controls visibility
+        function updatePatchControlsVisibility() {
+            const patchControlsContainer = document.getElementById('patchControls');
+            if (!patchControlsContainer) return;
+            
+            let hasEnabledPatches = false;
+            
+            // Check if any patches are enabled
+            Object.keys(settings.patchTypes).forEach(patchType => {
+                const checkbox = document.getElementById(patchType);
+                if (checkbox && checkbox.checked) {
+                    hasEnabledPatches = true;
+                }
+            });
+            
+            // Show/hide patch controls container
+            patchControlsContainer.style.display = hasEnabledPatches ? 'block' : 'none';
+        }
+
+        // Load ground texture
+        function loadGroundTexture(textureType) {
+            if (textureType === 'none') {
+                groundTexture = null;
+                groundPattern = null;
+                updateTerrain();
+                return;
+            }
+
+            const textureImg = new Image();
+            textureImg.onload = function() {
+                groundTexture = textureImg;
+                console.log('Loaded ground texture:', textureImg.width, 'x', textureImg.height);
+                
+                // Create seamless pattern from ground texture
+                const patternCanvas = document.createElement('canvas');
+                const patternCtx = patternCanvas.getContext('2d');
+                patternCanvas.width = textureImg.width;
+                patternCanvas.height = textureImg.height;
+                patternCtx.drawImage(textureImg, 0, 0);
+                groundPattern = ctx.createPattern(patternCanvas, 'repeat');
+                
+                updateTerrain();
+            };
+            textureImg.onerror = function() {
+                console.error('Failed to load ground texture:', textureType);
+                groundTexture = null;
+                groundPattern = null;
+                updateTerrain();
+            };
+            textureImg.src = `/assets/images/textures/terrain/${textureType}.png`;
+        }
+
+        // Default settings
+        let settings = {
+            minTrees: 10,
+            maxTrees: 25,
+            treeSize: 36,
+            treeSizeVariance: 18,
+            clusterGroups: 1,
+            clustering: 0,
+            treeType: 'forest-trees',
+            groundColor: '#55492f',
+            groundTextureType: 'none',
+            groundTextureBlend: 'multiply',
+            groundTextureOpacity: 0.5,
+            groundTextureScale: 1.0,
+            patchTypes: {
+                patch1: { enabled: false, quantity: 0, size: 50, sizeVariance: 20, opacity: 0.7, blend: 'multiply' },
+                patch2: { enabled: false, quantity: 0, size: 50, sizeVariance: 20, opacity: 0.7, blend: 'multiply' },
+                patch3: { enabled: false, quantity: 0, size: 50, sizeVariance: 20, opacity: 0.7, blend: 'multiply' },
+                patch4: { enabled: false, quantity: 0, size: 50, sizeVariance: 20, opacity: 0.7, blend: 'multiply' },
+                patch5: { enabled: false, quantity: 0, size: 50, sizeVariance: 20, opacity: 0.7, blend: 'multiply' },
+                patch6: { enabled: false, quantity: 0, size: 50, sizeVariance: 20, opacity: 0.7, blend: 'multiply' },
+                patch7: { enabled: false, quantity: 0, size: 50, sizeVariance: 20, opacity: 0.7, blend: 'multiply' }
+            },
+            road: {
+                enabled: false,
+                type: 'none',
+                curviness: 50,
+                color: '#444444',
+                textureType: 'none',
+                textureBlend: 'overlay',
+                width: 20,
+                textureOpacity: 0.6,
+                lines: {
+                    enabled: false,
+                    color: '#ffffff',
+                    sideDistance: 4,
+                    dottedLength: 12,
+                    width: 3
+                }
+            }
+        };
+
+        // Generated terrain data
+        let terrainData = {
+            trees: [],
+            patches: [],
+            groundTextureOffsetX: 0,
+            groundTextureOffsetY: 0
+        };
+
+        // Load terrain maps
+        let terrainMaps = {};
+
+        function updateControls() {
+            document.getElementById('minTrees').value = settings.minTrees;
+            document.getElementById('maxTrees').value = settings.maxTrees;
+            document.getElementById('treeSize').value = settings.treeSize;
+            document.getElementById('treeSizeVariance').value = settings.treeSizeVariance;
+            document.getElementById('clusterGroups').value = settings.clusterGroups;
+            document.getElementById('clustering').value = settings.clustering;
+            const treeTypeSelect = document.getElementById('treeType');
+            if (treeTypeSelect) treeTypeSelect.value = settings.treeType;
+            document.getElementById('groundColor').value = settings.groundColor;
+            document.getElementById('groundTextureType').value = settings.groundTextureType;
+            // Sync blend grid active state
+            const grid = document.getElementById('blendGrid');
+            if (grid) {
+                grid.querySelectorAll('.blend-option').forEach(opt => {
+                    opt.classList.toggle('active', opt.getAttribute('data-blend') === settings.groundTextureBlend);
+                });
+            }
+            document.getElementById('groundTextureOpacity').value = settings.groundTextureOpacity;
+            document.getElementById('groundTextureScale').value = settings.groundTextureScale;
+
+            // Update patch checkboxes
+            Object.keys(settings.patchTypes).forEach(patchType => {
+                const checkbox = document.getElementById(patchType);
+                if (checkbox) {
+                    checkbox.checked = settings.patchTypes[patchType].enabled;
+                }
+            });
+
+            // Update value displays
+            document.getElementById('minTreesValue').textContent = settings.minTrees;
+            document.getElementById('maxTreesValue').textContent = settings.maxTrees;
+            document.getElementById('treeSizeValue').textContent = settings.treeSize;
+            document.getElementById('treeSizeVarianceValue').textContent = settings.treeSizeVariance;
+            document.getElementById('clusterGroupsValue').textContent = settings.clusterGroups;
+            document.getElementById('clusteringValue').textContent = settings.clustering;
+            document.getElementById('groundTextureOpacityValue').textContent = settings.groundTextureOpacity.toFixed(1);
+            document.getElementById('groundTextureScaleValue').textContent = settings.groundTextureScale.toFixed(1);
+
+
+            // Update color previews
+            document.getElementById('groundColorPreview').style.backgroundColor = settings.groundColor;
+
+            // Road controls
+            const roadTypeSelect = document.getElementById('roadType');
+            const roadCurviness = document.getElementById('roadCurviness');
+            const roadCurvinessValue = document.getElementById('roadCurvinessValue');
+            const roadColor = document.getElementById('roadColor');
+            const roadTextureType = document.getElementById('roadTextureType');
+            const roadWidth = document.getElementById('roadWidth');
+            const roadWidthValue = document.getElementById('roadWidthValue');
+            const roadTextureOpacity = document.getElementById('roadTextureOpacity');
+            const roadTextureOpacityValue = document.getElementById('roadTextureOpacityValue');
+            if (roadTypeSelect) roadTypeSelect.value = settings.road.type || (settings.road.enabled ? 'asphalt' : 'none');
+            if (roadCurviness) roadCurviness.value = settings.road.curviness;
+            if (roadCurvinessValue) roadCurvinessValue.textContent = settings.road.curviness;
+            if (roadColor) roadColor.value = settings.road.color;
+            if (roadTextureType) roadTextureType.value = settings.road.textureType;
+            if (roadWidth) roadWidth.value = settings.road.width;
+            if (roadWidthValue) roadWidthValue.textContent = settings.road.width;
+            if (roadTextureOpacity) roadTextureOpacity.value = settings.road.textureOpacity;
+            if (roadTextureOpacityValue) roadTextureOpacityValue.textContent = settings.road.textureOpacity;
+            const roadBlendGrid = document.getElementById('roadBlendGrid');
+            if (roadBlendGrid) {
+                roadBlendGrid.querySelectorAll('.blend-option').forEach(opt => {
+                    opt.classList.toggle('active', opt.getAttribute('data-blend') === settings.road.textureBlend);
+                });
+            }
+            const roadLinesControls = document.getElementById('roadLinesControls');
+            const roadLinesEnabled = document.getElementById('roadLinesEnabled');
+            if (roadLinesEnabled) roadLinesEnabled.checked = !!settings.road.lines.enabled;
+            if (roadLinesControls) roadLinesControls.style.display = ((settings.road.type||'none') === 'asphalt') ? 'block' : 'none';
+            const roadLineColor = document.getElementById('roadLineColor');
+            const roadSideLineDistance = document.getElementById('roadSideLineDistance');
+            const roadSideLineDistanceValue = document.getElementById('roadSideLineDistanceValue');
+            const roadDottedLength = document.getElementById('roadDottedLength');
+            const roadDottedLengthValue = document.getElementById('roadDottedLengthValue');
+            const roadLineWidth = document.getElementById('roadLineWidth');
+            const roadLineWidthValue = document.getElementById('roadLineWidthValue');
+            if (roadLineColor) roadLineColor.value = settings.road.lines.color;
+            if (roadSideLineDistance) roadSideLineDistance.value = settings.road.lines.sideDistance;
+            if (roadSideLineDistanceValue) roadSideLineDistanceValue.textContent = settings.road.lines.sideDistance;
+            if (roadDottedLength) roadDottedLength.value = settings.road.lines.dottedLength;
+            if (roadDottedLengthValue) roadDottedLengthValue.textContent = settings.road.lines.dottedLength;
+            if (roadLineWidth) roadLineWidth.value = settings.road.lines.width;
+            if (roadLineWidthValue) roadLineWidthValue.textContent = settings.road.lines.width;
+        }
+
+        function generateTerrain() {
+            // Clear existing terrain
+            terrainData.trees = [];
+            terrainData.patches = [];
+
+            // Generate a road polyline across the map first (so trees can avoid it)
+            terrainData.road = null;
+            if (settings.road && settings.road.enabled) {
+                const worldW = 1500; // world space, matches draw scaling
+                const worldH = 900;
+                const segments = 18;
+                const amplitude = (settings.road.curviness / 100) * (Math.min(worldW, worldH) * 0.25);
+                const angle = Math.random() * Math.PI; // 0..pi gives all directions
+                const dirX = Math.cos(angle);
+                const dirY = Math.sin(angle);
+                // Start a bit before the world on one side, end a bit after on the opposite side
+                const margin = 100;
+                const start = { x: worldW/2 - dirX * (Math.max(worldW, worldH)/2 + margin),
+                                y: worldH/2 - dirY * (Math.max(worldW, worldH)/2 + margin) };
+                const end   = { x: worldW/2 + dirX * (Math.max(worldW, worldH)/2 + margin),
+                                y: worldH/2 + dirY * (Math.max(worldW, worldH)/2 + margin) };
+                const perpX = -dirY;
+                const perpY = dirX;
+                const points = [];
+                for (let i = 0; i <= segments; i++) {
+                    const t = i / segments;
+                    const x = start.x + (end.x - start.x) * t;
+                    const y = start.y + (end.y - start.y) * t;
+                    const wave = Math.sin(t * Math.PI * 2) * amplitude;
+                    points.push({ x: x + perpX * wave, y: y + perpY * wave });
+                }
+                // For dirt: generate two parallel tracks
+                if ((settings.road.type || 'asphalt') === 'dirt') {
+                    const trackOffset = Math.max(6, (settings.road.width || 20) * 0.35);
+                    const leftTrack = [];
+                    const rightTrack = [];
+                    for (let i = 0; i < points.length; i++) {
+                        const p = points[i];
+                        const prev = points[Math.max(0, i-1)];
+                        const next = points[Math.min(points.length-1, i+1)];
+                        const vx = next.x - prev.x;
+                        const vy = next.y - prev.y;
+                        const len = Math.hypot(vx, vy) || 1;
+                        const nx = -vy / len;
+                        const ny = vx / len;
+                        leftTrack.push({ x: p.x + nx * trackOffset, y: p.y + ny * trackOffset });
+                        rightTrack.push({ x: p.x - nx * trackOffset, y: p.y - ny * trackOffset });
+                    }
+                    terrainData.road = { points, leftTrack, rightTrack };
+                } else {
+                    terrainData.road = { points };
+                }
+            }
+
+            // Generate tree count
+            const treeCount = Math.floor(
+                Math.random() * (settings.maxTrees - settings.minTrees + 1) + 
+                settings.minTrees
+            );
+
+            // Generate cluster centers if clustering is enabled
+            let clusterCenters = [];
+            if (settings.clustering > 0) {
+                const numClusters = Math.min(settings.clusterGroups, treeCount);
+                for (let i = 0; i < numClusters; i++) {
+                    clusterCenters.push({
+                        x: Math.random() * 1400 + 50, // 50 to 1450
+                        y: Math.random() * 800 + 50   // 50 to 850
+                    });
+                }
+            }
+
+            // Helper: distance from point to segment
+            function pointToSegmentDistance(px, py, ax, ay, bx, by) {
+                const abx = bx - ax; const aby = by - ay;
+                const apx = px - ax; const apy = py - ay;
+                const abLenSq = abx*abx + aby*aby || 1e-6;
+                let t = (apx*abx + apy*aby) / abLenSq;
+                t = Math.max(0, Math.min(1, t));
+                const cx = ax + t * abx; const cy = ay + t * aby;
+                const dx = px - cx; const dy = py - cy;
+                return Math.sqrt(dx*dx + dy*dy);
+            }
+
+            // Helper: whether a position lies on road (within roadHalfWidth)
+            function isOnRoad(px, py) {
+                if (!terrainData.road || !terrainData.road.points || terrainData.road.points.length < 2) return false;
+                const roadHalfWidth = (settings.road.width || 20) * 0.5;
+                const extraBuffer = 6; // small safety margin
+                const minClearDist = roadHalfWidth + extraBuffer;
+                for (let i = 1; i < terrainData.road.points.length; i++) {
+                    const a = terrainData.road.points[i-1];
+                    const b = terrainData.road.points[i];
+                    const d = pointToSegmentDistance(px, py, a.x, a.y, b.x, b.y);
+                    if (d < minClearDist) return true;
+                }
+                return false;
+            }
+
+            // Generate trees, avoiding road
+            for (let i = 0; i < treeCount; i++) {
+                const size = settings.treeSize + (Math.random() - 0.5) * settings.treeSizeVariance;
+                let position = null;
+                let attempts = 0;
+                const maxAttempts = 30;
+                while (attempts < maxAttempts) {
+                    attempts++;
+                    let candidate;
+                    if (settings.clustering > 0 && clusterCenters.length > 0) {
+                        const clusterIndex = i % clusterCenters.length;
+                        const center = clusterCenters[clusterIndex];
+                        const baseRadius = 400 - (settings.clustering / 100) * 350;
+                        const radius = Math.random() * baseRadius + 10;
+                        const ang = Math.random() * 2 * Math.PI;
+                        candidate = {
+                            x: center.x + radius * Math.cos(ang),
+                            y: center.y + radius * Math.sin(ang)
+                        };
+                        candidate.x = Math.max(50, Math.min(1450, candidate.x));
+                        candidate.y = Math.max(50, Math.min(850, candidate.y));
+                    } else {
+                        candidate = {
+                            x: Math.random() * 1400 + 50,
+                            y: Math.random() * 800 + 50
+                        };
+                    }
+                    if (!isOnRoad(candidate.x, candidate.y)) { position = candidate; break; }
+                }
+                if (!position) continue;
+                terrainData.trees.push({ x: position.x, y: position.y, size });
+            }
+
+            // Generate patches
+            Object.keys(settings.patchTypes).forEach(patchType => {
+                const patchConfig = settings.patchTypes[patchType];
+                if (patchConfig.enabled) {
+                    for (let i = 0; i < patchConfig.quantity; i++) {
+                        const size = patchConfig.size + 
+                            (Math.random() - 0.5) * patchConfig.sizeVariance;
+                        
+                        const position = {
+                            x: Math.random() * 1400 + 50, // 50 to 1450
+                            y: Math.random() * 800 + 50   // 50 to 850
+                        };
+
+                        terrainData.patches.push({
+                            x: position.x,
+                            y: position.y,
+                            size: size,
+                            type: patchType,
+                            rotation: Math.random() * 2 * Math.PI // 360 degrees of rotation
+                        });
+                    }
+                }
+            });
+
+            // (road will be generated earlier so trees can avoid it)
+
+            // Randomize ground texture position
+            terrainData.groundTextureOffsetX = Math.random() * 200;
+            terrainData.groundTextureOffsetY = Math.random() * 200;
+        }
+
+        function updateTerrain() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Calculate scale factors to fit terrain in canvas (1500x900 terrain)
+            const scaleX = canvas.width / 1500;
+            const scaleY = canvas.height / 900;
+            const scale = Math.min(scaleX, scaleY);
+
+            // Calculate offset to center the terrain
+            const offsetX = (canvas.width - 1500 * scale) / 2;
+            const offsetY = (canvas.height - 900 * scale) / 2;
+
+            // Save context
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+            ctx.scale(scale, scale);
+
+            // Draw ground
+            ctx.fillStyle = settings.groundColor;
+            ctx.fillRect(0, 0, 1500, 900);
+
+            // Draw ground texture if enabled
+            if (settings.groundTextureType !== 'none' && groundPattern) {
+                ctx.save();
+                ctx.globalCompositeOperation = settings.groundTextureBlend;
+                ctx.globalAlpha = settings.groundTextureOpacity;
+                ctx.fillStyle = groundPattern;
+                ctx.scale(settings.groundTextureScale, settings.groundTextureScale);
+                ctx.fillRect(-terrainData.groundTextureOffsetX, -terrainData.groundTextureOffsetY, 
+                           1900, 1300); // 1500+400, 900+400
+                ctx.restore();
+            }
+
+            // (moved road draw to after trees)
+
+            // Draw patches
+            terrainData.patches.forEach(patch => {
+                const patchImage = patchImages[patch.type];
+                if (patchImage) {
+                    const patchConfig = settings.patchTypes[patch.type];
+                    ctx.save();
+                    ctx.translate(patch.x, patch.y);
+                    ctx.rotate(patch.rotation);
+                    
+                    // Calculate image size based on patch size
+                    const imageSize = patch.size;
+                    const imageAspectRatio = patchImage.width / patchImage.height;
+                    const scaledWidth = imageSize;
+                    const scaledHeight = imageSize / imageAspectRatio;
+                    
+                    // Draw patch with individual blending and opacity
+                    ctx.globalCompositeOperation = patchConfig.blend;
+                    ctx.globalAlpha = patchConfig.opacity;
+                    ctx.drawImage(patchImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
+                    
+                    ctx.restore();
+                }
+            });
+
+            // Draw road (on top of patches, under trees)
+            if (terrainData.road && terrainData.road.points && terrainData.road.points.length > 1 && settings.road && settings.road.enabled) {
+                ctx.save();
+                // Build road polygon (for texture fill) and fill base color
+                const buildOffsets = (pts, halfWidth) => {
+                    const left = [], right = [];
+                    for (let i = 0; i < pts.length; i++) {
+                        const p = pts[i];
+                        const prev = pts[Math.max(0, i-1)];
+                        const next = pts[Math.min(pts.length-1, i+1)];
+                        const vx = next.x - prev.x;
+                        const vy = next.y - prev.y;
+                        const len = Math.hypot(vx, vy) || 1;
+                        const nx = -vy / len;
+                        const ny = vx / len;
+                        left.push({ x: p.x + nx * halfWidth, y: p.y + ny * halfWidth });
+                        right.push({ x: p.x - nx * halfWidth, y: p.y - ny * halfWidth });
+                    }
+                    return { left, right };
+                };
+                const fillPolygon = (poly) => {
+                    ctx.beginPath();
+                    ctx.moveTo(poly.left[0].x, poly.left[0].y);
+                    for (let i = 1; i < poly.left.length; i++) ctx.lineTo(poly.left[i].x, poly.left[i].y);
+                    for (let i = poly.right.length - 1; i >= 0; i--) ctx.lineTo(poly.right[i].x, poly.right[i].y);
+                    ctx.closePath();
+                };
+                if ((settings.road.type||'asphalt') === 'dirt' && terrainData.road.leftTrack && terrainData.road.rightTrack) {
+                    const trackHalf = Math.max(2, Math.round((settings.road.width||20) * 0.175));
+                    const leftPoly = buildOffsets(terrainData.road.leftTrack, trackHalf);
+                    const rightPoly = buildOffsets(terrainData.road.rightTrack, trackHalf);
+                    ctx.globalAlpha = settings.road.baseOpacity ?? 1.0;
+                    ctx.fillStyle = settings.road.color || '#444444';
+                    fillPolygon(leftPoly); ctx.fill();
+                    fillPolygon(rightPoly); ctx.fill();
+                    // texture overlay is skipped for dirt
+                } else {
+                    const halfW = (settings.road.width || 20) / 2;
+                    const poly = buildOffsets(terrainData.road.points, halfW);
+                    ctx.globalAlpha = settings.road.baseOpacity ?? 1.0;
+                    ctx.fillStyle = settings.road.color || '#444444';
+                    fillPolygon(poly); ctx.fill();
+                    // Apply texture inside polygon by clipping
+                    if (settings.road.textureType && settings.road.textureType !== 'none') {
+                        ensureRoadTexture(settings.road.textureType, function(img){
+                            if (!img) return;
+                            ctx.save();
+                            fillPolygon(poly); ctx.clip();
+                            const pat = createScaledPattern(img, settings.road.textureScale || 1.0);
+                            ctx.globalCompositeOperation = settings.road.textureBlend || 'overlay';
+                            ctx.globalAlpha = settings.road.textureOpacity ?? 0.6;
+                            ctx.fillStyle = pat;
+                            ctx.fillRect(0, 0, 1500, 900);
+                            ctx.restore();
+                        });
+                    }
+                }
+
+                // Apply texture overlay if available
+                if (settings.road.textureType && settings.road.textureType !== 'none' && (settings.road.type||'asphalt') === 'asphalt') {
+                    // For builder preview, simulate texture blend with composite operation
+                    ctx.globalCompositeOperation = settings.road.textureBlend || 'overlay';
+                    ctx.globalAlpha = settings.road.textureOpacity ?? 0.6;
+                    ctx.strokeStyle = '#777';
+                    // Use full road width so texture covers edge-to-edge
+                    ctx.lineWidth = settings.road.width || 20;
+                    ctx.beginPath();
+                    ctx.moveTo(terrainData.road.points[0].x, terrainData.road.points[0].y);
+                    for (let i = 1; i < terrainData.road.points.length; i++) {
+                        const p = terrainData.road.points[i];
+                        ctx.lineTo(p.x, p.y);
+                    }
+                    ctx.stroke();
+                }
+                // Road lines overlay (on top of base road)
+                if ((settings.road.type||'asphalt') === 'asphalt' && settings.road.lines && settings.road.lines.enabled) {
+                    const lineColor = settings.road.lines.color || '#ffffff';
+                    const sideOffset = Math.max(0, settings.road.lines.sideDistance || 0);
+                    const dottedLen = Math.max(2, settings.road.lines.dottedLength || 12);
+
+                    // Helper to draw a stroked path from offset points
+                    function strokePath(points, width, style, dashed=false) {
+                        ctx.save();
+                        ctx.strokeStyle = style;
+                        ctx.lineWidth = width;
+                        ctx.lineCap = 'round';
+                        ctx.lineJoin = 'round';
+                        if (dashed) ctx.setLineDash([dottedLen, dottedLen]);
+                        ctx.beginPath();
+                        ctx.moveTo(points[0].x, points[0].y);
+                        for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+
+                    // Build offset polylines along road
+                    const basePts = terrainData.road.points;
+                    const leftPts = [];
+                    const rightPts = [];
+                    for (let i = 0; i < basePts.length; i++) {
+                        const p = basePts[i];
+                        const prev = basePts[Math.max(0, i-1)];
+                        const next = basePts[Math.min(basePts.length-1, i+1)];
+                        const vx = next.x - prev.x;
+                        const vy = next.y - prev.y;
+                        const len = Math.hypot(vx, vy) || 1;
+                        const nx = -vy / len; // left normal
+                        const ny = vx / len;
+                        leftPts.push({ x: p.x + nx * (settings.road.width/2 - sideOffset), y: p.y + ny * (settings.road.width/2 - sideOffset) });
+                        rightPts.push({ x: p.x - nx * (settings.road.width/2 - sideOffset), y: p.y - ny * (settings.road.width/2 - sideOffset) });
+                    }
+
+                    // Draw side continuous lines
+                    const lw = Math.max(1, settings.road.lines.width || Math.round(settings.road.width * 0.08));
+                    strokePath(leftPts, lw, lineColor, false);
+                    strokePath(rightPts, lw, lineColor, false);
+
+                    // Draw center dotted/solid line
+                    strokePath(basePts, lw, lineColor, dottedLen > settings.road.width ? false : true);
+                }
+                ctx.restore();
+            }
+
+            // Draw trees
+            terrainData.trees.forEach((tree, index) => {
+                ctx.save();
+                ctx.translate(tree.x, tree.y);
+
+                // Select a random tree image (only from loaded images)
+                const availableTreeKeys = Object.keys(treeImages).filter(key => treeImages[key] !== null);
+                let treeImage = null;
+                
+                if (availableTreeKeys.length > 0) {
+                    const randomTreeKey = availableTreeKeys[Math.floor(Math.random() * availableTreeKeys.length)];
+                    treeImage = treeImages[randomTreeKey];
+                }
+
+                if (treeImage) {
+                    // Calculate image size based on tree size
+                    const imageSize = tree.size;
+                    const imageAspectRatio = treeImage.width / treeImage.height;
+                    const scaledWidth = imageSize;
+                    const scaledHeight = imageSize / imageAspectRatio;
+                    
+                    // Draw shadow first
+                    ctx.globalAlpha = 0.5;
+                    ctx.globalCompositeOperation = 'multiply';
+                    ctx.shadowColor = 'black';
+                    ctx.shadowBlur = 8;
+                    ctx.shadowOffsetX = 4;
+                    ctx.shadowOffsetY = 4;
+                    ctx.drawImage(treeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
+                    
+                    // Draw the main tree image
+                    ctx.globalAlpha = 1.0;
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.shadowColor = 'transparent';
+                    ctx.shadowBlur = 0;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+                    ctx.drawImage(treeImage, -scaledWidth/2, -scaledHeight/2, scaledWidth, scaledHeight);
+                } else {
+                    // Fallback to simple circle if image not loaded
+                    ctx.globalAlpha = 0.5;
+                    ctx.globalCompositeOperation = 'multiply';
+                    ctx.shadowColor = 'black';
+                    ctx.shadowBlur = 8;
+                    ctx.shadowOffsetX = 4;
+                    ctx.shadowOffsetY = 4;
+                    ctx.fillStyle = '#5e6936'; // Default tree color
+                    ctx.beginPath();
+                    ctx.arc(0, 0, tree.size/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Draw main tree
+                    ctx.globalAlpha = 1.0;
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.shadowColor = 'transparent';
+                    ctx.shadowBlur = 0;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+                    ctx.fillStyle = '#5e6936'; // Default tree color
+                    ctx.beginPath();
+                    ctx.arc(0, 0, tree.size/2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            });
+
+            // (removed duplicate road draw; road is drawn above patches, below trees earlier)
+
+            ctx.restore();
+        }
+
+        function updateSettingsOutput() {
+            const output = JSON.stringify(settings, null, 2);
+            document.getElementById('settingsOutput').value = output;
+        }
+
+        function copySettings() {
+            const textarea = document.getElementById('settingsOutput');
+            textarea.select();
+            document.execCommand('copy');
+            alert('Settings copied to clipboard!');
+        }
+
+        // Event listeners
+        document.getElementById('minTrees').addEventListener('input', (e) => {
+            settings.minTrees = parseInt(e.target.value);
+            document.getElementById('minTreesValue').textContent = e.target.value;
+            generateTerrain();
+            updateTerrain();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('maxTrees').addEventListener('input', (e) => {
+            settings.maxTrees = parseInt(e.target.value);
+            document.getElementById('maxTreesValue').textContent = e.target.value;
+            generateTerrain();
+            updateTerrain();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('treeSize').addEventListener('input', (e) => {
+            settings.treeSize = parseInt(e.target.value);
+            document.getElementById('treeSizeValue').textContent = e.target.value;
+            generateTerrain();
+            updateTerrain();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('treeSizeVariance').addEventListener('input', (e) => {
+            settings.treeSizeVariance = parseInt(e.target.value);
+            document.getElementById('treeSizeVarianceValue').textContent = e.target.value;
+            generateTerrain();
+            updateTerrain();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('clusterGroups').addEventListener('input', (e) => {
+            settings.clusterGroups = parseInt(e.target.value);
+            document.getElementById('clusterGroupsValue').textContent = e.target.value;
+            generateTerrain();
+            updateTerrain();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('clustering').addEventListener('input', (e) => {
+            settings.clustering = parseInt(e.target.value);
+            document.getElementById('clusteringValue').textContent = e.target.value;
+            updateSettingsOutput();
+        });
+
+        document.getElementById('groundColor').addEventListener('input', (e) => {
+            settings.groundColor = e.target.value;
+            document.getElementById('groundColorPreview').style.backgroundColor = e.target.value;
+            updateTerrain();
+            updateSettingsOutput();
+        });
+
+
+
+        document.getElementById('groundTextureType').addEventListener('change', (e) => {
+            settings.groundTextureType = e.target.value;
+            loadGroundTexture(settings.groundTextureType);
+            updateSettingsOutput();
+        });
+
+        // Init blend buttons and sync active state
+        function initBlendGrid() {
+            const grid = document.getElementById('blendGrid');
+            if (!grid) return;
+            const options = Array.from(grid.querySelectorAll('.blend-option'));
+            const setActive = (value) => {
+                options.forEach(opt => {
+                    opt.classList.toggle('active', opt.getAttribute('data-blend') === value);
+                });
+            };
+            // Initial
+            setActive(settings.groundTextureBlend);
+            options.forEach(opt => {
+                opt.addEventListener('click', () => {
+                    const value = opt.getAttribute('data-blend');
+                    settings.groundTextureBlend = value;
+                    setActive(value);
+                    updateTerrain();
+                    updateSettingsOutput();
+                });
+            });
+        }
+
+        // Tree type change should reload tree images and re-render
+        document.getElementById('treeType').addEventListener('change', (e) => {
+            settings.treeType = e.target.value;
+            loadTreeImages();
+            generateTerrain();
+            updateTerrain();
+            updateSettingsOutput();
+        });
+
+        // (select removed) blend is controlled by the grid buttons
+
+        // Road listeners
+        document.getElementById('roadType').addEventListener('change', (e) => {
+            const val = e.target.value;
+            settings.road.type = val;
+            settings.road.enabled = (val !== 'none');
+            // Show/hide road lines sub-panel only for asphalt
+            document.getElementById('roadLinesControls').style.display = (val === 'asphalt') ? 'block' : 'none';
+            generateTerrain();
+            updateTerrain();
+            updateSettingsOutput();
+        });
+        document.getElementById('roadCurviness').addEventListener('input', (e) => {
+            settings.road.curviness = parseInt(e.target.value);
+            document.getElementById('roadCurvinessValue').textContent = e.target.value;
+            generateTerrain();
+            updateTerrain();
+            updateSettingsOutput();
+        });
+        document.getElementById('roadColor').addEventListener('input', (e) => {
+            settings.road.color = e.target.value;
+            updateTerrain();
+            updateSettingsOutput();
+        });
+        document.getElementById('roadTextureType').addEventListener('change', (e) => {
+            settings.road.textureType = e.target.value;
+            updateTerrain();
+            updateSettingsOutput();
+        });
+        document.getElementById('roadWidth').addEventListener('input', (e) => {
+            settings.road.width = parseInt(e.target.value);
+            document.getElementById('roadWidthValue').textContent = e.target.value;
+            updateTerrain();
+            updateSettingsOutput();
+        });
+        document.getElementById('roadBaseOpacity').addEventListener('input', (e) => {
+            settings.road.baseOpacity = parseFloat(e.target.value);
+            document.getElementById('roadBaseOpacityValue').textContent = e.target.value;
+            updateTerrain();
+            updateSettingsOutput();
+        });
+        document.getElementById('roadTextureOpacity').addEventListener('input', (e) => {
+            settings.road.textureOpacity = parseFloat(e.target.value);
+            document.getElementById('roadTextureOpacityValue').textContent = e.target.value;
+            updateTerrain();
+            updateSettingsOutput();
+        });
+
+        // Road lines listeners
+        document.getElementById('roadLinesEnabled').addEventListener('change', (e) => {
+            settings.road.lines.enabled = e.target.checked;
+            document.getElementById('roadLinesControls').style.display = e.target.checked ? 'block' : 'none';
+            updateTerrain();
+            updateSettingsOutput();
+        });
+        document.getElementById('roadLineColor').addEventListener('input', (e) => {
+            settings.road.lines.color = e.target.value;
+            updateTerrain();
+            updateSettingsOutput();
+        });
+        document.getElementById('roadSideLineDistance').addEventListener('input', (e) => {
+            settings.road.lines.sideDistance = parseInt(e.target.value);
+            document.getElementById('roadSideLineDistanceValue').textContent = e.target.value;
+            updateTerrain();
+            updateSettingsOutput();
+        });
+        document.getElementById('roadDottedLength').addEventListener('input', (e) => {
+            settings.road.lines.dottedLength = parseInt(e.target.value);
+            document.getElementById('roadDottedLengthValue').textContent = e.target.value;
+            updateTerrain();
+            updateSettingsOutput();
+        });
+        document.getElementById('roadLineWidth').addEventListener('input', (e) => {
+            settings.road.lines.width = parseInt(e.target.value);
+            document.getElementById('roadLineWidthValue').textContent = e.target.value;
+            updateTerrain();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('groundTextureOpacity').addEventListener('input', (e) => {
+            settings.groundTextureOpacity = parseFloat(e.target.value);
+            document.getElementById('groundTextureOpacityValue').textContent = e.target.value;
+            updateTerrain();
+            updateSettingsOutput();
+        });
+
+        document.getElementById('groundTextureScale').addEventListener('input', (e) => {
+            settings.groundTextureScale = parseFloat(e.target.value);
+            document.getElementById('groundTextureScaleValue').textContent = e.target.value;
+            updateTerrain();
+            updateSettingsOutput();
+        });
+
+        // Patch checkbox event listeners
+        Object.keys(settings.patchTypes).forEach(patchType => {
+            document.getElementById(patchType).addEventListener('change', (e) => {
+                settings.patchTypes[patchType].enabled = e.target.checked;
+                // When activating a patch, default quantity to 10 if not previously set
+                if (e.target.checked && (settings.patchTypes[patchType].quantity == null || settings.patchTypes[patchType].quantity === 0)) {
+                    settings.patchTypes[patchType].quantity = 10;
+                }
+                updatePatchControls();
+                generateTerrain();
+                updateTerrain();
+                updateSettingsOutput();
+            });
+        });
+
+        // Function to update individual patch controls
+        function updatePatchControls() {
+            const patchControlsContainer = document.getElementById('patchControls');
+            const enabledPatches = Object.keys(settings.patchTypes).filter(key => settings.patchTypes[key].enabled);
+            
+            if (enabledPatches.length === 0) {
+                patchControlsContainer.style.display = 'none';
+                return;
+            }
+
+            patchControlsContainer.style.display = 'block';
+            patchControlsContainer.innerHTML = '';
+
+            enabledPatches.forEach((patchType, index) => {
+                const patchConfig = settings.patchTypes[patchType];
+                const patchNumber = patchType.replace('patch', '');
+                const controlGroup = document.createElement('div');
+                controlGroup.className = 'control-group';
+                controlGroup.style.marginTop = '15px';
+                controlGroup.style.padding = '10px';
+                controlGroup.style.backgroundColor = '#444';
+                controlGroup.style.borderRadius = '6px';
+                controlGroup.innerHTML = `
+                    <h3 style="margin: 0 0 10px 0; color: #4CAF50; font-size: 14px;">Patch ${patchNumber} Settings</h3>
+                    <div class="control-row">
+                        <label>Quantity:</label>
+                        <input type="range" id="${patchType}Quantity" min="0" max="30" value="${patchConfig.quantity}" step="1">
+                        <span class="value-display" id="${patchType}QuantityValue">${patchConfig.quantity}</span>
+                    </div>
+                    <div class="control-row">
+                        <label>Size:</label>
+                        <input type="range" id="${patchType}Size" min="20" max="200" value="${patchConfig.size}" step="5">
+                        <span class="value-display" id="${patchType}SizeValue">${patchConfig.size}</span>
+                    </div>
+                    <div class="control-row">
+                        <label>Size Variance:</label>
+                        <input type="range" id="${patchType}SizeVariance" min="0" max="150" value="${patchConfig.sizeVariance}" step="5">
+                        <span class="value-display" id="${patchType}SizeVarianceValue">${patchConfig.sizeVariance}</span>
+                    </div>
+                    <div class="control-row">
+                        <label>Opacity:</label>
+                        <input type="range" id="${patchType}Opacity" min="0" max="1" value="${patchConfig.opacity}" step="0.1">
+                        <span class="value-display" id="${patchType}OpacityValue">${patchConfig.opacity.toFixed(1)}</span>
+                    </div>
+                    <div class="control-row">
+                        <label>Blending:</label>
+                        <div class="blend-grid" id="${patchType}BlendGrid">
+                            <div class="blend-option" data-blend="multiply">M</div>
+                            <div class="blend-option" data-blend="overlay">O</div>
+                            <div class="blend-option" data-blend="soft-light">SL</div>
+                            <div class="blend-option" data-blend="hard-light">HL</div>
+                            <div class="blend-option" data-blend="color-burn">CB</div>
+                            <div class="blend-option" data-blend="color-dodge">CD</div>
+                            <div class="blend-option" data-blend="darken">D</div>
+                            <div class="blend-option" data-blend="lighten">L</div>
+                            <div class="blend-option" data-blend="screen">S</div>
+                            <div class="blend-option" data-blend="source-over">N</div>
+                        </div>
+                    </div>
+                `;
+
+                // Set initial values
+                const quantitySlider = controlGroup.querySelector(`#${patchType}Quantity`);
+                const sizeSlider = controlGroup.querySelector(`#${patchType}Size`);
+                const sizeVarianceSlider = controlGroup.querySelector(`#${patchType}SizeVariance`);
+                const opacitySlider = controlGroup.querySelector(`#${patchType}Opacity`);
+                const blendGrid = controlGroup.querySelector(`#${patchType}BlendGrid`);
+
+                quantitySlider.value = patchConfig.quantity;
+                sizeSlider.value = patchConfig.size;
+                sizeVarianceSlider.value = patchConfig.sizeVariance;
+                opacitySlider.value = patchConfig.opacity;
+                if (blendGrid) {
+                    const options = blendGrid.querySelectorAll('.blend-option');
+                    options.forEach(opt => {
+                        opt.classList.toggle('active', opt.getAttribute('data-blend') === patchConfig.blend);
+                    });
+                }
+
+                // Add event listeners
+                quantitySlider.addEventListener('input', (e) => {
+                    const value = parseInt(e.target.value);
+                    controlGroup.querySelector(`#${patchType}QuantityValue`).textContent = value;
+                    settings.patchTypes[patchType].quantity = value;
+                    generateTerrain();
+                    updateTerrain();
+                    updateSettingsOutput();
+                });
+
+                sizeSlider.addEventListener('input', (e) => {
+                    const value = parseInt(e.target.value);
+                    controlGroup.querySelector(`#${patchType}SizeValue`).textContent = value;
+                    settings.patchTypes[patchType].size = value;
+                    generateTerrain();
+                    updateTerrain();
+                    updateSettingsOutput();
+                });
+
+                sizeVarianceSlider.addEventListener('input', (e) => {
+                    const value = parseInt(e.target.value);
+                    controlGroup.querySelector(`#${patchType}SizeVarianceValue`).textContent = value;
+                    settings.patchTypes[patchType].sizeVariance = value;
+                    generateTerrain();
+                    updateTerrain();
+                    updateSettingsOutput();
+                });
+
+                opacitySlider.addEventListener('input', (e) => {
+                    const value = parseFloat(e.target.value);
+                    controlGroup.querySelector(`#${patchType}OpacityValue`).textContent = value.toFixed(1);
+                    settings.patchTypes[patchType].opacity = value;
+                    updateTerrain();
+                    updateSettingsOutput();
+                });
+
+                if (blendGrid) {
+                    const options = blendGrid.querySelectorAll('.blend-option');
+                    options.forEach(opt => {
+                        opt.addEventListener('click', () => {
+                            const value = opt.getAttribute('data-blend');
+                            settings.patchTypes[patchType].blend = value;
+                            options.forEach(o => o.classList.toggle('active', o === opt));
+                            updateTerrain();
+                            updateSettingsOutput();
+                        });
+                    });
+                }
+
+                patchControlsContainer.appendChild(controlGroup);
+            });
+        }
+
+
+
+                    document.getElementById('refreshButton').addEventListener('click', () => {
+                generateTerrain();
+                updateTerrain();
+            });
+
+            // Add event listener for terrain map dropdown
+            document.getElementById('terrainMapSelect').addEventListener('change', (e) => {
+                applyTerrainMap(e.target.value);
+            });
+
+
+
+        // Initialize
+        loadTreeImages();
+        loadPatchImages();
+        loadGroundTexture(settings.groundTextureType);
+        initBlendGrid();
+        // Init road blend grid
+        (function initRoadBlendGrid() {
+            const grid = document.getElementById('roadBlendGrid');
+            if (!grid) return;
+            const options = Array.from(grid.querySelectorAll('.blend-option'));
+            const setActive = (value) => {
+                options.forEach(opt => {
+                    opt.classList.toggle('active', opt.getAttribute('data-blend') === value);
+                });
+            };
+            setActive(settings.road.textureBlend);
+            options.forEach(opt => {
+                opt.addEventListener('click', () => {
+                    const value = opt.getAttribute('data-blend');
+                    settings.road.textureBlend = value;
+                    setActive(value);
+                    updateTerrain();
+                    updateSettingsOutput();
+                });
+            });
+        })();
+        
+        // Test terrain maps loading
+        console.log('🚀 Starting initialization...');
+        console.log('🔍 About to call loadTerrainMaps...');
+        try {
+            loadTerrainMaps().then(() => {
+                console.log('✅ Terrain maps loaded, checking dropdown...');
+                const select = document.getElementById('terrainMapSelect');
+                console.log('🎯 Select element options:', select.options.length);
+                for (let i = 0; i < select.options.length; i++) {
+                    console.log(`Option ${i}: ${select.options[i].text} (${select.options[i].value})`);
+                }
+            }).catch(error => {
+                console.error('❌ Error in loadTerrainMaps promise:', error);
+            });
+        } catch (error) {
+            console.error('❌ Error calling loadTerrainMaps:', error);
+        }
+        
+        updateControls();
+        updatePatchControls();
+        generateTerrain();
+        updateSettingsOutput();
+        updateTerrain();
+    </script>
+</body>
+</html> 
