@@ -1,6 +1,13 @@
 import { GameState, Tank, Shell, Upgrade, Tree, Patch, Vector2 } from '../shared/types.js';
 import { AIController } from '../shared/ai.js';
 import { checkAABBCollision, getRandomPositionAvoidingObstacles } from '../shared/collision.js';
+import { SpatialManager, createBounds } from '../shared/spatialPartitioning.js';
+import { memoryManager } from '../shared/objectPools.js';
+import { HybridSpatialSystem } from '../shared/spatialHashing.js';
+import { changeTracker, lazyEvaluator } from '../shared/eventSystem.js';
+import { VectorUtils } from '../shared/vectorOptimizations.js';
+import { gameLoop, updateScheduler } from '../shared/gameLoop.js';
+import { priorityUpdateManager } from '../shared/priorityUpdates.js';
 import { 
   GAME_TICK_RATE, 
   UPGRADE_TYPES, 
@@ -83,11 +90,28 @@ export class GameEngine {
     
     this.initializeBattlefield();
     
+    // OPTIMIZATION: Initialize hybrid spatial system for ultra-fast collision detection
+    this.spatialManager = new HybridSpatialSystem(
+      createBounds(0, 0, 1500, 900), // World bounds (game arena)
+      50, // Cell size for spatial hashing
+      15, // Max objects per node for QuadTree
+      5   // Max levels deep for QuadTree
+    );
+    
     // Helper method to get random tank color for AI tanks
     this.getRandomTankColor = () => {
       const colorKeys = Object.keys(tankColors);
       const randomKey = colorKeys[Math.floor(Math.random() * colorKeys.length)];
       return tankColors[randomKey].hex;
+    };
+    
+    // 🚀 CRITICAL OPTIMIZATION: AI frame-skipping system
+    this.aiUpdateFrameCounter = 0;
+    this.aiUpdateInterval = 3; // Update AI every 3 frames instead of every frame
+    this.aiUpdateStats = {
+      totalUpdates: 0,
+      skippedUpdates: 0,
+      lastUpdateTime: 0
     };
   }
 
@@ -95,25 +119,28 @@ export class GameEngine {
     if (this.isRunning) return;
     
     this.isRunning = true;
-    this.gameLoop = setInterval(() => {
-      this.update();
-    }, 1000 / GAME_TICK_RATE);
+    
+    // OPTIMIZATION: Use fixed timestep game loop for consistent 60fps
+    gameLoop.start(
+      (deltaTime) => this.update(deltaTime), // Update callback
+      (interpolationAlpha) => this.render(interpolationAlpha) // Render callback
+    );
   }
 
   stop() {
     if (!this.isRunning) return;
     
     this.isRunning = false;
-    if (this.gameLoop) {
-      clearInterval(this.gameLoop);
-      this.gameLoop = null;
-    }
+    
+    // OPTIMIZATION: Stop fixed timestep game loop
+    gameLoop.stop();
   }
 
-  update() {
-    const currentTime = Date.now();
-    const deltaTime = currentTime - this.lastUpdate;
-    this.lastUpdate = currentTime;
+  update(deltaTime) {
+    // OPTIMIZATION: Use fixed timestep deltaTime instead of calculating from current time
+    // const currentTime = Date.now();
+    // const deltaTime = currentTime - this.lastUpdate;
+    // this.lastUpdate = currentTime;
 
     // Update game time
     this.gameState.gameTime += deltaTime;
@@ -123,17 +150,42 @@ export class GameEngine {
       tank.update(deltaTime, this.gameSettings.gameParams.gasolinePerUnit, this.gameSettings.gameParams.gasolineSpeedPenalty, this.gameState.trees);
     }
 
-    // Update AI controllers and handle their actions
-    for (const [id, aiController] of this.aiControllers) {
-      aiController.update(deltaTime);
+    // 🚀 CRITICAL OPTIMIZATION: AI frame-skipping system
+    this.aiUpdateFrameCounter++;
+    
+    // Only update AI controllers every few frames to spread the load
+    if (this.aiUpdateFrameCounter >= this.aiUpdateInterval) {
+      this.aiUpdateFrameCounter = 0;
       
-      // Check if AI tank shot a shell
-      const aiTank = this.gameState.tanks.get(id);
-      if (aiTank && aiTank.lastShotShell) {
-        // Add AI shell to game state
-        this.gameState.shells.push(aiTank.lastShotShell);
-        aiTank.lastShotShell = null; // Clear the shell reference
+      const aiUpdateStart = performance.now();
+      
+      // Update AI controllers and handle their actions
+      for (const [id, aiController] of this.aiControllers) {
+        aiController.update(deltaTime);
+        
+        // Check if AI tank shot a shell
+        const aiTank = this.gameState.tanks.get(id);
+        if (aiTank && aiTank.lastShotShell) {
+          // Add AI shell to game state
+          this.gameState.shells.push(aiTank.lastShotShell);
+          aiTank.lastShotShell = null; // Clear the shell reference
+        }
       }
+      
+      const aiUpdateEnd = performance.now();
+      const aiUpdateTime = aiUpdateEnd - aiUpdateStart;
+      
+      // Track AI update performance
+      this.aiUpdateStats.totalUpdates++;
+      this.aiUpdateStats.lastUpdateTime = aiUpdateTime;
+      
+      // Log slow AI updates for debugging
+      if (aiUpdateTime > 5) {
+        console.log(`⚠️ Slow AI update: ${aiUpdateTime.toFixed(1)}ms for ${this.aiControllers.size} AI tanks`);
+      }
+    } else {
+      // Skip AI updates this frame - count as skipped
+      this.aiUpdateStats.skippedUpdates++;
     }
 
     // Update shells
@@ -156,6 +208,13 @@ export class GameEngine {
     this.cleanupShells();
   }
 
+  // OPTIMIZATION: Render method for interpolation
+  render(interpolationAlpha) {
+    // This method is called by the fixed timestep game loop
+    // It can be used for client-side rendering interpolation
+    // For now, it's a placeholder for future client-side optimizations
+  }
+
   updateShells(deltaTime) {
     for (const shell of this.gameState.shells) {
       shell.update(deltaTime);
@@ -165,41 +224,43 @@ export class GameEngine {
 
 
   checkCollisions() {
-    // Check shell-tank collisions
+    // OPTIMIZATION: Use spatial partitioning for collision detection (O(log n) instead of O(n²))
+    
+    // Update spatial manager with current entity positions
+    this.updateSpatialManager();
+    
+    // Check shell-tank collisions using spatial partitioning
     for (let i = this.gameState.shells.length - 1; i >= 0; i--) {
       const shell = this.gameState.shells[i];
-      const shellBox = shell.getBoundingBox();
       let shellHit = false;
 
-      // Check collision with tanks
-      for (const [tankId, tank] of this.gameState.tanks) {
-        if (!tank.isAlive) continue;
+      // Get potential tank collision candidates using spatial partitioning
+      const tankCandidates = this.spatialManager.getCollisionCandidates(shell, 25); // 25px search radius
+      
+      for (const tank of tankCandidates) {
+        if (!tank.isAlive || tank.constructor.name !== 'Tank') continue;
 
-        const tankBox = tank.getBoundingBox();
-        if (checkAABBCollision(shellBox, tankBox)) {
+        if (checkAABBCollision(shell.bounds, tank.bounds)) {
           // Use robust damage system that handles immunity
           const damageApplied = tank.takeDamage(shell);
           
           if (damageApplied) {
+            // OPTIMIZATION: Release shell back to object pool instead of destroying it
+            memoryManager.release(this.gameState.shells[i]);
             this.gameState.shells.splice(i, 1);
             shellHit = true;
             break;
           }
         } else {
-          // Additional check for high-velocity shells that might pass through
+          // OPTIMIZATION: Use fast distance check (no sqrt) for high-velocity shells
           const shellSpeed = shell.velocity.magnitude();
           if (shellSpeed > 10) { // Only check for fast shells
-            const shellRadius = 2.5; // Half of shell size
-            const tankCenter = { x: tank.position.x, y: tank.position.y };
-            const distance = Math.sqrt(
-              Math.pow(shell.position.x - tankCenter.x, 2) + 
-              Math.pow(shell.position.y - tankCenter.y, 2)
-            );
-            
-            // If shell is very close to tank center, consider it a hit
-            if (distance < 20) { // Tank radius approximation
+            // Use fast distance check without square root
+            if (VectorUtils.fastDistanceCheck(shell.position, tank.position, 20)) {
               const damageApplied = tank.takeDamage(shell);
               if (damageApplied) {
+                // OPTIMIZATION: Release shell back to object pool
+                memoryManager.release(this.gameState.shells[i]);
                 this.gameState.shells.splice(i, 1);
                 shellHit = true;
                 break;
@@ -211,12 +272,20 @@ export class GameEngine {
 
       // Only check tree collision if shell didn't hit a tank
       if (!shellHit) {
-        for (const tree of this.gameState.trees) {
-          const treeBox = tree.getBoundingBox();
-          if (checkAABBCollision(shellBox, treeBox)) {
-            // Trigger tree swing animation based on shell velocity and speed
+        const treeCandidates = this.spatialManager.getCollisionCandidates(shell, 15); // 15px search radius
+        
+        for (const tree of treeCandidates) {
+          if (tree.constructor.name !== 'Tree') continue;
+          
+          if (checkAABBCollision(shell.bounds, tree.bounds)) {
+            // OPTIMIZATION: Use object pool for tree impact velocity
+            const impactVelocity = memoryManager.getVector(shell.velocity.x, shell.velocity.y);
             const shellSpeed = shell.velocity.magnitude();
-            tree.impact(shell.velocity, shellSpeed);
+            tree.impact(impactVelocity, shellSpeed);
+            memoryManager.release(impactVelocity);
+            
+            // OPTIMIZATION: Release shell back to object pool
+            memoryManager.release(this.gameState.shells[i]);
             this.gameState.shells.splice(i, 1);
             break;
           }
@@ -224,23 +293,119 @@ export class GameEngine {
       }
     }
 
-    // Check tank-upgrade collisions
+    // Check tank-upgrade collisions using spatial partitioning
     for (const tank of this.gameState.tanks.values()) {
       if (!tank.isAlive) continue;
 
-      const tankBox = tank.getBoundingBox();
-      for (let i = this.gameState.upgrades.length - 1; i >= 0; i--) {
-        const upgrade = this.gameState.upgrades[i];
+      // SIMPLIFIED: Direct upgrade collision check (bypass spatial manager for now)
+      for (const upgrade of this.gameState.upgrades) {
         if (upgrade.collected) continue;
-
-        const upgradeBox = upgrade.getBoundingBox();
-        if (checkAABBCollision(tankBox, upgradeBox)) {
+        
+        // Ensure upgrade has bounds
+        if (!upgrade.bounds) {
+          console.warn(`⚠️ Upgrade ${upgrade.type} missing bounds, forcing update`);
+          upgrade.updateBounds();
+        }
+        
+        // Use more forgiving collision detection: check if upgrade bounds overlap with tank bounds
+        // This is more appropriate since upgrades have size and tanks have collision areas
+        
+        // 🚀 DEBUG: Log collision detection details
+        console.log(`🔍 Checking collision: Tank ${tank.id} at (${tank.position.x.toFixed(1)}, ${tank.position.y.toFixed(1)}) vs Upgrade ${upgrade.type} at (${upgrade.position.x.toFixed(1)}, ${upgrade.position.y.toFixed(1)})`);
+        console.log(`🔍 Tank bounds:`, tank.bounds);
+        console.log(`🔍 Upgrade bounds:`, upgrade.bounds);
+        
+        if (this.checkTankUpgradeCollision(tank, upgrade)) {
+          console.log(`🎯 COLLISION: Tank ${tank.id} collected ${upgrade.type} upgrade!`);
           this.applyUpgrade(tank, upgrade.type);
           upgrade.collected = true;
-          this.gameState.upgrades.splice(i, 1);
+          
+          // Remove from upgrades array
+          const upgradeIndex = this.gameState.upgrades.findIndex(u => u === upgrade);
+          if (upgradeIndex >= 0) {
+            this.gameState.upgrades.splice(upgradeIndex, 1);
+          }
+        } else {
+          console.log(`❌ NO COLLISION: Tank ${tank.id} did not collect ${upgrade.type} upgrade`);
         }
       }
     }
+  }
+
+  // OPTIMIZATION: Update spatial manager with current entity positions
+  updateSpatialManager() {
+    // Collect all entities that need spatial tracking
+    const allEntities = [];
+    
+    // Add all tanks
+    for (const tank of this.gameState.tanks.values()) {
+      if (tank.isAlive && tank.bounds) {
+        allEntities.push(tank);
+      }
+    }
+    
+    // Add all shells
+    for (const shell of this.gameState.shells) {
+      if (shell.bounds) {
+        allEntities.push(shell);
+      }
+    }
+    
+    // Add all trees
+    for (const tree of this.gameState.trees) {
+      if (tree.bounds) {
+        allEntities.push(tree);
+      }
+    }
+    
+    // Add all upgrades (still needed for other collision types)
+    for (const upgrade of this.gameState.upgrades) {
+      if (!upgrade.collected && upgrade.bounds) {
+        allEntities.push(upgrade);
+      }
+    }
+    
+    // OPTIMIZATION: Use hybrid spatial system update for better performance
+    this.spatialManager.update(allEntities);
+    
+    // OPTIMIZATION: Track entity changes for event-driven updates
+    for (const entity of allEntities) {
+      changeTracker.track(entity);
+    }
+    
+    // OPTIMIZATION: Schedule entities for different update frequencies
+    this.scheduleEntities();
+  }
+
+  // OPTIMIZATION: Schedule entities for different update frequencies
+  scheduleEntities() {
+    // Clear existing schedules
+    updateScheduler.clear();
+    
+    // Schedule tanks at 60fps (highest priority)
+    for (const [id, tank] of this.gameState.tanks) {
+      if (tank.isAlive) {
+        updateScheduler.schedule(id, 60);
+      }
+    }
+    
+    // Schedule AI controllers at 30fps
+    for (const [id, aiController] of this.aiControllers) {
+      updateScheduler.schedule(id, 30);
+    }
+    
+    // Schedule shells at 60fps
+    for (const shell of this.gameState.shells) {
+      updateScheduler.schedule(shell.id, 60);
+    }
+    
+    // Schedule trees at 15fps (less frequent for animations)
+    for (const tree of this.gameState.trees) {
+      updateScheduler.schedule(tree.id, 15);
+    }
+    
+    // Schedule upgrade spawning at 5fps (very low priority)
+    updateScheduler.schedule('upgrade_spawner', 5);
   }
 
   applyUpgrade(tank, upgradeType) {
@@ -287,6 +452,51 @@ export class GameEngine {
     }
   }
 
+  // Check collision between tank and upgrade using more forgiving bounds overlap
+  checkTankUpgradeCollision(tank, upgrade) {
+    // Get tank's collision bounds (oriented bounding box)
+    const tankBounds = tank.getOrientedBoundingBox();
+    
+    // Get upgrade's collision bounds (axis-aligned bounding box)
+    const upgradeBounds = upgrade.bounds;
+    
+    if (!upgradeBounds) return false;
+    
+    // Use a more forgiving collision detection approach
+    // Check if the upgrade's bounds overlap with the tank's collision area
+    // This is better than just checking if the upgrade center is inside the tank
+    
+    // First, do a simple AABB check for performance
+    const tankAABB = tank.bounds;
+    if (!tankAABB) return false;
+    
+    // Check if AABB bounds overlap
+    if (tankAABB.x < upgradeBounds.x + upgradeBounds.width &&
+        tankAABB.x + tankAABB.width > upgradeBounds.x &&
+        tankAABB.y < upgradeBounds.y + upgradeBounds.height &&
+        tankAABB.y + tankAABB.height > upgradeBounds.y) {
+      
+      // If AABB overlaps, do a more precise check using the upgrade's center
+      // but with a larger tolerance area around the tank
+      const upgradeCenter = upgrade.position;
+      const tankCenter = tank.position;
+      
+      // Calculate distance between centers
+      const dx = upgradeCenter.x - tankCenter.x;
+      const dy = upgradeCenter.y - tankCenter.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Use a more forgiving collision radius: tank collision radius + upgrade radius + buffer
+      const tankCollisionRadius = Math.max(tank.collisionWidth, tank.collisionHeight) / 2;
+      const upgradeRadius = upgradeBounds.width / 2;
+      const collisionDistance = tankCollisionRadius + upgradeRadius + 5; // 5px buffer
+      
+      return distance <= collisionDistance;
+    }
+    
+    return false;
+  }
+
   spawnUpgrades() {
     // Count current upgrades by type
     const upgradeCounts = {};
@@ -304,7 +514,8 @@ export class GameEngine {
           ...this.gameState.tanks.values()
         ]);
         
-        this.gameState.upgrades.push(new Upgrade(type, new Vector2(position.x, position.y), this.gameSettings.upgradeParams.rotationRange));
+        const newUpgrade = new Upgrade(type, new Vector2(position.x, position.y), this.gameSettings.upgradeParams.rotationRange);
+        this.gameState.upgrades.push(newUpgrade);
       }
     }
   }
@@ -794,6 +1005,39 @@ export class GameEngine {
     return null; // No changes
   }
 
+  // OPTIMIZATION: Get priority-based game state updates
+  getPriorityGameState() {
+    const currentTime = Date.now();
+    const updates = priorityUpdateManager.getUpdatesForFrame(currentTime);
+    
+    // If no updates needed, return null
+    if (updates.length === 0) {
+      return null;
+    }
+    
+    // Create priority-based updates
+    const priorityUpdates = [];
+    
+    for (const update of updates) {
+      const updateData = priorityUpdateManager.createUpdate(
+        this.gameState, 
+        update.priority
+      );
+      
+      // Mark update as sent
+      priorityUpdateManager.markUpdateSent(update.priority, currentTime);
+      
+      priorityUpdates.push({
+        priority: update.priority,
+        frequency: update.frequency,
+        data: updateData,
+        timestamp: currentTime
+      });
+    }
+    
+    return priorityUpdates;
+  }
+
   hasTankChanged(currentTank, lastTank) {
     // Check if tank position, health, or other critical attributes changed
     return currentTank.position.x !== lastTank.position.x ||
@@ -829,6 +1073,9 @@ export class GameEngine {
     this.gameState.patches = [];
 
     this.aiControllers.clear();
+    
+    // OPTIMIZATION: Clear spatial manager
+    this.spatialManager.clear();
     
     // Reset game time
     this.gameState.gameTime = 0;
@@ -937,5 +1184,21 @@ export class GameEngine {
     // This is a simple implementation - you might want to store the current map name
     // For now, we'll return 'mudlands' as default since that's what we're using
     return 'mudlands';
+  }
+
+  // OPTIMIZATION: Get spatial partitioning performance statistics
+  getSpatialStats() {
+    return this.spatialManager.getStats();
+  }
+  
+  // 🚀 Get AI update performance statistics
+  getAIUpdateStats() {
+    return {
+      frameCounter: this.aiUpdateFrameCounter,
+      updateInterval: this.aiUpdateInterval,
+      stats: this.aiUpdateStats,
+      efficiency: this.aiUpdateStats.totalUpdates > 0 ? 
+        ((this.aiUpdateStats.skippedUpdates / this.aiUpdateStats.totalUpdates) * 100).toFixed(1) + '%' : '0%'
+    };
   }
 } 

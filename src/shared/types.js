@@ -1,4 +1,5 @@
 import { GAME_PARAMS, DAMAGE_PARAMS } from './constants.js';
+import { memoryManager } from './objectPools.js';
 
 // Game State Types
 export class Vector2 {
@@ -7,26 +8,73 @@ export class Vector2 {
     this.y = y;
   }
 
+  // OPTIMIZATION: In-place operations to avoid object creation
+  set(x, y) {
+    this.x = x;
+    this.y = y;
+    return this;
+  }
+
+  setFrom(other) {
+    this.x = other.x;
+    this.y = other.y;
+    return this;
+  }
+
   add(other) {
     return new Vector2(this.x + other.x, this.y + other.y);
+  }
+
+  addInPlace(other) {
+    this.x += other.x;
+    this.y += other.y;
+    return this;
   }
 
   subtract(other) {
     return new Vector2(this.x - other.x, this.y - other.y);
   }
 
+  subtractInPlace(other) {
+    this.x -= other.x;
+    this.y -= other.y;
+    return this;
+  }
+
   multiply(scalar) {
     return new Vector2(this.x * scalar, this.y * scalar);
+  }
+
+  multiplyInPlace(scalar) {
+    this.x *= scalar;
+    this.y *= scalar;
+    return this;
   }
 
   magnitude() {
     return Math.sqrt(this.x * this.x + this.y * this.y);
   }
 
+  magnitudeSquared() {
+    return this.x * this.x + this.y * this.y;
+  }
+
   normalize() {
     const mag = this.magnitude();
     if (mag === 0) return new Vector2(0, 0);
     return new Vector2(this.x / mag, this.y / mag);
+  }
+
+  normalizeInPlace() {
+    const mag = this.magnitude();
+    if (mag === 0) {
+      this.x = 0;
+      this.y = 0;
+    } else {
+      this.x /= mag;
+      this.y /= mag;
+    }
+    return this;
   }
 
   lerp(target, factor) {
@@ -36,8 +84,20 @@ export class Vector2 {
     );
   }
 
+  lerpInPlace(target, factor) {
+    this.x += (target.x - this.x) * factor;
+    this.y += (target.y - this.y) * factor;
+    return this;
+  }
+
   distance(other) {
     return this.subtract(other).magnitude();
+  }
+
+  distanceSquared(other) {
+    const dx = this.x - other.x;
+    const dy = this.y - other.y;
+    return dx * dx + dy * dy;
   }
 
   dot(other) {
@@ -55,6 +115,15 @@ export class Vector2 {
       this.x * cos - this.y * sin,
       this.x * sin + this.y * cos
     );
+  }
+
+  rotateInPlace(angle) {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const oldX = this.x;
+    this.x = oldX * cos - this.y * sin;
+    this.y = oldX * sin + this.y * cos;
+    return this;
   }
 }
 
@@ -117,6 +186,29 @@ export class Tank {
     this.turretPendulumRange = 0.1; // Reduced from 0.3 to 0.1 for very subtle rotation
     this.turretPendulumSpeed = 0.5;
     this.pendulumDirection = 1; // Random direction for pendulum swing
+    
+    // OPTIMIZATION: Spatial partitioning bounds (updated on position change)
+    this.bounds = null;
+    this.updateBounds();
+  }
+
+  // OPTIMIZATION: Update spatial bounds for collision detection
+  updateBounds() {
+    // Tank collision box: longer front/back, narrower sides (more realistic)
+    const frontBackWidth = 48;  // Front/back collision width (was 44, increased slightly)
+    const sideHeight = 32;      // Side collision height (was 44, reduced significantly)
+    
+    // Store dimensions for OBB collision detection
+    this.collisionWidth = frontBackWidth;
+    this.collisionHeight = sideHeight;
+    
+    // Keep AABB for spatial partitioning (performance)
+    this.bounds = {
+      x: this.position.x - frontBackWidth / 2,
+      y: this.position.y - sideHeight / 2,
+      width: frontBackWidth,
+      height: sideHeight
+    };
   }
 
   update(deltaTime, gasolinePerUnit = GAME_PARAMS.GASOLINE_PER_UNIT, gasolineSpeedPenalty = GAME_PARAMS.GASOLINE_SPEED_PENALTY, trees = []) {
@@ -149,38 +241,59 @@ export class Tank {
       // Apply smooth rotation based on rotation speed attribute
       this.rotateTowards(targetAngle, deltaTime);
       
-      // ALL tanks (both AI and player) should move only in their current facing direction
-      // This prevents the weird strafing effect when rotating
-      const currentDirection = new Vector2(Math.cos(this.angle), Math.sin(this.angle));
-      const desiredDirection = this.targetVelocity.normalize();
-      const dotProduct = currentDirection.dot(desiredDirection);
+      // OPTIMIZATION: Use temporary variables instead of creating new Vector2 objects
+      const cosAngle = Math.cos(this.angle);
+      const sinAngle = Math.sin(this.angle);
       
-      // Only move forward or backward, not sideways
-      const forwardSpeed = dotProduct * effectiveSpeed;
-      const movementDirection = currentDirection.multiply(Math.sign(forwardSpeed));
-      const targetVelocity = movementDirection.multiply(Math.abs(forwardSpeed));
+      // Calculate how much the tank should move forward/backward based on input direction
+      // This creates realistic tank movement where the tank can only move in the direction it's facing
+      const targetVelMagnitude = Math.sqrt(this.targetVelocity.x * this.targetVelocity.x + this.targetVelocity.y * this.targetVelocity.y);
+      const desiredDirectionX = this.targetVelocity.x / targetVelMagnitude;
+      const desiredDirectionY = this.targetVelocity.y / targetVelMagnitude;
       
-      // Smooth velocity interpolation
-      const lerpFactor = 0.15;
-      this.velocity = this.velocity.lerp(targetVelocity, lerpFactor);
+      // Calculate dot product to determine if we're moving forward or backward relative to tank's facing direction
+      const dotProduct = cosAngle * desiredDirectionX + sinAngle * desiredDirectionY;
+      
+      // Only allow forward/backward movement (no sideways movement like a car)
+      // Positive dot product = moving forward, negative = moving backward
+      const forwardSpeed = Math.abs(dotProduct) * effectiveSpeed;
+      const movementDirection = Math.sign(dotProduct); // 1 for forward, -1 for backward
+      
+      // Calculate target velocity in the tank's facing direction
+      const targetVelocityX = cosAngle * forwardSpeed * movementDirection;
+      const targetVelocityY = sinAngle * forwardSpeed * movementDirection;
+      
+      // Smooth velocity interpolation for realistic movement feel
+      const lerpFactor = 0.12; // Slightly reduced for more realistic tank movement
+      this.velocity.x = this.velocity.x + (targetVelocityX - this.velocity.x) * lerpFactor;
+      this.velocity.y = this.velocity.y + (targetVelocityY - this.velocity.y) * lerpFactor;
     } else {
       // Tank should stop - apply strong friction to reach zero quickly
-      this.velocity = this.velocity.multiply(0.8);
+      this.velocity.x *= 0.7; // Increased friction for more realistic tank stopping
+      this.velocity.y *= 0.7;
       
       // If velocity becomes very small, set it to zero to avoid floating point precision issues
-      if (this.velocity.magnitude() < 0.1) {
-        this.velocity = new Vector2(0, 0);
+      if (this.velocity.x * this.velocity.x + this.velocity.y * this.velocity.y < 0.01) {
+        this.velocity.x = 0;
+        this.velocity.y = 0;
       }
     }
 
-    // Update position
-    const oldPosition = this.position.clone();
-    this.position = this.position.add(this.velocity.multiply(deltaTime / 1000));
+    // OPTIMIZATION: Store old position values instead of cloning
+    const oldPositionX = this.position.x;
+    const oldPositionY = this.position.y;
+    
+    // Update position in-place
+    this.position.x += this.velocity.x * (deltaTime / 1000);
+    this.position.y += this.velocity.y * (deltaTime / 1000);
+    
+    // OPTIMIZATION: Update spatial bounds when position changes
+    this.updateBounds();
     
     // Check collision with trees using simplified circle-to-circle physics
     if (trees && trees.length > 0) {
-      const tankRadius = 22; // Tank collision radius (increased by 10% from 20 to 22)
-      
+      const tankRadius = 20; // Tank collision radius (reduced to match new collision box)
+    
       for (const tree of trees) {
         const trunkRadius = tree.size / 16; // Tree trunk collision radius (even smaller)
         
@@ -223,9 +336,12 @@ export class Tank {
             this.velocity.x *= friction;
             this.velocity.y *= friction;
             
-            // Trigger tree animation
+            // OPTIMIZATION: Use object pool for tree impact vector
+            const impactVector = memoryManager.getVector(-this.velocity.x, -this.velocity.y);
             const impactForce = velocityTowardTree * 0.3;
-            tree.impact(new Vector2(-this.velocity.x, -this.velocity.y), impactForce);
+            tree.impact(impactVector, impactForce);
+            memoryManager.release(impactVector);
+            
             // Make trees swing quicker (not further) for a short time on tank collision
             if (typeof tree.boostSwingFrequency === 'function') {
               tree.boostSwingFrequency(1200, 1.8);
@@ -237,8 +353,10 @@ export class Tank {
       }
     }
     
-    // Calculate distance moved and consume gasoline
-    const distanceMoved = this.position.distance(oldPosition);
+    // Calculate distance moved and consume gasoline (in-place calculation)
+    const dx = this.position.x - oldPositionX;
+    const dy = this.position.y - oldPositionY;
+    const distanceMoved = Math.sqrt(dx * dx + dy * dy);
     if (distanceMoved > 0.1) { // Only consume if actually moving
       const gasolineConsumed = distanceMoved * gasolinePerUnit;
       this.attributes.gasoline = Math.max(0, this.attributes.gasoline - gasolineConsumed);
@@ -311,11 +429,12 @@ export class Tank {
 
     // Calculate rotation speed based on tank's rotation attribute
     // Higher rotation = faster turning, lower rotation = sluggish turning
-    const rotationSpeed = this.attributes.rotation * 0.1; // Increased from 0.02 to 0.1
+    // Reduced from 0.1 to 0.06 for more realistic tank turning feel
+    const rotationSpeed = this.attributes.rotation * 0.06;
     const maxRotationThisFrame = rotationSpeed * (deltaTime / 1000);
     
-    // Fixed: Remove instant rotation - always use smooth rotation based on tank's rotation attribute
-    if (Math.abs(angleDiff) > 0.01) { // Reduced threshold from 0.05 to 0.01
+    // Only rotate if the angle difference is significant enough
+    if (Math.abs(angleDiff) > 0.005) { // Reduced threshold for smoother rotation
       const rotateAmount = Math.min(Math.abs(angleDiff), maxRotationThisFrame) * Math.sign(angleDiff);
       this.angle += rotateAmount;
     }
@@ -372,17 +491,22 @@ export class Tank {
     this.pendulumDirection = Math.random() < 0.5 ? 1 : -1;
 
     const shellSpeed = this.attributes.kinetics;
-    const direction = new Vector2(
-      Math.cos(this.angle),
-      Math.sin(this.angle)
-    );
-    const shellVelocity = direction.multiply(shellSpeed);
-
-    // Position shell closer to tank barrel (approximately 15-20 pixels from tank center)
-    const shellOffset = 20; // Reduced distance to be closer to tank barrel
-    const shellPosition = this.position.add(direction.multiply(shellOffset));
     
-    const shell = new Shell(
+    // OPTIMIZATION: Use object pool for direction vector
+    const direction = memoryManager.getVector(Math.cos(this.angle), Math.sin(this.angle));
+    
+    // OPTIMIZATION: Calculate shell velocity in-place
+    const shellVelocity = memoryManager.getVector(direction.x * shellSpeed, direction.y * shellSpeed);
+
+    // OPTIMIZATION: Calculate shell position in-place
+    const shellOffset = 20; // Reduced distance to be closer to tank barrel
+    const shellPosition = memoryManager.getVector(
+      this.position.x + direction.x * shellOffset,
+      this.position.y + direction.y * shellOffset
+    );
+    
+    // OPTIMIZATION: Use object pooling for shell creation (eliminates GC spikes)
+    const shell = memoryManager.getShell(
       this.id,
       shellPosition,
       shellVelocity,
@@ -394,6 +518,11 @@ export class Tank {
     if (this.isAI) {
       this.lastShotShell = shell;
     }
+
+    // OPTIMIZATION: Release temporary vectors back to pool
+    memoryManager.release(direction);
+    memoryManager.release(shellVelocity);
+    memoryManager.release(shellPosition);
 
     // Removed excessive logging - only log critical events
     
@@ -443,11 +572,60 @@ export class Tank {
     };
   }
 
+  // Get oriented bounding box for precise collision detection
+  getOrientedBoundingBox() {
+    const cos = Math.cos(this.angle);
+    const sin = Math.sin(this.angle);
+    
+    // Calculate the four corners of the tank relative to its center
+    const halfWidth = this.collisionWidth / 2;
+    const halfHeight = this.collisionHeight / 2;
+    
+    // Define corners relative to tank center (before rotation)
+    const corners = [
+      { x: -halfWidth, y: -halfHeight },  // Top-left
+      { x: halfWidth, y: -halfHeight },   // Top-right
+      { x: halfWidth, y: halfHeight },    // Bottom-right
+      { x: -halfWidth, y: halfHeight }    // Bottom-left
+    ];
+    
+    // Rotate and translate corners to world coordinates
+    const rotatedCorners = corners.map(corner => ({
+      x: this.position.x + corner.x * cos - corner.y * sin,
+      y: this.position.y + corner.x * sin + corner.y * cos
+    }));
+    
+    return {
+      center: this.position,
+      corners: rotatedCorners,
+      width: this.collisionWidth,
+      height: this.collisionHeight,
+      angle: this.angle
+    };
+  }
+
   checkCollision(box1, box2) {
     return box1.x < box2.x + box2.width &&
            box1.x + box1.width > box2.x &&
            box1.y < box2.y + box2.height &&
            box1.y + box1.height > box2.y;
+  }
+
+  // Check if a point is inside the oriented bounding box
+  isPointInOBB(point) {
+    const obb = this.getOrientedBoundingBox();
+    const cos = Math.cos(-obb.angle); // Negative angle to rotate point back
+    const sin = Math.sin(-obb.angle);
+    
+    // Translate point to tank's local coordinate system
+    const localX = (point.x - obb.center.x) * cos - (point.y - obb.center.y) * sin;
+    const localY = (point.x - obb.center.x) * sin + (point.y - obb.center.y) * cos;
+    
+    // Check if point is within the local bounds
+    const halfWidth = obb.width / 2;
+    const halfHeight = obb.height / 2;
+    
+    return Math.abs(localX) <= halfWidth && Math.abs(localY) <= halfHeight;
   }
 
 
@@ -461,11 +639,33 @@ export class Shell {
     this.timestamp = timestamp;
     this.shooterImmunity = shooterImmunity; // Time until shooter is immune to this shell
     // Removed lifetime since shells should persist until collision or going off-screen
+    
+    // OPTIMIZATION: Spatial partitioning bounds (updated on position change)
+    this.bounds = null;
+    this.updateBounds();
   }
 
   update(deltaTime) {
-    this.position = this.position.add(this.velocity.multiply(deltaTime / 1000));
+    // OPTIMIZATION: Update position in-place instead of creating new Vector2 objects
+    const deltaTimeSeconds = deltaTime / 1000;
+    this.position.x += this.velocity.x * deltaTimeSeconds;
+    this.position.y += this.velocity.y * deltaTimeSeconds;
+    
     // Removed lifetime decrement since shells should persist until collision or going off-screen
+    
+    // OPTIMIZATION: Update spatial bounds when position changes
+    this.updateBounds();
+  }
+
+  // OPTIMIZATION: Update spatial bounds for collision detection
+  updateBounds() {
+    const size = 5; // Shell size
+    this.bounds = {
+      x: this.position.x - size / 2,
+      y: this.position.y - size / 2,
+      width: size,
+      height: size
+    };
   }
 
   isExpired() {
@@ -494,6 +694,21 @@ export class Upgrade {
     this.collected = false;
     // Add random rotation based on rotation range (converted to radians)
     this.rotation = (Math.random() - 0.5) * (rotationRange * Math.PI / 180); // Convert degrees to radians
+    
+    // OPTIMIZATION: Spatial partitioning bounds (static for upgrades)
+    this.bounds = null;
+    this.updateBounds();
+  }
+
+  // OPTIMIZATION: Update spatial bounds for collision detection
+  updateBounds() {
+    const size = 22.5; // Upgrade size
+    this.bounds = {
+      x: this.position.x - size / 2,
+      y: this.position.y - size / 2,
+      width: size,
+      height: size
+    };
   }
 
   getBoundingBox() {
@@ -525,16 +740,25 @@ export class Tree {
     const treeTypes = ['tree1', 'tree2', 'tree3'];
     this.treeType = treeTypes[Math.floor(Math.random() * treeTypes.length)];
     this.leafRotation = Math.random() * Math.PI * 2; // Random rotation between 0 and 2π
+    
+    // OPTIMIZATION: Spatial partitioning bounds (static for trees)
+    this.bounds = null;
+    this.updateBounds();
   }
 
   // Called when tree is hit by something (shell, tank, etc.)
   impact(impactVelocity, impactForce = null) {
-    // Calculate impact direction and magnitude
-    const impactSpeed = impactVelocity.magnitude();
+    // Calculate impact direction and magnitude (works with both Vector2 and plain objects)
+    const impactSpeed = Math.sqrt(impactVelocity.x * impactVelocity.x + impactVelocity.y * impactVelocity.y);
     
     if (impactSpeed < 1) return; // Ignore very small impacts
     
-    const impactDirection = impactVelocity.normalize();
+    // OPTIMIZATION: Use object pool for normalized impact direction
+    const impactDirection = memoryManager.getVector(0, 0);
+    if (impactSpeed > 0) {
+      impactDirection.x = impactVelocity.x / impactSpeed;
+      impactDirection.y = impactVelocity.y / impactSpeed;
+    }
     
     // Extremely visible spring-damper response for both rotation and translation
     const forceScale = impactForce ? Math.min(impactForce / 10, 5.0) : Math.min(impactSpeed / 5, 5.0);
@@ -558,6 +782,20 @@ export class Tree {
     this.foliageVelocityY = Math.max(-2.5, Math.min(2.5, this.foliageVelocityY)); // Reduced from ±3.5 to ±2.5
     
     this.lastImpactTime = Date.now();
+    
+    // OPTIMIZATION: Release pooled vector
+    memoryManager.release(impactDirection);
+  }
+
+  // OPTIMIZATION: Update spatial bounds for collision detection
+  updateBounds() {
+    const trunkSize = this.size / 8; // Tree trunk collision size
+    this.bounds = {
+      x: this.position.x - trunkSize / 2,
+      y: this.position.y - this.size / 2 - trunkSize / 2,
+      width: trunkSize,
+      height: trunkSize
+    };
   }
 
   // Temporarily increase swing frequency (oscillation speed) without increasing amplitude

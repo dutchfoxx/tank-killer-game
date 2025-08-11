@@ -87,20 +87,26 @@ export class AIController {
 
   checkIfStuck(currentTime) {
     if (!this.stuckPosition) {
-      this.stuckPosition = this.tank.position.clone();
+      // OPTIMIZATION: Store position values instead of cloning Vector2
+      this.stuckPosition = { x: this.tank.position.x, y: this.tank.position.y };
       this.stuckTimer = currentTime;
       return;
     }
 
-    const distanceMoved = this.tank.position.distance(this.stuckPosition);
+    // OPTIMIZATION: Calculate distance in-place instead of using Vector2.distance
+    const dx = this.tank.position.x - this.stuckPosition.x;
+    const dy = this.tank.position.y - this.stuckPosition.y;
+    const distanceMoved = Math.sqrt(dx * dx + dy * dy);
     
     if (distanceMoved < 20 && currentTime - this.stuckTimer > 3000) {
       // Increased stuck time to 3 seconds to avoid false positives
       this.performEmergencyManeuver();
-      this.stuckPosition = this.tank.position.clone();
+      this.stuckPosition.x = this.tank.position.x;
+      this.stuckPosition.y = this.tank.position.y;
       this.stuckTimer = currentTime;
     } else if (distanceMoved > 50) {
-      this.stuckPosition = this.tank.position.clone();
+      this.stuckPosition.x = this.tank.position.x;
+      this.stuckPosition.y = this.tank.position.y;
       this.stuckTimer = currentTime;
     }
   }
@@ -108,8 +114,12 @@ export class AIController {
   performEmergencyManeuver() {
     // Move in a random direction (no backward movement)
     const randomAngle = Math.random() * Math.PI * 2;
-    const emergencyDirection = new Vector2(Math.cos(randomAngle), Math.sin(randomAngle));
-    this.tank.targetVelocity = emergencyDirection.multiply(this.tank.attributes.speed * 0.8);
+    const cosAngle = Math.cos(randomAngle);
+    const sinAngle = Math.sin(randomAngle);
+    
+    // OPTIMIZATION: Set target velocity in-place instead of creating new Vector2
+    this.tank.targetVelocity.x = cosAngle * this.tank.attributes.speed * 0.8;
+    this.tank.targetVelocity.y = sinAngle * this.tank.attributes.speed * 0.8;
     
     // Clear current target to force new decision
     this.target = null;
@@ -283,16 +293,21 @@ export class AIController {
       return;
     }
 
-    const direction = enemyTank.position.subtract(this.tank.position);
-    const distance = direction.magnitude();
-    const targetAngle = Math.atan2(direction.y, direction.x);
+    // OPTIMIZATION: Calculate direction in-place instead of creating new Vector2
+    const directionX = enemyTank.position.x - this.tank.position.x;
+    const directionY = enemyTank.position.y - this.tank.position.y;
+    const distance = Math.sqrt(directionX * directionX + directionY * directionY);
+    const targetAngle = Math.atan2(directionY, directionX);
     
     // Realistic tank combat behavior with consistent speed (no backward movement)
     if (distance < 150) {
       // Too close - move to the side instead of backward
       const sideAngle = this.tank.angle + (Math.random() < 0.5 ? Math.PI/2 : -Math.PI/2);
-      const sideDirection = new Vector2(Math.cos(sideAngle), Math.sin(sideAngle));
-      this.tank.targetVelocity = sideDirection.multiply(this.tank.attributes.speed * 0.8);
+      const cosSideAngle = Math.cos(sideAngle);
+      const sinSideAngle = Math.sin(sideAngle);
+      // OPTIMIZATION: Set target velocity in-place
+      this.tank.targetVelocity.x = cosSideAngle * this.tank.attributes.speed * 0.8;
+      this.tank.targetVelocity.y = sinSideAngle * this.tank.attributes.speed * 0.8;
     } else if (distance > this.engagementRange) {
       // Too far - approach with full speed
       this.moveTowardsWithAvoidance(enemyTank.position);
@@ -301,16 +316,22 @@ export class AIController {
       const behaviorChoice = Math.random();
       if (behaviorChoice < 0.4) {
         // Stand still and shoot (most common for tanks)
-        this.tank.targetVelocity = new Vector2(0, 0);
+        this.tank.targetVelocity.x = 0;
+        this.tank.targetVelocity.y = 0;
       } else if (behaviorChoice < 0.7) {
         // Approach slowly but not too slowly
         this.moveTowardsWithAvoidance(enemyTank.position);
-        this.tank.targetVelocity = this.tank.targetVelocity.multiply(0.6);
+        // OPTIMIZATION: Apply velocity reduction in-place
+        this.tank.targetVelocity.x *= 0.6;
+        this.tank.targetVelocity.y *= 0.6;
       } else {
         // Move to the side instead of retreating backward
         const sideAngle = this.tank.angle + (Math.random() < 0.5 ? Math.PI/2 : -Math.PI/2);
-        const sideDirection = new Vector2(Math.cos(sideAngle), Math.sin(sideAngle));
-        this.tank.targetVelocity = sideDirection.multiply(this.tank.attributes.speed * 0.7);
+        const cosSideAngle = Math.cos(sideAngle);
+        const sinSideAngle = Math.sin(sideAngle);
+        // OPTIMIZATION: Set target velocity in-place
+        this.tank.targetVelocity.x = cosSideAngle * this.tank.attributes.speed * 0.7;
+        this.tank.targetVelocity.y = sinSideAngle * this.tank.attributes.speed * 0.7;
       }
     }
 
@@ -319,34 +340,57 @@ export class AIController {
   }
 
   moveTowardsWithAvoidance(targetPosition) {
-    const direction = targetPosition.subtract(this.tank.position);
-    const normalizedDirection = direction.normalize();
+    // OPTIMIZATION: Calculate direction in-place instead of creating new Vector2
+    const directionX = targetPosition.x - this.tank.position.x;
+    const directionY = targetPosition.y - this.tank.position.y;
+    const directionMagnitude = Math.sqrt(directionX * directionX + directionY * directionY);
+    
+    // Normalize direction in-place
+    const normalizedDirectionX = directionX / directionMagnitude;
+    const normalizedDirectionY = directionY / directionMagnitude;
     
     // Simple obstacle avoidance
     const obstacles = this.gameState.trees;
-    let avoidanceVector = new Vector2(0, 0);
+    let avoidanceVectorX = 0;
+    let avoidanceVectorY = 0;
     
     for (const tree of obstacles) {
-      const toTree = tree.position.subtract(this.tank.position);
-      const distanceToTree = toTree.magnitude();
+      // OPTIMIZATION: Calculate tree avoidance in-place
+      const toTreeX = tree.position.x - this.tank.position.x;
+      const toTreeY = tree.position.y - this.tank.position.y;
+      const distanceToTree = Math.sqrt(toTreeX * toTreeX + toTreeY * toTreeY);
       
       if (distanceToTree < 80) {
-        const avoidDirection = toTree.normalize().multiply(-1);
-        avoidanceVector = avoidanceVector.add(avoidDirection.multiply(80 / distanceToTree));
+        // Normalize and invert tree direction
+        const avoidDirectionX = -toTreeX / distanceToTree;
+        const avoidDirectionY = -toTreeY / distanceToTree;
+        const avoidanceStrength = 80 / distanceToTree;
+        
+        avoidanceVectorX += avoidDirectionX * avoidanceStrength;
+        avoidanceVectorY += avoidDirectionY * avoidanceStrength;
       }
     }
     
     // Reduce avoidance strength when very close to target (within 50 units)
-    const distanceToTarget = this.tank.position.distance(targetPosition);
+    const distanceToTarget = Math.sqrt(directionX * directionX + directionY * directionY);
     let avoidanceStrength = 0.5;
     if (distanceToTarget < 50) {
       avoidanceStrength = 0.0; // No avoidance when close to target
     }
     
-    const finalDirection = normalizedDirection.add(avoidanceVector.multiply(avoidanceStrength)).normalize();
-    this.tank.targetVelocity = finalDirection.multiply(this.tank.attributes.speed);
+    // OPTIMIZATION: Calculate final direction in-place
+    const finalDirectionX = normalizedDirectionX + avoidanceVectorX * avoidanceStrength;
+    const finalDirectionY = normalizedDirectionY + avoidanceVectorY * avoidanceStrength;
     
-
+    // Normalize final direction
+    const finalMagnitude = Math.sqrt(finalDirectionX * finalDirectionX + finalDirectionY * finalDirectionY);
+    if (finalMagnitude > 0) {
+      this.tank.targetVelocity.x = (finalDirectionX / finalMagnitude) * this.tank.attributes.speed;
+      this.tank.targetVelocity.y = (finalDirectionY / finalMagnitude) * this.tank.attributes.speed;
+    } else {
+      this.tank.targetVelocity.x = normalizedDirectionX * this.tank.attributes.speed;
+      this.tank.targetVelocity.y = normalizedDirectionY * this.tank.attributes.speed;
+    }
   }
 
   attemptShot(enemyTank, distance, targetAngle, currentTime) {
@@ -357,17 +401,22 @@ export class AIController {
     if (distance < 25) return;
 
     // Improved predictive aiming with better accuracy
-    const enemyVelocity = enemyTank.velocity || new Vector2(0, 0);
+    const enemyVelocity = enemyTank.velocity || { x: 0, y: 0 };
     const shellSpeed = this.tank.attributes.kinetics;
     const timeToHit = distance / shellSpeed;
     
     // Add a small random factor to make AI less predictable but still accurate
     const predictionFactor = 0.8 + (Math.random() * 0.4); // 0.8 to 1.2
     const adjustedTimeToHit = timeToHit * predictionFactor;
-    const predictedPosition = enemyTank.position.add(enemyVelocity.multiply(adjustedTimeToHit));
     
-    const predictedDirection = predictedPosition.subtract(this.tank.position);
-    const predictedAngle = Math.atan2(predictedDirection.y, predictedDirection.x);
+    // OPTIMIZATION: Calculate predicted position in-place instead of creating new Vector2
+    const predictedX = enemyTank.position.x + enemyVelocity.x * adjustedTimeToHit;
+    const predictedY = enemyTank.position.y + enemyVelocity.y * adjustedTimeToHit;
+    
+    // OPTIMIZATION: Calculate predicted direction in-place
+    const predictedDirectionX = predictedX - this.tank.position.x;
+    const predictedDirectionY = predictedY - this.tank.position.y;
+    const predictedAngle = Math.atan2(predictedDirectionY, predictedDirectionX);
     
     // Check if aimed at target
     let angleDiff = predictedAngle - this.tank.angle;
@@ -383,7 +432,7 @@ export class AIController {
     const speedOk = perpendicularSpeed < 8; // Increased from 3 to 8 for more aggressive shooting
     
     // Additional check: if enemy is moving slowly, be more lenient with angle
-    const enemySpeed = enemyVelocity.magnitude();
+    const enemySpeed = Math.sqrt(enemyVelocity.x * enemyVelocity.x + enemyVelocity.y * enemyVelocity.y);
     const adjustedAngleThreshold = enemySpeed < 2 ? 1.2 : 0.8; // More lenient angle for slow targets
     const finalAngleOk = angleDiff < adjustedAngleThreshold;
     
@@ -396,8 +445,10 @@ export class AIController {
   collectUpgrade() {
     if (!this.target) return;
 
-    const direction = this.target.position.subtract(this.tank.position);
-    const distance = direction.magnitude();
+    // OPTIMIZATION: Calculate direction in-place instead of creating new Vector2
+    const directionX = this.target.position.x - this.tank.position.x;
+    const directionY = this.target.position.y - this.tank.position.y;
+    const distance = Math.sqrt(directionX * directionX + directionY * directionY);
 
     // Use proper collection distance (tank size + upgrade size + buffer)
     const collectionDistance = 25; // Reduced to match actual collision detection range
@@ -415,21 +466,29 @@ export class AIController {
     if (!this.wanderTarget || this.tank.position.distance(this.wanderTarget) < 50) {
       let attempts = 0;
       do {
-        this.wanderTarget = new Vector2(
-          Math.random() * 1000 + 100,
-          Math.random() * 600 + 100
-        );
+        // OPTIMIZATION: Create wander target in-place instead of new Vector2
+        if (!this.wanderTarget) {
+          this.wanderTarget = { x: 0, y: 0 };
+        }
+        this.wanderTarget.x = Math.random() * 1000 + 100;
+        this.wanderTarget.y = Math.random() * 600 + 100;
         attempts++;
       } while (this.isNearObstacle(this.wanderTarget) && attempts < 10);
     }
 
     this.moveTowardsWithAvoidance(this.wanderTarget);
-    this.tank.targetVelocity = this.tank.targetVelocity.multiply(0.4);
+    // OPTIMIZATION: Apply velocity reduction in-place
+    this.tank.targetVelocity.x *= 0.4;
+    this.tank.targetVelocity.y *= 0.4;
   }
 
   isNearObstacle(position) {
     for (const tree of this.gameState.trees) {
-      if (position.distance(tree.position) < 60) {
+      // OPTIMIZATION: Calculate distance in-place instead of using Vector2.distance
+      const dx = position.x - tree.position.x;
+      const dy = position.y - tree.position.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance < 60) {
         return true;
       }
     }

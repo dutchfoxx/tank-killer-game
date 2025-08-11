@@ -7,6 +7,11 @@ import { fileURLToPath } from 'url';
 import { GameEngine } from './gameEngine.js';
 import { DAMAGE_PARAMS } from '../shared/constants.js';
 import { getAllTerrainMaps, getTerrainMap } from '../shared/terrainMaps.js';
+import { memoryManager } from '../shared/objectPools.js';
+import { changeTracker, lazyEvaluator } from '../shared/eventSystem.js';
+import { batchVectorOps } from '../shared/vectorOptimizations.js';
+import { gameLoop, updateScheduler } from '../shared/gameLoop.js';
+import { priorityUpdateManager } from '../shared/priorityUpdates.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -320,7 +325,25 @@ app.get('/health', (req, res) => {
     tanks: gameEngine.gameState.tanks.size,
     shells: gameEngine.gameState.shells.length,
     upgrades: gameEngine.gameState.upgrades.length,
-    trees: gameEngine.gameState.trees.length
+    trees: gameEngine.gameState.trees.length,
+    spatialStats: gameEngine.getSpatialStats(),
+    memoryStats: memoryManager.getStats(),
+    algorithmStats: {
+      changeTracking: changeTracker.getStats(),
+      lazyEvaluation: lazyEvaluator.getStats(),
+      vectorOptimizations: batchVectorOps.getStats()
+    },
+    gameLoopStats: {
+      gameLoop: gameLoop.getStats(),
+      updateScheduler: updateScheduler.getStats()
+    },
+    priorityStats: priorityUpdateManager.getStats(),
+    // 🚀 CRITICAL OPTIMIZATION: AI update performance statistics
+    aiUpdateStats: gameEngine.getAIUpdateStats(),
+    clientFrameRateStats: {
+      note: "Client-side frame rate stats will appear here when clients connect",
+      serverFrameRate: gameLoop.getStats()
+    }
   });
 });
 
